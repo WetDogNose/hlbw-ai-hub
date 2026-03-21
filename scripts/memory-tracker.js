@@ -135,21 +135,14 @@ async function main() {
     
     const startTime = Date.now();
     
-    const exitCode = await new Promise((resolve) => {
-        const child = spawn(commandString, [], { 
-            stdio: "inherit",
-            shell: true
-        });
-        
-        child.on("close", (code) => {
-            resolve(code);
-        });
-        
-        child.on("error", (err) => {
-            console.error(`[Memory Tracker] Error executing command: ${err}`);
-            resolve(1);
-        });
-    });
+    let exitCode = 0;
+    try {
+        execSync(commandString, { stdio: "inherit" });
+    } catch (err) {
+        console.error(`[Memory Tracker] Error executing command: ${err.message}`);
+        exitCode = err.status || 1;
+    }
+
     
     const endTime = Date.now();
     const afterMem = getSystemMemory();

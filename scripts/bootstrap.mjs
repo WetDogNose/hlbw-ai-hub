@@ -132,6 +132,36 @@ async function installVSCodeExtensions() {
     }
 }
 
+async function checkPythonEnv() {
+    console.log('\n\x1b[33m--- Checking Python Environment ---\x1b[0m');
+    try {
+        execSync('python --version', { stdio: 'ignore' });
+        
+        if (!fs.existsSync(path.resolve(process.cwd(), '.venv'))) {
+            console.log('Creating virtual environment (.venv)...');
+            runCommand('python -m venv .venv', 'Failed to create virtual environment');
+        }
+
+        console.log('Syncing Python dependencies...');
+        const pipCmd = process.platform === 'win32' ? '.venv\\Scripts\\pip' : '.venv/bin/pip';
+        
+        if (fs.existsSync('scripts/swarm/requirements.txt')) {
+             runCommand(`${pipCmd} install -r scripts/swarm/requirements.txt`, 'Failed to install swarm python requirements');
+        }
+        if (fs.existsSync('wrappers/a2a/requirements.txt')) {
+             runCommand(`${pipCmd} install -r wrappers/a2a/requirements.txt`, 'Failed to install wrappers python requirements');
+        }
+        if (fs.existsSync('.agents/workers/directive-enforcer/requirements.txt')) {
+             runCommand(`${pipCmd} install -r .agents/workers/directive-enforcer/requirements.txt`, 'Failed to install directive-enforcer requirements');
+        }
+        
+        console.log('\x1b[32mPython environment initialized.\x1b[0m');
+    } catch (error) {
+        console.log('\x1b[31mPython 3 is not installed or not in PATH.\x1b[0m');
+        console.log('\x1b[33mSkipping Python environment setup.\x1b[0m');
+    }
+}
+
 async function checkGCloudAuth() {
     console.log('\n\x1b[33m--- Checking Google Cloud SDK & Auth ---\x1b[0m');
 
@@ -187,7 +217,8 @@ async function bootstrap() {
     console.log('\x1b[1m\x1b[34m=======================================\x1b[0m\n');
 
     console.log('\x1b[33m--- Installing Dependencies ---\x1b[0m');
-    runCommand('npm install', 'Failed to install npm dependencies');
+    runCommand('npm install --legacy-peer-deps', 'Failed to install npm dependencies');
+    runCommand('npx husky install', 'Failed to install husky hooks');
 
     console.log('\n\x1b[33m--- Setting up .env ---\x1b[0m');
     const envPath = path.resolve(process.cwd(), '.env');
@@ -212,6 +243,7 @@ async function bootstrap() {
     await checkPwsh();
     await checkGeminiCli();
     await checkGitConfig();
+    await checkPythonEnv();
     await checkGCloudAuth();
     await installVSCodeExtensions();
 

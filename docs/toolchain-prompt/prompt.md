@@ -95,3 +95,12 @@ For every repetitive task, create a markdown file (e.g., `.agents/workflows/scaf
 - Scaffolding new API endpoints.
 - Running database migrations.
 - Automated deployment and version tagging.
+
+## Pillar 7. CI/CD Pipeline & Workflow Templates
+
+Standardize how pipelines and runner environments are built to prevent ad-hoc and brittle configurations.
+
+**1. Update Agent Directives:**
+* "If the user asks to create or deploy a CI/CD pipeline, you MUST look in `docs/templates/pipelines.md` for guidance."
+* "Never invent a GitHub Actions workflow from scratch. Always copy the base templates located inside `templates/pipelines/github-actions/`."
+* "If queried about GitHub Actions runners or self-hosted infrastructure, refer the user immediately to `docs/templates/pipelines/gha-runners.md` which explains standard vs. self-hosted runners."

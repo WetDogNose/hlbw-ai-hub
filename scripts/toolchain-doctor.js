@@ -10,6 +10,9 @@ console.log('🩺 Starting Toolchain Doctor...\n');
 const args = process.argv.slice(2);
 const isUpdate = args.includes('--update');
 const isMcpRefresh = args.includes('--mcp-refresh');
+const isAuditDirectives = args.includes('--audit-directives');
+const isFixDirectives = args.includes('--fix-directives');
+const isGraphDirectives = args.includes('--graph-directives');
 
 if (isUpdate) {
     console.log('🔄 Update flag detected. Launching Toolchain Updater...\n');
@@ -21,6 +24,22 @@ if (isUpdate) {
         process.exit(1);
     }
 }
+
+if (isAuditDirectives || isFixDirectives || isGraphDirectives) {
+    const mode = isGraphDirectives ? 'graph' : (isFixDirectives ? 'fix' : 'identify');
+    const verb = mode === 'fix' ? 'Enforcing' : (mode === 'graph' ? 'Mapping' : 'Auditing');
+    console.log(`🛡️  ${verb} Agent Directives across workspace [Mode: ${mode}]...\n`);
+    try {
+        const agentPy = path.join(__dirname, '..', '.agents', 'workers', 'directive-enforcer', 'main.py');
+        const pythonCmd = process.platform === 'win32' ? path.join(__dirname, '..', '.venv', 'Scripts', 'python.exe') : path.join(__dirname, '..', '.venv', 'bin', 'python');
+        execSync(`"${pythonCmd}" "${agentPy}" --cli-run "${path.join(__dirname, '..')}" --mode ${mode}`, { stdio: 'inherit' });
+        process.exit(0); // Only run the enforcement, exit correctly afterward
+    } catch (e) {
+        console.error(`🚨 Directive Enforcer failed: ${e.message}\n`);
+        process.exit(1);
+    }
+}
+
 
 let hasErrors = false;
 
@@ -498,6 +517,63 @@ try {
 } catch (e) {
     logError(`MCP health validation failed: ${e.message}`);
 }
+
+console.log('\n-------------------------------');
+
+// 11. Validate Tooling Configuration (Prettier, CSpell, Husky, Jest, Secretlint)
+console.log('\n--- Tooling Configuration Validate ---');
+try {
+    const pkgJsonPath = path.join(__dirname, '..', 'package.json');
+    if (fs.existsSync(pkgJsonPath)) {
+        const pkg = JSON.parse(fs.readFileSync(pkgJsonPath, 'utf8'));
+        const devDeps = pkg.devDependencies || {};
+        if (!devDeps.prettier) logError("Prettier is missing from devDependencies!");
+        if (!devDeps.cspell) logError("cspell is missing from devDependencies!");
+        logSuccess("Prettier and CSpell dependencies check passed.");
+    }
+    
+    const secretlintrcPath = path.join(__dirname, '..', '.secretlintrc.json');
+    if (!fs.existsSync(secretlintrcPath)) logError("Missing .secretlintrc.json config for security testing.");
+    else logSuccess(".secretlintrc.json found.");
+
+    const precommitPath = path.join(__dirname, '..', '.husky', 'pre-commit');
+    if (!fs.existsSync(precommitPath)) {
+        logError("Missing .husky/pre-commit! Attempting auto-heal...");
+        try {
+            if (!fs.existsSync(path.join(__dirname, '..', '.husky'))) fs.mkdirSync(path.join(__dirname, '..', '.husky'));
+            fs.writeFileSync(precommitPath, '#!/usr/bin/env sh\n. "$(dirname -- "$0")/_/husky.sh"\n\nnpx lint-staged\n');
+            logSuccess("Auto-healed .husky/pre-commit.");
+        } catch(e) { logError("Failed to auto-heal husky: " + e.message); }
+    } else {
+        logSuccess(".husky/pre-commit hook found.");
+    }
+} catch (e) {
+    logError(`Tooling config validation failed: ${e.message}`);
+}
+
+console.log('\n-------------------------------');
+
+// 12. Validate Directive Enforcer Worker
+console.log('\n--- Directive Enforcer A2A Worker Validate ---');
+try {
+    const enforcerPath = path.join(__dirname, '..', '.agents', 'workers', 'directive-enforcer', 'main.py');
+    const skillPath = path.join(__dirname, '..', '.agents', 'skills', 'directive-enforcer', 'SKILL.md');
+    
+    if (!fs.existsSync(enforcerPath)) {
+        logError("Missing Directive Enforcer A2A Worker! Run scaffold-agent to restore.");
+    } else {
+        logSuccess("Directive Enforcer A2A Worker script exists.");
+    }
+    
+    if (!fs.existsSync(skillPath)) {
+        logError("Missing Directive Enforcer SKILL.md documentation.");
+    } else {
+        logSuccess("Directive Enforcer SKILL.md exists.");
+    }
+} catch (e) {
+    logError(`Directive Enforcer validation failed: ${e.message}`);
+}
+
 
 console.log('\n-------------------------------');
 if (hasErrors) {

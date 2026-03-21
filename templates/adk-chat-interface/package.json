@@ -1,0 +1,24 @@
+{
+  "name": "adk-chat-interface-template",
+  "version": "1.0.0",
+  "description": "Template for an ADK-based Chat Interface for local development",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "@opentelemetry/api": "^1.8.0",
+    "@opentelemetry/sdk-node": "^0.51.1",
+    "@opentelemetry/auto-instrumentations-node": "^0.47.0",
+    "@opentelemetry/exporter-trace-otlp-grpc": "^0.51.1",
+    "@google-cloud/opentelemetry-cloud-trace-exporter": "^2.1.0",
+    "@google-cloud/logging": "^11.0.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.0"
+  }
+}

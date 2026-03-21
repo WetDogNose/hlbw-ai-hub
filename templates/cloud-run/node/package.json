@@ -1,0 +1,18 @@
+{
+  "name": "node-cloud-run-template",
+  "version": "1.0.0",
+  "description": "Base Node.js Cloud Run Template",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "@opentelemetry/api": "^1.8.0",
+    "@opentelemetry/sdk-node": "^0.51.1",
+    "@opentelemetry/auto-instrumentations-node": "^0.47.0",
+    "@opentelemetry/exporter-trace-otlp-grpc": "^0.51.1",
+    "@google-cloud/opentelemetry-cloud-trace-exporter": "^2.1.0",
+    "@google-cloud/logging": "^11.0.0"
+  }
+}

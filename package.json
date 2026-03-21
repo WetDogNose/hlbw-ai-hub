@@ -22,14 +22,20 @@
     "secretlint": "secretlint \"**/*\"",
     "bootstrap": "node scripts/bootstrap.mjs",
     "toolchain-doctor": "node scripts/toolchain-doctor.js",
+    "doctor:audit": "node scripts/toolchain-doctor.js --audit-directives",
+    "doctor:fix": "node scripts/toolchain-doctor.js --fix-directives",
+    "doctor:graph": "node scripts/toolchain-doctor.js --graph-directives",
     "sync-agents": "node scripts/sync-agent-configs.js",
     "auto-doc": "node scripts/auto-document.js",
     "monitor:memory": "node scripts/swarm/monitor-memory.mjs",
+    "format": "prettier --write .",
+    "spellcheck": "cspell \"**/*\"",
     "prepare": "husky"
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx}": [
-      "eslint --fix"
+      "eslint --fix",
+      "prettier --write"
     ]
   },
   "dependencies": {
@@ -95,6 +101,7 @@
     "@types/nodemailer": "^7.0.11",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "cspell": "^9.7.0",
     "dotenv": "^17.3.1",
     "dotenv-cli": "^11.0.0",
     "eslint": "^10",
@@ -107,6 +114,7 @@
     "jest-mock-extended": "^4.0.0",
     "lint-staged": "^16.3.3",
     "node-mocks-http": "^1.17.2",
+    "prettier": "^3.8.1",
     "secretlint": "^11.3.1",
     "ts-jest": "^29.4.6",
     "ts-node": "^10.9.2",

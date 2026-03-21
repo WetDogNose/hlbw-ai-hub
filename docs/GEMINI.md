@@ -6,7 +6,8 @@
 **SWARM DELEGATION:** When faced with a large, multi-component, or highly parallelizable task across the ecosystem, you MUST evaluate if you can hand off work to the agent swarming system. Review `.agents/workflows/master-agent-coordinator.md` to act as a Master Agent and dispatch true-parallel Docker sub-agents using the `scripts/swarm/` toolchain.
 **MCP MANAGEMENT:** This repository houses the unified `mcp.json` and manages MCP servers for the entire infrastructure (including `wot-box`).
 **MCP EFFICIENCY & SPEED (CRITICAL):** You MUST prioritize the use of custom MCP servers over slow CLI execution or manual filesystem searches. Speed of action is YOUR HIGHEST PRIORITY. Use `gcp-logging-mcp` and `gcp-trace-mcp` for diagnosing production/cloud issues instead of gcloud/bash commands. Use `ast-analyzer-mcp` to inspect code instead of linearly reading files. Use `infrastructure-analyzer-mcp` instead of searching the codebase for schema/config info. Reference `.agents/skills/mcp-optimizations/SKILL.md` for the full breakdown.
-
+**AGENT DEPLOYMENT & WRAPPERS:** When creating a new AI Agent or MCP Server, you MUST NOT write custom Dockerfiles or from-scratch entry points. You MUST use the standard wrappers in `wrappers/a2a/` or `wrappers/mcp/` as your entry points. For deployment, you MUST place these wrappers into either the `templates/docker/` or `templates/cloud-run/` environment templates. Review `.agents/workflows/scaffold-agent.md` and `.agents/workflows/scaffold-mcp.md` for instructions.
+**TEMPLATES & WRAPPERS MAINTENANCE:** If you are ever tasked with updating core agent libraries (like `@modelcontextprotocol/sdk`, `fastapi`, or `genkit`), or if you change deployment environment standards, you MUST proactively update the corresponding baselines in `templates/` and `wrappers/` to ensure parity across the hub ecosystem.
 ---
 
 ## 🏗 System Overview

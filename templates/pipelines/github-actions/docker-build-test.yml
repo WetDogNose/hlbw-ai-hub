@@ -1,0 +1,32 @@
+name: Docker Build Test
+
+on:
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+      
+    - name: Build image explicitly to verify syntax and layers
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        push: false
+        tags: test-image:latest
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+
+    # Optional: If you need to verify it boots up without instantly crashing
+    - name: Test Container Boot
+      run: |
+        docker run -d -p 8080:8080 --name test-container test-image:latest
+        sleep 5
+        docker logs test-container
+        # Check if the container is still running (exit code 0 = true)
+        if [ "$(docker inspect -f '{{.State.Running}}' test-container)" = "false" ]; then exit 1; fi

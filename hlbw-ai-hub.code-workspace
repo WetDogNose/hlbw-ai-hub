@@ -5,15 +5,25 @@
 		},
 		{
 			"path": "../wot-box"
+		},
+		{
+			"path": "../genkit"
+		},
+		{
+			"path": "../adk-python"
+		},
+		{
+			"path": "../adk-js"
 		}
 	],
 	"settings": {
 		"terminal.integrated.defaultProfile.windows": "PowerShell 7",
 		"terminal.integrated.profiles.windows": {
 			"PowerShell 7": {
-				"path": "C:\\Program Files\\PowerShell\\7\\pwsh.exe"
+				"path": "pwsh.exe"
 			}
 		},
-		"prisma.pinToPrisma6": true
+		"prisma.pinToPrisma6": true,
+		"powershell.cwd": "hlbw-ai-hub"
 	}
 }
