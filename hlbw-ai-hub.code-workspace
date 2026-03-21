@@ -1,0 +1,19 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"path": "../wot-box"
+		}
+	],
+	"settings": {
+		"terminal.integrated.defaultProfile.windows": "PowerShell 7",
+		"terminal.integrated.profiles.windows": {
+			"PowerShell 7": {
+				"path": "C:\\Program Files\\PowerShell\\7\\pwsh.exe"
+			}
+		},
+		"prisma.pinToPrisma6": true
+	}
+}

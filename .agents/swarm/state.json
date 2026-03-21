@@ -1,0 +1,47 @@
+{
+  "tasks": [
+    {
+      "title": "Final Demo: Sub-agent origin tracking",
+      "description": "Final Demo: Sub-agent origin tracking",
+      "priority": 5,
+      "dependencies": [],
+      "metadata": {
+        "agentType": "general"
+      },
+      "id": "task-1773922794045-391",
+      "status": "in_progress",
+      "blockedBy": [],
+      "createdAt": "2026-03-19T12:19:54.045Z",
+      "assignedAgent": "general",
+      "startedAt": "2026-03-19T12:20:56.162Z"
+    }
+  ],
+  "workers": [
+    {
+      "taskId": "task-1773922794045-391",
+      "provider": "gemini",
+      "modelId": "gemini-2.5-flash",
+      "status": "starting",
+      "metadata": {
+        "branchName": "swarm-task-1773922794045-391",
+        "agentType": "general"
+      },
+      "id": "worker-1773922809854-72",
+      "createdAt": "2026-03-19T12:20:09.854Z"
+    },
+    {
+      "taskId": "task-1773922794045-391",
+      "provider": "gemini",
+      "modelId": "gemini-2.5-flash",
+      "status": "running",
+      "metadata": {
+        "instructionPayload": "1. Read public/version.txt. 2. Store discovery: npx tsx scripts/swarm/shared-memory.ts store discovery:origin swarm_discovery 'Origin tracking verified.'. 3. Relate it: npx tsx scripts/swarm/shared-memory.ts relate discovery:origin task:task-1773922794045-391 LINKED. DONE.",
+        "branchName": "swarm-task-1773922794045-391"
+      },
+      "id": "worker-1773922856152-438",
+      "createdAt": "2026-03-19T12:20:56.152Z",
+      "startedAt": "2026-03-19T12:20:56.903Z",
+      "runtimeId": "ab444ebb896356f5cf985f12a69ee75ad8b16affc2e6a270500988f11537b925"
+    }
+  ]
+}
