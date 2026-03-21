@@ -1,14 +1,13 @@
 import { NextResponse } from 'next/server';
 import { routeInference, InferenceRequest } from '@/lib/ai/inference';
-import { getServerSession } from 'next-auth';
-import { buildAuthOptions } from '@/auth';
+import { getIapUser } from '@/lib/iap-auth';
 
 export async function POST(req: Request) {
     try {
-        const session = await getServerSession(await buildAuthOptions());
+        const user = await getIapUser();
         
         // Ensure only authenticated users on the Hub can hit the inference endpoint
-        if (!session?.user) {
+        if (!user) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 

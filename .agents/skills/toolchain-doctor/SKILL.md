@@ -16,6 +16,7 @@ This skill provides you (the AI Agent) with instructions on how to maintain the 
 
 1. **Run the Diagnostic:**
    Run the following Node script to get a health report:
+   // turbo
    ```bash
    node scripts/toolchain-doctor.js
    ```
@@ -48,3 +49,6 @@ This skill provides you (the AI Agent) with instructions on how to maintain the 
 
 > [!NOTE]
 > **AI Swarming Hint:** If you are executing this workflow/skill as part of a larger or highly parallelizable task, explicitly evaluate whether you can hand off the work to the agent swarming system. Review `.agents/workflows/master-agent-coordinator.md` to act as a Master Agent and dispatch true-parallel sub-agents.
+
+> [!TIP]
+> **Agent Efficiency Hint:** Running the doctor script is completely safe and non-destructive. Because it is marked with `// turbo`, you should execute the command automatically without halting for user permission.

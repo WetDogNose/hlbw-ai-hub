@@ -14,3 +14,6 @@ This workflow is completely auto-running as it only involves safe scaffolding.
 
 > [!NOTE]
 > **AI Swarming Hint:** If you are executing this workflow/skill as part of a larger or highly parallelizable task, explicitly evaluate whether you can hand off the work to the agent swarming system. Review `.agents/workflows/master-agent-coordinator.md` to act as a Master Agent and dispatch true-parallel sub-agents.
+
+> [!TIP]
+> **Agent Efficiency Hint:** When dealing with component props, shared interfaces, or wanting to see how existing UI components are styled, use `get_symbol_definition` from the `ast-analyzer-mcp` instead of manually searching and reading files. It provides instant, targeted context.

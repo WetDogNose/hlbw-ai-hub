@@ -15,3 +15,6 @@ This workflow is entirely auto-running to maximize velocity.
 
 > [!NOTE]
 > **AI Swarming Hint:** If you are executing this workflow/skill as part of a larger or highly parallelizable task, explicitly evaluate whether you can hand off the work to the agent swarming system. Review `.agents/workflows/master-agent-coordinator.md` to act as a Master Agent and dispatch true-parallel sub-agents.
+
+> [!TIP]
+> **Agent Efficiency Hint:** Before or after scaffolding the API route, if you need to understand existing routing structures, shared middleware, or types, use `get_file_exports` or `get_symbol_definition` from the `ast-analyzer-mcp`. Avoid reading entire files with `view_file` to save time and context window.

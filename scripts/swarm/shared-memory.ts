@@ -236,6 +236,14 @@ export async function shareDecision(taskId: string, decision: string, rationale:
 }
 
 /**
+ * Mark a task as complete and add final observations.
+ */
+export async function markTaskComplete(taskId: string, finalObservation: string): Promise<void> {
+  const name = `task:${taskId}`;
+  await addObservations(name, [`Status: completed`, `Final Result: ${finalObservation}`, `CompletedAt: ${new Date().toISOString()}`]);
+}
+
+/**
  * Before starting work, query shared memory for relevant context from other agents.
  */
 export async function getSharedContext(taskTitle: string): Promise<string[]> {

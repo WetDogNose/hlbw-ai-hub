@@ -1,5 +1,5 @@
 // Comprehensive Memory Demo
-import { shareTaskContext, shareDiscovery, shareDecision, markTaskComplete, closeMemoryClient } from "./shared-memory.ts";
+import { shareTaskContext, shareDiscovery, shareDecision, markTaskComplete, closeMemoryClient } from "./shared-memory";
 
 async function runDemo() {
   console.log("Starting Comprehensive Swarm Memory Demo...");

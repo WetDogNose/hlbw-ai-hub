@@ -5,6 +5,7 @@
 **DIRECTORY HYGIENE:** Never write logs, temporary files, or general artifacts to the root directory. Always write logs to `logs/`, temporary logic/data files to `tmp/`, and documentation to `docs/` or `.agents/`.
 **SWARM DELEGATION:** When faced with a large, multi-component, or highly parallelizable task across the ecosystem, you MUST evaluate if you can hand off work to the agent swarming system. Review `.agents/workflows/master-agent-coordinator.md` to act as a Master Agent and dispatch true-parallel Docker sub-agents using the `scripts/swarm/` toolchain.
 **MCP MANAGEMENT:** This repository houses the unified `mcp.json` and manages MCP servers for the entire infrastructure (including `wot-box`).
+**MCP EFFICIENCY & SPEED (CRITICAL):** You MUST prioritize the use of custom MCP servers over slow CLI execution or manual filesystem searches. Speed of action is YOUR HIGHEST PRIORITY. Use `gcp-logging-mcp` and `gcp-trace-mcp` for diagnosing production/cloud issues instead of gcloud/bash commands. Use `ast-analyzer-mcp` to inspect code instead of linearly reading files. Use `infrastructure-analyzer-mcp` instead of searching the codebase for schema/config info. Reference `.agents/skills/mcp-optimizations/SKILL.md` for the full breakdown.
 
 ---
 

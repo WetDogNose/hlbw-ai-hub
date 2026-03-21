@@ -1,3 +1,6 @@
+# 🤖 AGENT DIRECTIVE: ALL CLOUD RUN AND INFRASTRUCTURE DEPLOYMENTS MUST TARGET THE `asia-southeast1` REGION. 
+# NEVER DEPLOY TO `us-central1` OR ANY OTHER REGION UNLESS STRICTLY INSTRUCTED BY THE USER.
+
 steps:
   # Pull the previous image (if available) to speed up the build using Docker cache
   - name: 'gcr.io/cloud-builders/docker'

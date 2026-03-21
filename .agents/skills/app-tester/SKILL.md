@@ -38,3 +38,6 @@ If you modify code, or the user specifically asks you to test the application:
 
 > [!NOTE]
 > **AI Swarming Hint:** If you are executing this workflow/skill as part of a larger or highly parallelizable task, explicitly evaluate whether you can hand off the work to the agent swarming system. Review `.agents/workflows/master-agent-coordinator.md` to act as a Master Agent and dispatch true-parallel sub-agents.
+
+> [!TIP]
+> **Agent Efficiency Hint:** Since you are using the MCP servers directly and receiving their STDOUT returns, do not pause to ask the user to read the terminal. Keep autonomous testing, diagnosing, and fixing loops running in sequence until `isError: false` is achieved to maximize velocity.

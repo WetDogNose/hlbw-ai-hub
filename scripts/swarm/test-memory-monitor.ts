@@ -1,5 +1,5 @@
 // Test script to pulse memory for monitoring verification
-import { storeEntity, createRelation, addObservations, closeMemoryClient } from "./shared-memory.ts";
+import { storeEntity, createRelation, addObservations, closeMemoryClient } from "./shared-memory";
 
 async function pulse() {
   console.log("Pulsing memory...");
