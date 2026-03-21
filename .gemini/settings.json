@@ -1,103 +1,102 @@
 {
-    "mcpServers": {
-        "postgres-prod": {
-            "command": "C:\\Program Files\\nodejs\\node.exe",
-            "args": [
-                "C:\\Users\\Jason\\repos\\hlbw-ai-hub\\scripts\\mcp-wrapper.mjs"
-            ]
-        },
-        "wot-box-tester": {
-            "command": "C:\\Program Files\\nodejs\\node.exe",
-            "args": [
-                "C:\\Users\\Jason\\repos\\hlbw-ai-hub\\scripts\\mcp-tester.mjs"
-            ]
-        },
-        "gcp-trace-mcp": {
-            "command": "C:\\Program Files\\nodejs\\node.exe",
-            "args": [
-                "C:\\Users\\Jason\\repos\\hlbw-ai-hub\\scripts\\mcp-trace-server.mjs"
-            ]
-        },
-        "gcp-logging-mcp": {
-            "command": "C:\\Program Files\\nodejs\\node.exe",
-            "args": [
-                "C:\\Users\\Jason\\repos\\hlbw-ai-hub\\scripts\\mcp-logging-server.mjs"
-            ]
-        },
-        "task-delegator-mcp": {
-            "command": "C:\\Program Files\\nodejs\\node.exe",
-            "args": [
-                "C:\\Users\\Jason\\repos\\hlbw-ai-hub\\.agents\\mcp-servers\\task-delegator\\dist\\index.js"
-            ]
-        },
-        "ast-analyzer-mcp": {
-            "command": "C:\\Program Files\\nodejs\\node.exe",
-            "args": [
-                "C:\\Users\\Jason\\repos\\hlbw-ai-hub\\.agents\\mcp-servers\\ast-analyzer\\dist\\index.js"
-            ]
-        },
-        "infrastructure-analyzer-mcp": {
-            "command": "C:\\Program Files\\nodejs\\node.exe",
-            "args": [
-                "C:\\Users\\Jason\\repos\\hlbw-ai-hub\\.agents\\mcp-servers\\infrastructure-analyzer\\dist\\index.js"
-            ]
-        },
-        "git": {
-            "command": "npx",
-            "args": [
-                "-y",
-                "@mseep/git-mcp-server",
-                "C:\\Users\\Jason\\repos\\wot-box"
-            ]
-        },
-        "memory": {
-            "command": "npx",
-            "args": [
-                "-y",
-                "@modelcontextprotocol/server-memory"
-            ]
-        },
-        "sequential-thinking": {
-            "command": "npx",
-            "args": [
-                "-y",
-                "@modelcontextprotocol/server-sequential-thinking"
-            ]
-        },
-        "docker-mcp-gateway": {
-            "command": "docker",
-            "args": [
-                "mcp",
-                "gateway",
-                "run"
-            ]
-        },
-        "cloudrun": {
-            "command": "npx",
-            "args": [
-                "-y",
-                "@google-cloud/cloud-run-mcp"
-            ],
-            "env": {}
-        },
-
-        "genkit-mcp-server": {
-            "command": "npx",
-            "args": [
-                "-y",
-                "genkit-cli@^1.28.0",
-                "mcp",
-                "--explicitProjectRoot",
-                "--no-update-notification",
-                "--non-interactive"
-            ],
-            "env": {}
-        },
-        "docker-manager-mcp": {
-            "command": "C:\\Program Files\\nodejs\\node.exe",
-            "args": [
-                "C:\\Users\\Jason\\repos\\hlbw-ai-hub\\.agents\\mcp-servers\\docker-manager-mcp\\build\\index.js"
-            ]
-        }
+  "mcpServers": {
+    "postgres-prod": {
+      "command": "C:\\Program Files\\nodejs\\node.exe",
+      "args": [
+        "C:\\Users\\Jason\\repos\\hlbw-ai-hub\\scripts\\mcp-wrapper.mjs"
+      ]
+    },
+    "wot-box-tester": {
+      "command": "C:\\Program Files\\nodejs\\node.exe",
+      "args": [
+        "C:\\Users\\Jason\\repos\\hlbw-ai-hub\\scripts\\mcp-tester.mjs"
+      ]
+    },
+    "gcp-trace-mcp": {
+      "command": "C:\\Program Files\\nodejs\\node.exe",
+      "args": [
+        "C:\\Users\\Jason\\repos\\hlbw-ai-hub\\scripts\\mcp-trace-server.mjs"
+      ]
+    },
+    "gcp-logging-mcp": {
+      "command": "C:\\Program Files\\nodejs\\node.exe",
+      "args": [
+        "C:\\Users\\Jason\\repos\\hlbw-ai-hub\\scripts\\mcp-logging-server.mjs"
+      ]
+    },
+    "task-delegator-mcp": {
+      "command": "C:\\Program Files\\nodejs\\node.exe",
+      "args": [
+        "C:\\Users\\Jason\\repos\\hlbw-ai-hub\\.agents\\mcp-servers\\task-delegator\\dist\\index.js"
+      ]
+    },
+    "ast-analyzer-mcp": {
+      "command": "C:\\Program Files\\nodejs\\node.exe",
+      "args": [
+        "C:\\Users\\Jason\\repos\\hlbw-ai-hub\\.agents\\mcp-servers\\ast-analyzer\\dist\\index.js"
+      ]
+    },
+    "infrastructure-analyzer-mcp": {
+      "command": "C:\\Program Files\\nodejs\\node.exe",
+      "args": [
+        "C:\\Users\\Jason\\repos\\hlbw-ai-hub\\.agents\\mcp-servers\\infrastructure-analyzer\\dist\\index.js"
+      ]
+    },
+    "git": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@mseep/git-mcp-server",
+        "C:\\Users\\Jason\\repos\\wot-box"
+      ]
+    },
+    "memory": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-memory"
+      ]
+    },
+    "sequential-thinking": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-sequential-thinking"
+      ]
+    },
+    "docker-mcp-gateway": {
+      "command": "docker",
+      "args": [
+        "mcp",
+        "gateway",
+        "run"
+      ]
+    },
+    "cloudrun": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@google-cloud/cloud-run-mcp"
+      ],
+      "env": {}
+    },
+    "genkit-mcp-server": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "genkit-cli@^1.28.0",
+        "mcp",
+        "--explicitProjectRoot",
+        "--no-update-notification",
+        "--non-interactive"
+      ],
+      "env": {}
+    },
+    "docker-manager-mcp": {
+      "command": "C:\\Program Files\\nodejs\\node.exe",
+      "args": [
+        "C:\\Users\\Jason\\repos\\hlbw-ai-hub\\.agents\\mcp-servers\\docker-manager-mcp\\build\\index.js"
+      ]
     }
+  }
 }

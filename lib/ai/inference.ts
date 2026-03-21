@@ -1,22 +1,16 @@
-import { VertexAI } from '@google-cloud/vertexai';
+import { ai } from './genkit';
 import { tracer } from '@/lib/otel';
-
-// Initialize Vertex with the Hub's central project and region
-const vertex_ai = new VertexAI({
-    project: process.env.GOOGLE_CLOUD_PROJECT || 'hlbw-ai-hub',
-    location: process.env.GOOGLE_CLOUD_REGION || 'asia-southeast1'
-});
 
 // Define the available canonical models for the Hub
 export const AVAILABLE_MODELS = {
     // Ultra fast, cost-effective multimodal inference
-    FLASH_2_5: 'gemini-2.5-flash',
+    FLASH_2_5: 'googleai/gemini-2.5-flash',
     
     // High-complexity reasoning and coding tasks
-    PRO_2_5: 'gemini-2.5-pro',
+    PRO_2_5: 'googleai/gemini-2.5-pro',
     
     // Legacy support where necessary
-    FLASH_8B: 'gemini-1.5-flash-8b',
+    FLASH_8B: 'googleai/gemini-1.5-flash-8b',
 
     // Future-proofing for upcoming 3+ models
     // EXPERIMENTAL_3_0: 'gemini-3.0-pro-experimental'
@@ -32,40 +26,22 @@ export interface InferenceRequest {
 }
 
 export async function routeInference(request: InferenceRequest) {
-    return tracer.startActiveSpan('VertexAI:routeInference', async (span) => {
+    return tracer.startActiveSpan('Genkit:routeInference', async (span) => {
         try {
             const modelIdentifier = AVAILABLE_MODELS[request.model];
             span.setAttribute('ai.model', modelIdentifier);
 
-            const model = vertex_ai.preview.getGenerativeModel({
+            const response = await ai.generate({
                 model: modelIdentifier,
-                generationConfig: {
+                prompt: typeof request.prompt === 'string' ? request.prompt : JSON.stringify(request.prompt),
+                config: {
                     temperature: request.temperature ?? 0.4,
                 },
-                systemInstruction: request.systemInstruction ? {
-                    role: 'system',
-                    parts: [{ text: request.systemInstruction }]
-                } : undefined
+                system: request.systemInstruction
             });
-
-            // If prompt is string, wrap in parts, otherwise pass array directly
-            const contents = [
-                {
-                    role: 'user',
-                    parts: typeof request.prompt === 'string' 
-                        ? [{ text: request.prompt }] 
-                        : request.prompt
-                }
-            ];
-
-            const responseStream = await model.generateContentStream({ contents });
             
-            // For simple central routing, we'll await the full response, 
-            // but the stream is available for more complex handlers
-            const response = await responseStream.response;
-            
-            span.setAttribute('ai.usage.prompt_tokens', response.usageMetadata?.promptTokenCount || 0);
-            span.setAttribute('ai.usage.completion_tokens', response.usageMetadata?.candidatesTokenCount || 0);
+            span.setAttribute('ai.usage.prompt_tokens', response.usage?.inputTokens || 0);
+            span.setAttribute('ai.usage.completion_tokens', response.usage?.outputTokens || 0);
 
             return response;
         } catch (err) {

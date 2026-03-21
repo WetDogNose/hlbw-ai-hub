@@ -21,8 +21,8 @@ export async function POST(req: Request) {
         
         return NextResponse.json({
             success: true,
-            text: result.candidates?.[0]?.content?.parts?.[0]?.text || '',
-            usage: result.usageMetadata
+            text: result.text || '',
+            usage: result.usage
         });
     } catch (err: any) {
         console.error("Inference Error:", err);

@@ -1,0 +1,9 @@
+FROM python:3.11-slim
+WORKDIR /workspace
+
+# We assume this is built from the root of the repository
+COPY scripts/swarm/requirements.txt /tmp/requirements.txt
+RUN pip install --no-cache-dir -r /tmp/requirements.txt
+
+# The agent workspace will be mounted to /workspace
+# The MCP run_container tool will override the command.

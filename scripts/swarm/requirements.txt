@@ -1,0 +1,2 @@
+google-genai
+# google-adk (or any other required ADK packages)

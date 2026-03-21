@@ -26,7 +26,7 @@ async function getMcpClient() {
 
 // --- Core Spawn ---
 
-export async function spawnDockerWorker(taskId: string, instructionPayload: string, branchName: string) {
+export async function spawnDockerWorker(taskId: string, instructionPayload: string, branchName: string, agentType: "ts" | "python" = "ts") {
   const tracer = getTracer();
   return tracer.startActiveSpan("DockerWorker:spawn", async (span) => {
     span.setAttribute("task.id", taskId);
@@ -61,13 +61,18 @@ export async function spawnDockerWorker(taskId: string, instructionPayload: stri
       if (carrier.traceparent) envKeys.TRACEPARENT = carrier.traceparent;
       if (carrier.tracestate) envKeys.TRACESTATE = carrier.tracestate;
 
+      const imageName = agentType === "python" ? "wot-box-python-worker:latest" : "wot-box-worker:latest";
+      const command = agentType === "python"
+        ? ["python", "-u", "scripts/swarm/python-runner.py", instructionPayload]
+        : ["npx", "tsx", "scripts/swarm/agent-runner.ts", instructionPayload];
+
       const response = await client.callTool({
         name: "run_container",
         arguments: {
-          imageName: "wot-box-worker:latest",
+          imageName,
           mountVolume: absoluteWorktreePath,
           envKeys: envKeys,
-          command: ["npx", "tsx", "scripts/swarm/agent-runner.ts", instructionPayload],
+          command,
           extraBinds: [`${hostAuditDir}:/workspace/.agents/swarm`]
         }
       });
@@ -99,6 +104,7 @@ export interface BatchSpawnRequest {
   taskId: string;
   instruction: string;
   branchName: string;
+  agentType?: "ts" | "python";
 }
 
 export async function spawnBatch(requests: BatchSpawnRequest[]): Promise<Array<{ workerId: string; containerId: string } | { error: string }>> {
@@ -109,7 +115,7 @@ export async function spawnBatch(requests: BatchSpawnRequest[]): Promise<Array<{
     const results: Array<{ workerId: string; containerId: string } | { error: string }> = [];
     const promises = requests.map(async (req) => {
       try {
-        const result = await spawnDockerWorker(req.taskId, req.instruction, req.branchName);
+        const result = await spawnDockerWorker(req.taskId, req.instruction, req.branchName, req.agentType || "ts");
         return result;
       } catch (err: any) {
         return { error: err.message };
@@ -215,12 +221,13 @@ if (require.main === module) {
     const taskId = process.argv[3];
     const branchName = process.argv[4];
     const instruction = process.argv[5];
+    const agentType = (process.argv[6] as "ts" | "python") || "ts";
     if (!taskId || !branchName || !instruction) {
-      console.error("Usage: tsx docker-worker.ts spawn <taskId> <branchName> <instruction>");
+      console.error("Usage: tsx docker-worker.ts spawn <taskId> <branchName> <instruction> [ts|python]");
       stopTracing();
       process.exit(1);
     }
-    spawnDockerWorker(taskId, instruction, branchName)
+    spawnDockerWorker(taskId, instruction, branchName, agentType)
       .then((r) => console.log(JSON.stringify(r, null, 2)))
       .catch(console.error)
       .finally(() => stopTracing());
@@ -247,8 +254,9 @@ if (require.main === module) {
     const taskId = process.argv[2];
     const branchName = process.argv[3];
     const instruction = process.argv[4];
+    const agentType = (process.argv[5] as "ts" | "python") || "ts";
     if (taskId && branchName && instruction) {
-      spawnDockerWorker(taskId, instruction, branchName)
+      spawnDockerWorker(taskId, instruction, branchName, agentType)
         .catch(console.error)
         .finally(() => stopTracing());
     } else {

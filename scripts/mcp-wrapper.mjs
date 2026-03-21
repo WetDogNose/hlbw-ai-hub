@@ -12,11 +12,19 @@ const __dirname = path.dirname(__filename);
 const envPath = path.resolve(__dirname, '..', '.env');
 
 let dbUrl = process.env.MCP_DATABASE_URL;
-if (!dbUrl && fs.existsSync(envPath)) {
+let proxyInstance = process.env.MCP_CLOUD_SQL_INSTANCE;
+
+if ((!dbUrl || proxyInstance === undefined) && fs.existsSync(envPath)) {
     const envContent = fs.readFileSync(envPath, 'utf8');
-    const match = envContent.match(/MCP_DATABASE_URL=(["']?)([^\r\n]+)\1/);
-    if (match) {
-        dbUrl = match[2];
+    
+    if (!dbUrl) {
+        const urlMatch = envContent.match(/MCP_DATABASE_URL=(["']?)([^\r\n]+)\1/);
+        if (urlMatch) dbUrl = urlMatch[2];
+    }
+    
+    if (proxyInstance === undefined) {
+        const proxyMatch = envContent.match(/MCP_CLOUD_SQL_INSTANCE=(["']?)([^\r\n]+)\1/);
+        if (proxyMatch) proxyInstance = proxyMatch[2];
     }
 }
 
@@ -25,15 +33,19 @@ if (!dbUrl) {
     process.exit(1);
 }
 
-const proxyPath = path.resolve(__dirname, '..', 'bin', 'cloud-sql-proxy.x64.exe');
-const proxy = spawn(proxyPath, ['wot-box:asia-southeast1:wot-box-db-instance', '--port=15432', '-g'], {
-    stdio: 'ignore',
-    shell: process.platform === 'win32'
-});
+let proxy = null;
 
-process.on('exit', () => proxy.kill());
-process.on('SIGINT', () => { proxy.kill(); process.exit(); });
-process.on('SIGTERM', () => { proxy.kill(); process.exit(); });
+if (proxyInstance) {
+    const proxyPath = path.resolve(__dirname, '..', 'bin', 'cloud-sql-proxy.x64.exe');
+    proxy = spawn(proxyPath, [proxyInstance, '--port=15432', '-g'], {
+        stdio: 'ignore',
+        shell: process.platform === 'win32'
+    });
+
+    process.on('exit', () => { if (proxy) proxy.kill(); });
+    process.on('SIGINT', () => { if (proxy) proxy.kill(); process.exit(); });
+    process.on('SIGTERM', () => { if (proxy) proxy.kill(); process.exit(); });
+}
 
 setTimeout(() => {
     const child = spawn(process.execPath, [
@@ -58,7 +70,7 @@ setTimeout(() => {
     });
 
     child.on('exit', (code) => {
-        proxy.kill();
+        if (proxy) proxy.kill();
         process.exit();
     });
-}, 1500);
+}, proxyInstance ? 1500 : 0);

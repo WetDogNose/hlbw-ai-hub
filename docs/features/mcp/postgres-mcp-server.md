@@ -13,9 +13,16 @@ Because Cloud SQL instances often require specific IPs or SSL certificates, and 
 To keep database credentials secure while allowing the configuration to be shared across the team, the configuration is split into two parts:
 
 **1. The Credentials (`.env`)**
-Add the connection string to your local `.env` file (which is tracked in `.gitignore`):
+Add the connection string to your local `.env` file (which is tracked in `.gitignore`).
+
+For standard direct connections (e.g. local databases, Supabase, Neon):
 ```env
 MCP_DATABASE_URL="<your_postgres_connection_string_here>"
+```
+
+*(Optional)* If you are connecting to a Google Cloud SQL instance and want the MCP server to automatically start the Cloud SQL authentication proxy for you, also add:
+```env
+MCP_CLOUD_SQL_INSTANCE="<your-project>:<region>:<instance>"
 ```
 
 **2. The Client Configuration (`mcp.json`)**
