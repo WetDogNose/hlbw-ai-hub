@@ -34,7 +34,7 @@ The AI client reads its tools from your global configuration file (e.g. `C:\\Use
     "postgres-prod": {
       "command": "node",
       "args": [
-        "c:/path/to/your/repo/wot-box/scripts/mcp-wrapper.js"
+        "c:/path/to/your/repo/hlbw-ai-hub/scripts/mcp-wrapper.js"
       ]
     }
   }

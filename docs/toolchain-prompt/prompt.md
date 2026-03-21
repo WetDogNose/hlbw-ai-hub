@@ -4,6 +4,11 @@
 You are working in the `hlbw-ai-hub` repository. This is the **Master Agent Control Plane**. 
 This document is a technical blueprint detailing the exact agent instructions, scripts, and Model Context Protocol (MCP) servers necessary to achieve a high-velocity, self-healing, autonomous development environment across the entire organization.
 
+**CORE HUB BEHAVIORS (CRITICAL):**
+1. **MCP First:** Never use slow CLI commands if an MCP server (`ast-analyzer`, `app-tester`, `gcp-logging`) can fetch structured data instantly.
+2. **Swarm First:** Never attempt slow, sequential multi-file refactoring. Always dispatch parallel sub-agents using the Master Agent Coordinator workflow (`scripts/swarm`) when tackling wide changes.
+3. **Control Plane Hygiene:** Do not write domain business logic (e.g., React components, Prisma schemas) to this repository. This repository only writes infrastructure, workflow orchestration, and MCP server management code.
+
 Make sure to implement and maintain all 6 pillars in this workspace.
 
 ## Pillar 1. The "Toolchain Doctor" (Self-Healing & Diagnostics)

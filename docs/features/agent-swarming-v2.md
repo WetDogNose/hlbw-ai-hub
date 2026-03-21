@@ -2,7 +2,7 @@
 
 ## Overview
 
-Wot-Box features a robust, local Agent Swarming architecture designed to fan out complex, multi-stage directives into true-parallel sub-agent execution contexts without requiring a heavy external web server.
+HLBW AI Hub features a robust, local Agent Swarming architecture designed to fan out complex, multi-stage directives into true-parallel sub-agent execution contexts without requiring a heavy external web server.
 
 ## Core Capabilities
 
@@ -10,7 +10,7 @@ Wot-Box features a robust, local Agent Swarming architecture designed to fan out
    Generates physical Git Worktrees for every task with full lifecycle management: `create`, `list`, `status`, `sync`, `merge`, and `remove`. Capacity-limited to 15 concurrent isolation units.
 
 2. **Docker Worker Execution (`scripts/swarm/docker-worker.ts`)**
-   Tasks are executed by spinning up ephemeral Docker containers containing the Wot-Box Worker image. Supports single and **batch spawning** (`spawnBatch`), plus `getWorkerLogs`, `waitForWorker`, and `stopWorker` APIs. Capacity-limited to 8 concurrent workers.
+   Tasks are executed by spinning up ephemeral Docker containers containing the Swarm Worker image. Supports single and **batch spawning** (`spawnBatch`), plus `getWorkerLogs`, `waitForWorker`, and `stopWorker` APIs. Capacity-limited to 8 concurrent workers.
 
 3. **State Management & Backlog (`scripts/swarm/state-manager.ts`)**
    Full backlog API: `addTask`, `listTasks`, `assignTask`, `completeTask`, `updateTaskStatus`. Full worker API: `addWorker`, `getWorkerStatus`, `getWorkerResult`, `updateWorkerStatus`, `listWorkers`. Includes task size limit enforcement (100,000 chars) and retention-based cleanup.
@@ -53,3 +53,6 @@ Wot-Box features a robust, local Agent Swarming architecture designed to fan out
 ## Master Agent Workflow
 
 When modifying or scaling the application using the swarm, the primary developer AI instance should adopt the persona defined in `.agents/workflows/master-agent-coordinator.md`. This instructs the AI to break down intent into granular tasks, register them into the local state database, and sequentially evaluate the arbiter to dispatch workers without blocking the primary chat window.
+
+**MANDATORY AGENT DIRECTIVE:**
+Agents MUST prioritize dispatching sub-agents via this swarm architecture for any multi-file, refactoring, or heavily parallelizable task, rather than attempting slow, sequential manual file edits.

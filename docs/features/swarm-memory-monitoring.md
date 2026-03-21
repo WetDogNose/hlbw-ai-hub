@@ -1,7 +1,7 @@
 # Swarm Memory Real-Time Monitoring
 
 ## Overview
-The Swarm Memory Monitoring system provides real-time visibility into the Neo4j-based shared knowledge graph used by the Wot-Box Swarm agents. It allows developers to observe how agents share task context, discoveries, and decisions during parallel execution.
+The Swarm Memory Monitoring system provides real-time visibility into the Neo4j-based shared knowledge graph used by the Hub Swarm agents. It allows developers to observe how agents share task context, discoveries, and decisions during parallel execution.
 
 ## Components
 
