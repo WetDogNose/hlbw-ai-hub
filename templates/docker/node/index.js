@@ -1,13 +1,13 @@
 const http = require('http');
-<agent_directive priority="CRITICAL" domain="Logic">
-  OpenTelemetry initialization MUST NOT be removed.
-</agent_directive>
+> [!IMPORTANT]
+> **[Agent Directive: Logic]**
+> OpenTelemetry initialization MUST NOT be removed.
 const { initTelemetry } = require('./otelSetup');
 const logger = initTelemetry('node-docker-agent');
 
-<agent_directive priority="HIGH" domain="Logic">
-  The PORT environment variable MUST ALWAYS be used for port configuration.
-</agent_directive>
+> [!IMPORTANT]
+> **[Agent Directive: Logic]**
+> The PORT environment variable MUST ALWAYS be used for port configuration.
 const port = process.env.PORT || 8080;
 
 const server = http.createServer((req, res) => {

@@ -5,7 +5,9 @@ import uvicorn
 from otel_setup import init_telemetry
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 
-<agent_directive priority="CRITICAL" domain="Security">OpenTelemetry initialization MUST NOT be removed.</agent_directive>
+> [!IMPORTANT]
+> **[Agent Directive: Security]**
+> OpenTelemetry initialization MUST NOT be removed.
 logger = init_telemetry("a2a-wrapper")
 app = FastAPI(title="A2A Agent Wrapper", description="Agent-to-Agent Communication Wrapper")
 
@@ -21,7 +23,9 @@ class A2AMessage(BaseModel):
 async def receive_message(message: A2AMessage):
     """
     Standardized A2A endpoint for wrapping an agent.
-    <agent_directive priority="CRITICAL" domain="Format">The `/a2a/message` route signature MUST NOT be changed as it is the standardized A2A interface for hlbw-ai-hub.</agent_directive>
+    > [!IMPORTANT]
+    > **[Agent Directive: Format]**
+    > The `/a2a/message` route signature MUST NOT be changed.
     """
     logger.info(f"Received A2A message from {message.sender_id} to {message.target_id}")
     
