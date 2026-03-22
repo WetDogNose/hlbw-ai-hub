@@ -121,6 +121,11 @@ jobs:
             🤖 Hi @${{ github.actor }}, I've received your request, and I'm working on it now! You can track my progress [in the logs](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) for more details.
           REPOSITORY: '${{ github.repository }}'
         run: |-
+          gh label create "gemini-working" --repo "${REPOSITORY}" --color "0052cc" --description "Gemini CLI is working on this" || true
+          gh issue edit "${ISSUE_NUMBER}" \
+            --add-assignee "${{ github.actor }}" \
+            --add-label "gemini-working" \
+            --repo "${REPOSITORY}" || true
           gh issue comment "${ISSUE_NUMBER}" \
             --body "${MESSAGE}" \
             --repo "${REPOSITORY}"
