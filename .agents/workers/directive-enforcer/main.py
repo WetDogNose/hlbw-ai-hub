@@ -279,6 +279,57 @@ File Content:
         logger.error(f"Sentry fix failed: {e}")
         return content
 
+def generate_architectural_graph(workspace_root: str) -> str:
+    """
+    Prompts Gemini to analyze the active Sentry Context cache and reconstruct the 
+    dependencies and origins of the directives into a Mermaid diagram.
+    Writes directly to docs/agent-directives-graph.md.
+    """
+    if not global_cache_mgr.client:
+        return "Sentry Cache is offline or GEMINI_API_KEY missing. Cannot generate graph."
+
+    if not global_cache_mgr.active_cache_name and not getattr(global_cache_mgr, 'inline_graph', None):
+        return "No memory graph available."
+
+    client = global_cache_mgr.client
+    prompt = """GENERATE ARCHITECTURAL GRAPH:
+
+Using the entire workspace graph, generate a single comprehensive Mermaid `graph TD` diagram that maps out ALL extracted strict directives, instructions, and hints.
+
+1. Group the origin files in a `subgraph Codebase Files`.
+2. Group the nodes for rules in a `subgraph Agent Rules` (broken down into Directives, Instructions, Hints).
+3. Group related core themes into a `subgraph Core Concepts`, and link the rules to those concepts.
+4. Draw arrows from the files to the rules they contain (`-- "contains" -->`).
+5. Output ONLY the raw markdown containing the title `# Agent Directives Graph`, a brief description, and the ````mermaid` codeblock. Do not include any other markdown chat formatting around the document.
+"""
+    try:
+        if global_cache_mgr.active_cache_name:
+            response = client.models.generate_content(
+                model='gemini-2.5-flash',
+                contents=prompt,
+                config=types.GenerateContentConfig(
+                    cached_content=global_cache_mgr.active_cache_name,
+                    temperature=0.0
+                )
+            )
+        else:
+            inline_prompt = f"{SENTRY_SYSTEM_INSTRUCTION}\n\nWORKSPACE GRAPH:\n{global_cache_mgr.inline_graph}\n\n{prompt}"
+            response = client.models.generate_content(
+                model='gemini-2.5-flash',
+                contents=inline_prompt,
+                config=types.GenerateContentConfig(temperature=0.0)
+            )
+
+        result = response.text
+        out_path = os.path.join(workspace_root, "docs", "agent-directives-graph.md")
+        os.makedirs(os.path.dirname(out_path), exist_ok=True)
+        with open(out_path, "w", encoding="utf-8") as fw:
+            fw.write(result.strip())
+        logger.info(f"Graph successfully written to {out_path}")
+        return "Graph successfully generated."
+    except Exception as e:
+        logger.error(f"Sentry graph generation failed: {e}")
+        return f"Sentry graph generation failed: {e}"
 
 @app.post("/a2a/message")
 async def receive_message(message: A2AMessage):
@@ -312,6 +363,11 @@ async def receive_message(message: A2AMessage):
                     f.write(fixed_content)
                 return {"status": "success", "response_payload": {"status": "fixed"}}
             return {"status": "success", "response_payload": {"status": "clean"}}
+
+        elif action == "generate_graph":
+            logger.info("Generating architectural graph...")
+            msg = generate_architectural_graph(workspace_root)
+            return {"status": "success", "response_payload": {"message": msg}}
 
         else:
             return {"status": "ignored", "message": "Action not recognized by Sentry."}

@@ -1,26 +1,25 @@
 {
   "files": {
     "/workspace/.agents/skills/directive-enforcer/SKILL.md": {
-      "context_metadata": "---\nname: \"Directive Enforcer Agent\"\ndescription: \"A specialized A2A worker agent that audits and enforces rigorous, unambiguous XML-based agent instructions.\"\n---\n\n# Directive Enforcer Agent\n\nThis skill deploys an A2A worker agent designed specifically to ensure that all hints, instructions, and directives provided to AI agents across `hlbw-ai-hub`'s artifacts remain unambiguous, non-cyclical, and uniform.\n\n## Background\n\nAmbiguity is the enemy of automation. Agents do not interpret nuance; they execute commands based on token probability. Loose text constraints (like \"Hey agent, remember to...\") engineer failure into pipelines.\n\n## The Three Tiers of Automated Execution\n",
+      "context_metadata": "---\nname: \"Directive Enforcer Agent\"\ndescription: \"A specialized A2A worker agent that audits and enforces rigorous, unambiguous Markdown Callout-based agent instructions.\"\n---\n\n# Directive Enforcer Agent\n\nThis skill deploys an A2A worker agent designed specifically to ensure that all hints, instructions, and directives provided to AI agents across `hlbw-ai-hub`'s artifacts remain unambiguous, non-cyclical, and uniform.\n\n## Background\n\nAmbiguity is the enemy of automation. Agents do not interpret nuance; they execute commands based on token probability. Loose text constraints (like \"Hey agent, remember to...\") engineer failure into pipelines.\n\n## The Three Tiers of Automated Execution\n",
       "annotations": {
         "directives": [
-          "<agent_directive priority=\"[CRITICAL|HIGH]\" domain=\"[Security|Format|Logic]\">\n  [A single, concise sentence using MUST, MUST NOT, ALWAYS, or NEVER. No exposition.]\n</agent_directive>"
+          "> [!IMPORTANT]\n> **[Agent Directive: `<Domain>`]**\n> `<A single, concise sentence using MUST, MUST NOT, ALWAYS, or NEVER. No exposition.>`\n"
         ],
         "instructions": [
-          "<agent_instruction execution_type=\"[sequential|conditional]\" target_action=\"[Action Name]\">\n  <step order=\"1\">[Verb-first actionable command]</step>\n  <step order=\"2\">[Verb-first actionable command]</step>\n</agent_instruction>"
+          "> [!NOTE]\n> **[Agent Instruction: `<Action Name>`]**\n> \n> 1. `<Verb-first actionable command>`\n> 2. `<Verb-first actionable command>`\n"
         ],
         "hints": [
-          "<agent_hint intent=\"[Optimization|Context|Stylistic]\">\n  [Brief observation or context that aids decision-making, written objectively.]\n</agent_hint>"
+          "> [!TIP]\n> **[Agent Hint: `<Intent>`]**\n> `<Brief observation or context that aids decision-making, written objectively.>`\n"
         ],
         "has_unstructured_legacy": true
       }
     },
     "/workspace/.agents/workers/directive-enforcer/main.py": {
-      "context_metadata": "import os\nimport glob\nimport re\nimport json\nimport logging\nimport datetime\nfrom fastapi import FastAPI, HTTPException\nfrom pydantic import BaseModel\nimport uvicorn\nfrom otel_setup import init_telemetry\nfrom opentelemetry.instrumentation.fastapi import FastAPIInstrumentor\nfrom google import genai\nfrom google.genai import types\n\n# <agent_directive priority=\"HIGH\" domain=\"Observability\">",
+      "context_metadata": "import os\nimport glob\nimport re\nimport json\nimport logging\nimport datetime\nfrom fastapi import FastAPI, HTTPException\nfrom pydantic import BaseModel\nimport uvicorn\nfrom otel_setup import init_telemetry\nfrom opentelemetry.instrumentation.fastapi import FastAPIInstrumentor\nfrom google import genai\nfrom google.genai import types\n\n# > [!IMPORTANT]",
       "annotations": {
         "directives": [
           "> [!IMPORTANT]\n> **[Agent Directive: <Domain>]**\n> <A single, concise sentence using MUST, MUST NOT, ALWAYS, or NEVER. No exposition.>\n",
-          "<agent_directive priority=\"HIGH\" domain=\"Observability\">\n# DO NOT remove OpenTelemetry initialization.\n# </agent_directive>",
           "<agent_directive.*?</agent_directive>"
         ],
         "instructions": [
@@ -35,7 +34,7 @@
       }
     },
     "/workspace/docs/agent-directive-enforcer.md": {
-      "context_metadata": "# Directive Enforcer Agent Documentation\n\nThe **Directive Enforcer** is a Python-based A2A worker agent built into `hlbw-ai-hub`. Its primary role is to enforce unambiguous, strict, Markdown Callout structures (Meta-Syntax) on any agent instructions, hints, or directives embedded across the workspace artifacts.\n\nThe enforcer resolves ambiguity by rejecting loose natural language prompts (e.g., *\"hello agent, don't forget to\"*), preventing infinite LLM loops, and consolidating conflicting logic.\n\n## 1. The Three Tiers of Automated Execution\n\nBecause AI agents can easily get confused by legacy comments like `\"make sure to run the tests\"`, the Directive Enforcer forces all instructions into three distinct, structured Markdown alerts: when modifying configuration files, boilerplates, or documentation.\n\n### The `<agent_directive>` (Markdown `> [!IMPORTANT]`)\nThese are explicit constraints that act as hard guardrails. They map directly to specific architectural domains (e.g., Security, Formatting, Logic).\n\n**Example:**\n```markdown",
+      "context_metadata": "# Directive Enforcer Agent Documentation\n\nThe **Directive Enforcer** is a Python-based A2A worker agent built into `hlbw-ai-hub`. Its primary role is to enforce unambiguous, strict, Markdown Callout structures (Meta-Syntax) on any agent instructions, hints, or directives embedded across the workspace artifacts.\n\nThe enforcer resolves ambiguity by rejecting loose natural language prompts (e.g., *\"hello agent, don't forget to\"*), preventing infinite LLM loops, and consolidating conflicting logic.\n\n## 1. The Three Tiers of Automated Execution\n\nBecause AI agents can easily get confused by legacy comments like `\"make sure to run the tests\"`, the Directive Enforcer forces all instructions into three distinct, structured Markdown alerts: when modifying configuration files, boilerplates, or documentation.\n\n### The `<agent_directive>` (Markdown `> [!IMPORTANT]`)\n\nThese are explicit constraints that act as hard guardrails. They map directly to specific architectural domains (e.g., Security, Formatting, Logic).\n\n**Example:**",
       "annotations": {
         "directives": [
           "> [!IMPORTANT]\n> **[Agent Directive: Security]**\n> Agents MUST NEVER commit raw Stripe API keys to any branch.\n"

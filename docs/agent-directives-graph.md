@@ -1,73 +1,110 @@
 # Agent Directives Graph
 
-This Mermaid diagram visualizes the strict agent directives, instructions, and hints extracted from the workspace. It illustrates how these rules originate from specific codebase files and relate to various domains, actions, and overarching concepts like OpenTelemetry standardization or port configuration. Directives, instructions, and hints are grouped by file and their core attributes (priority, domain, action, intent, execution type) are integrated into their labels for clarity, while common themes are highlighted as central concepts.
+This graph visualizes the interconnected web of directives, instructions, and hints extracted from the workspace, mapping them to their originating files and core architectural concepts. It serves as a comprehensive overview for combating context rot and ensuring agent compliance.
 
 ```mermaid
 graph TD
     subgraph Codebase Files
-        F1["templates/adk-chat-interface/server.js"]
-        F2["templates/cloud-run/node/index.js"]
-        F3["templates/docker/node/index.js"]
-        F4["wrappers/mcp/index.js"]
-        F5["wrappers/a2a/main.py"]
+        F1["/workspace/.agents/skills/directive-enforcer/SKILL.md"]
+        F2["/workspace/.agents/workers/directive-enforcer/main.py"]
+        F3["/workspace/docs/agent-directive-enforcer.md"]
+        F4["/workspace/docs/features/sentry-advisory-protocol.md"]
+        F5["/workspace/docs/toolchain-prompt/prompt.md"]
+        F6["/workspace/templates/adk-chat-interface/server.js"]
+        F7["/workspace/templates/cloud-run/node/index.js"]
+        F8["/workspace/templates/docker/node/index.js"]
+        F9["/workspace/wrappers/a2a/main.py"]
+        F10["/workspace/wrappers/mcp/index.js"]
     end
 
     subgraph Agent Rules
         subgraph Directives
-            D_OTel_CS("OpenTelemetry init MUST NOT be removed (CRITICAL, Security)")
-            D_ExpBoiler_HL("Express/OTel boilerplate MUST NOT be modified (HIGH, Logic)")
-            D_OTel_CL("OpenTelemetry init MUST NOT be removed (CRITICAL, Logic)")
-            D_PortVar_HL("Port var MUST use 'process.env.PORT' (HIGH, Logic)")
-            D_PortEnv_HL("PORT env var MUST ALWAYS be used (HIGH, Logic)")
-            D_DomHeavy_HL("Domain-heavy logic MUST NOT be in handler (HIGH, Logic)")
-            D_A2ARoute_CF("/a2a/message route signature MUST NOT be changed (CRITICAL, Format)")
+            D1["Directive Format: MUST/MUST NOT/ALWAYS/NEVER"]
+            D2["Security: NEVER commit raw Stripe API keys"]
+            D3["Security: OpenTelemetry init MUST NOT be removed"]
+            D4["Logic: OpenTelemetry init MUST NOT be removed"]
+            D5["Logic: Port MUST always use 'process.env.PORT'"]
+            D6["Logic: PORT env var MUST ALWAYS be used for config"]
+            D7["Agent Workflow: MUST consult Sentry before writing/committing"]
+            D8["Agent Workflow: MCP First"]
+            D9["Agent Workflow: Swarm First"]
+            D10["Agent Workflow: Control Plane Hygiene"]
         end
-
         subgraph Instructions
-            I_ADKGenkit_Seq[[Integrate ADK/Genkit logic into chat endpoint (sequential)]]
-            I_ToolReq_Seq[[Integrate tool requests with internal agent logic (sequential)]]
+            I1["Instruction Format: Verb-first actionable commands"]
+            I2["Bootstrapping Service: Read env, spin up docker, verify health"]
         end
-
         subgraph Hints
-            H_OTelUniform_Context{{{Maintaining OTel init ensures uniformity (Context)}}}
-            H_CRPort_Context{{{Default port for Cloud Run is 8080 (Context)}}}
+            H1["Hint Format: Brief, objective observation/context"]
+            H2["Context: Auth module mocked in local dev"]
+            H3["Context: OpenTelemetry init ensures uniformity"]
+            H4["Context: Default port for Cloud Run is 8080"]
         end
     end
 
     subgraph Core Concepts
-        ConcOTel[("OpenTelemetry Standardization")]
-        ConcPortConfig[("Standard Port Configuration")]
-        ConcA2A[("A2A Interface Standard")]
+        C1["Agent Meta-Syntax & Uniformity"]
+        C2["Security Best Practices"]
+        C3["Observability & Telemetry"]
+        C4["Configuration & Environment"]
+        C5["Agent Workflow & Coordination"]
+        C6["Development Context & Diagnostics"]
+        C7["Service Bootstrapping"]
     end
 
-    %% File to Directive/Instruction/Hint links
-    F1 -- "contains" --> D_OTel_CS
-    F1 -- "contains" --> D_ExpBoiler_HL
-    F1 -- "contains" --> I_ADKGenkit_Seq
+    %% File to Rule links
+    F1 -- "contains" --> D1
+    F1 -- "contains" --> I1
+    F1 -- "contains" --> H1
 
-    F2 -- "contains" --> D_OTel_CL
-    F2 -- "contains" --> D_PortVar_HL
-    F2 -- "contains" --> H_OTelUniform_Context
-    F2 -- "contains" --> H_CRPort_Context
+    F2 -- "contains" --> D1
+    F2 -- "contains" --> I1
+    F2 -- "contains" --> H1
 
-    F3 -- "contains" --> D_OTel_CL
-    F3 -- "contains" --> D_PortEnv_HL
+    F3 -- "contains" --> D2
+    F3 -- "contains" --> I2
+    F3 -- "contains" --> H2
 
-    F4 -- "contains" --> D_OTel_CL
-    F4 -- "contains" --> D_DomHeavy_HL
-    F4 -- "contains" --> I_ToolReq_Seq
+    F4 -- "contains" --> D7
 
-    F5 -- "contains" --> D_OTel_CS
-    F5 -- "contains" --> D_A2ARoute_CF
+    F5 -- "contains" --> D8
+    F5 -- "contains" --> D9
+    F5 -- "contains" --> D10
 
-    %% Rule to Core Concept links
-    D_OTel_CS -- "impacts" --> ConcOTel
-    D_ExpBoiler_HL -- "impacts" --> ConcOTel
-    D_OTel_CL -- "impacts" --> ConcOTel
-    D_PortVar_HL -- "impacts" --> ConcPortConfig
-    D_PortEnv_HL -- "impacts" --> ConcPortConfig
-    D_A2ARoute_CF -- "impacts" --> ConcA2A
+    F6 -- "contains" --> D3
 
-    H_OTelUniform_Context -- "explains" --> ConcOTel
-    H_CRPort_Context -- "explains" --> ConcPortConfig
+    F7 -- "contains" --> D4
+    F7 -- "contains" --> D5
+    F7 -- "contains" --> H3
+    F7 -- "contains" --> H4
+
+    F8 -- "contains" --> D4
+    F8 -- "contains" --> D6
+
+    F9 -- "contains" --> D3
+
+    F10 -- "contains" --> D4
+
+    %% Rule to Concept links
+    D1 --> C1
+    D2 --> C2
+    D3 --> C3
+    D3 --> C2
+    D4 --> C3
+    D5 --> C4
+    D6 --> C4
+    D7 --> C5
+    D8 --> C5
+    D9 --> C5
+    D10 --> C5
+
+    I1 --> C1
+    I2 --> C7
+
+    H1 --> C1
+    H2 --> C6
+    H3 --> C3
+    H3 --> C1
+    H4 --> C4
+    H4 --> C6
 ```
