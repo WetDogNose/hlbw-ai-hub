@@ -67,7 +67,7 @@ steps:
       - '--set-env-vars'
       - 'NEXT_PUBLIC_APP_URL=https://hlbw-ai-hub.com,NEXTAUTH_URL=https://hlbw-ai-hub.com,GCS_BUCKET_NAME=hlbw-ai-hub-uploads,SMTP_HOST=smtp.gmail.com,SMTP_PORT=587,SMTP_SECURE=false,ADMIN_EMAIL=barneswo@gmail.com,NEXT_PUBLIC_ADSENSE_PUB_ID=ca-pub-1756839464398511,APP_VERSION=$SHORT_SHA,APPLE_CLIENT_ID=com.hlbw-ai-hub.si,APPLE_TEAM_ID=A76BV63763,APPLE_KEY_ID=AQ5WAKV29R'
       - '--set-secrets'
-      - 'DATABASE_URL=database-url:latest,NEXTAUTH_SECRET=nextauth-secret:latest,GEMINI_API_KEY=gemini-api-key:latest,SMTP_PASSWORD=smtp-password:latest,SMTP_USER=smtp-user:latest,GOOGLE_CLIENT_ID=google-oauth-client-id:latest,GOOGLE_CLIENT_SECRET=google-oauth-client-secret:latest,GITHUB_CLIENT_ID=github-oauth-client-id:latest,GITHUB_CLIENT_SECRET=github-oauth-client-secret:latest,AZURE_AD_CLIENT_ID=azure-ad-oauth-client-id:latest,AZURE_AD_CLIENT_SECRET=azure-ad-oauth-client-secret:latest,APPLE_PRIVATE_KEY=apple-private-key:latest,STRIPE_SECRET_KEY=stripe-secret-key:latest,STRIPE_PUBLISHABLE_KEY=stripe-publishable-key:latest,STRIPE_WEBHOOK_SECRET=stripe-webhook-secret:latest'
+      - 'DATABASE_URL=database-url:latest,NEXTAUTH_SECRET=nextauth-secret:latest,GEMINI_API_KEY=gemini-api-key:latest,SMTP_PASSWORD=smtp-password:latest,SMTP_USER=smtp-user:latest,GOOGLE_CLIENT_ID=google-oauth-client-id:latest,GOOGLE_CLIENT_SECRET=google-oauth-client-secret:latest,GITHUB_CLIENT_ID=github-oauth-client-id:latest,GITHUB_CLIENT_SECRET=github-oauth-client-secret:latest,AZURE_AD_CLIENT_ID=azure-ad-oauth-client-id:latest,AZURE_AD_CLIENT_SECRET=azure-ad-oauth-client-secret:latest,APPLE_PRIVATE_KEY=apple-private-key:latest'
 
 images:
   - 'gcr.io/$PROJECT_ID/hlbw-ai-hub:latest'
