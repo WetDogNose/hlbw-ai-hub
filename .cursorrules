@@ -1,0 +1,12 @@
+# Global Frontend Styling Directive
+
+**CRITICAL INSTRUCTION**: Do not use Tailwind CSS in this project under any circumstances. 
+Even though Tailwind might be installed or present in `package.json` for auxiliary reasons, **the entire application relies strictly on Vanilla CSS defined in `app/globals.css`**.
+
+## Rules
+1. **Vanilla CSS Only**: All components, pages, and layouts must use standard CSS class names and native CSS properties.
+2. **No Utility Classes**: Do NOT use utility classes like `p-4`, `text-xl`, `flex-col`, `mt-2`, etc.
+3. **Globals.css**: If a new style constraint or component layout is needed, you must define the semantic class explicitly in `app/globals.css` (e.g., `.stat-card`, `.dashboard-grid`) and use that class in your React components.
+4. **Theme Variables**: Always use the provided CSS variables for colors, spacing, and shadows (e.g., `var(--bg-primary)`, `var(--text-secondary)`, `var(--shadow-md)`) to support the dynamic dark/light theme seamlessly.
+
+Violating this directive will result in unstyled, broken UI layers because Tailwind is deliberately stripped from the CSS build compilation pipeline.
