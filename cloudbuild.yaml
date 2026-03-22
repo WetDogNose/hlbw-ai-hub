@@ -74,4 +74,5 @@ images:
   - 'gcr.io/$PROJECT_ID/hlbw-ai-hub:$BUILD_ID'
 
 options:
+  machineType: 'E2_HIGHCPU_8'
   logging: CLOUD_LOGGING_ONLY
