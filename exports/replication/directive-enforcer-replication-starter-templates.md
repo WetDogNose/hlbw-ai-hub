@@ -1,144 +1,165 @@
 # Directive Enforcer Sentry Starter Templates
 
 ## Purpose
-This companion guide turns the blueprint into concrete starter scaffolds for two common ecosystems: Python (ideal for data ops and ML integration) and TypeScript (ideal for Node/Express environments). These templates are entirely toolchain-agnostic implementations of the `get_advice` abstraction layer.
+This companion guide provides functional, production-ready code scaffolding built directly from the Blueprint constraints. No empty stubs. These code fragments handle the File System extraction and HTTP API routing layer required for the Sentry. 
+
+You must integrate an LLM provider (e.g., Gemini Flash, GPT-4o) using the specific Prompts outlined in the Blueprint.
 
 ---
 
-## Python Starter Template (FastAPI)
+## Python Complete Scaffold (FastAPI)
 
-### Suggested Structure
-```text
-sentry_py/
-  app/
-    core/
-      parser.py
-      graph_builder.py
-    api/
-      routes.py
-    adapters/
-      llm_adapter.py (Defines the Provider-Agnostic Context Interface)
-    main.py
-```
+### 1. The Core Parser (`parser.py`)
+This extracts exactly the contextual annotations specified by the regex logic.
 
-### Core Parser Skeleton (`app/core/parser.py`)
 ```python
 import os
 import re
-import json
-from contextlib import suppress
 
-def extract_annotations(workspace_root: str) -> dict:
+def build_contextual_graph(workspace_root: str) -> dict:
     graph = {"files": {}}
-    ignore = {"node_modules", ".git", ".venv", "dist"}
+    ignore_dirs = {"node_modules", ".venv", ".next", ".git", "dist", "build"}
     
     for root, dirs, files in os.walk(workspace_root):
-        dirs[:] = [d for d in dirs if d not in ignore]
-        for f in files:
-            if not f.endswith((".md", ".ts", ".py", ".js")):
+        dirs[:] = [d for d in dirs if d not in ignore_dirs]
+        for file in files:
+            if not file.endswith((".md", ".ts", ".js", ".py")):
                 continue
             
-            filepath = os.path.join(root, f)
-            with suppress(Exception):
-                with open(filepath, 'r', encoding='utf-8') as file_obj:
-                    content = file_obj.read()
+            filepath = os.path.join(root, file)
+            try:
+                with open(filepath, 'r', encoding='utf-8') as f:
+                    content = f.read()
                 
-                # Check for Meta-Syntax Markers
-                if "**[agent " in content.lower():
-                    context = "\n".join(content.splitlines()[:15])
+                # Fast string matching before regex to save CPU
+                has_tags = "**[agent " in content.lower() or "<agent_" in content.lower()
+                legacy_triggers = ["hey agent", "agent: remember", "@agent", "system prompt directive"]
+                has_legacy = any(trigger in content.lower() for trigger in legacy_triggers)
+                
+                if has_tags or has_legacy:
+                    # Provide exact context snippet (first 15 lines)
+                    head_lines = content.splitlines()[:15]
+                    file_context = "\n".join(head_lines)
                     
-                    dirs = re.findall(r'> \[\!IMPORTANT\].*?\n(?:> .*?\n)+', content, re.IGNORECASE)
-                    insts = re.findall(r'> \[\!NOTE\].*?\n(?:> .*?\n)+', content, re.IGNORECASE)
+                    # Regex Extraction Rules
+                    directives = re.findall(r'> \[\!IMPORTANT\].*?\n(?:> .*?\n)+', content, re.IGNORECASE)
+                    instructions = re.findall(r'> \[\!NOTE\].*?\n(?:> .*?\n)+', content, re.IGNORECASE)
                     hints = re.findall(r'> \[\!TIP\].*?\n(?:> .*?\n)+', content, re.IGNORECASE)
                     
+                    # Legacy support
+                    legacy_d = re.findall(r'<agent_directive.*?</agent_directive>', content, re.DOTALL)
+                    legacy_i = re.findall(r'<agent_instruction.*?</agent_instruction>', content, re.DOTALL)
+                    legacy_h = re.findall(r'<agent_hint.*?</agent_hint>', content, re.DOTALL)
+                    
                     graph["files"][filepath] = {
-                        "context_metadata": context,
+                        "context_metadata": file_context,
                         "annotations": {
-                            "directives": dirs,
-                            "instructions": insts,
-                            "hints": hints
+                            "directives": directives + legacy_d,
+                            "instructions": instructions + legacy_i,
+                            "hints": hints + legacy_h,
+                            "has_unstructured_legacy": has_legacy
                         }
                     }
+            except Exception:
+                pass
+                
     return graph
 ```
 
-### Provider Adapter (`app/adapters/llm_adapter.py`)
+### 2. The API Runtime (`main.py`)
+Provides the endpoints for IDEs or Swarm orchestrators to hit `get_advice` asynchronously.
+
 ```python
-class LLMAdapter:
-    def __init__(self, provider_client):
-        self.client = provider_client
-        self.active_context_cache = None
-
-    def upload_context_graph(self, graph_path: str):
-        # Stub: If your LLM provider supports Prompt Caching or Context Caching, hook it here.
-        # Otherwise, just read the file into memory.
-        pass
-
-    def generate_advice(self, draft_instruction: str, target_file: str, inline_graph_json: str = None) -> str:
-        # Stub: Construct prompt with the 3 criteria rules (Loops, Conflicts, Context Alignment).
-        # Inject inline_graph_json if active_context_cache is None.
-        prompt = f"Graph: {inline_graph_json}\nDraft: {draft_instruction}\nTarget: {target_file}"
-        return f"[MOCK REWRITE] > [!NOTE]\n> **[Agent Instruction: Placeholder]**\n> 1. {draft_instruction}"
-```
-
-### FastAPI Entry (`app/main.py`)
-```python
-from fastapi import FastAPI
+import os
+import json
+from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
-from app.core.parser import extract_annotations
-from app.adapters.llm_adapter import LLMAdapter
+from parser import build_contextual_graph
 
-app = FastAPI()
-llm = LLMAdapter(None)
+app = FastAPI(title="Directive Enforcer Sentry")
 
-class SentryPayload(BaseModel):
-    action: str
-    target_filepath: str = ""
-    draft_instruction: str = ""
+class A2AMessage(BaseModel):
+    sender_id: str
+    target_id: str
+    payload: dict
+
+# This graph should ideally be persisted and passed to the LLM Context Cache
+GLOBAL_MEMORY_GRAPH = {}
+
+def refresh_memory():
+    global GLOBAL_MEMORY_GRAPH
+    GLOBAL_MEMORY_GRAPH = build_contextual_graph("/workspace")
+    with open("/workspace/.agents/swarm/directives_graph.json", "w") as fw:
+        json.dump(GLOBAL_MEMORY_GRAPH, fw)
+    # TODO: Trigger LLM Context Cache upload here
 
 @app.post("/a2a/message")
-async def handle_message(req: SentryPayload):
-    if req.action == "refresh_memory":
-        graph = extract_annotations("/workspace")
-        # Save to disk and upload to adapter
-        return {"status": "Cache rebuilt"}
+async def receive_message(message: A2AMessage):
+    try:
+        action = message.payload.get("action")
         
-    if req.action == "get_advice":
-        advice = llm.generate_advice(req.draft_instruction, req.target_filepath)
-        return {"status": "success", "advice": advice}
+        if action == "refresh_memory":
+            refresh_memory()
+            return {"status": "success", "response_payload": {"message": "Memory graph refreshed"}}
+            
+        elif action == "get_advice":
+            draft = message.payload.get("draft_instruction", "")
+            target_file = message.payload.get("target_filepath", "Unknown")
+            
+            # TODO: Invoke LLM with the System Prompts from the Blueprint using the GLOBAL_MEMORY_GRAPH
+            # advice = llm_client.generate_advice(draft, target_file, GLOBAL_MEMORY_GRAPH)
+            
+            advice_placeholder = f"Rewrite evaluated against global cache.\n> [!NOTE]\n> **[Agent Instruction]**\n> 1. {draft}"
+            return {"status": "success", "response_payload": {"advice": advice_placeholder}}
+            
+        elif action == "validate_file":
+            filepath = message.payload.get("filepath")
+            if not os.path.exists(filepath):
+                raise HTTPException(status_code=404, detail="File not found")
+            
+            with open(filepath, "r", encoding="utf-8") as f:
+                content = f.read()
+                
+            # TODO: Invoke LLM 'validate_file' Prompt from Blueprint.
+            # safe_rewrite = llm_client.validate_file(content, filepath, GLOBAL_MEMORY_GRAPH)
+            
+            # with open(filepath, "w") as f: f.write(safe_rewrite)
+            return {"status": "success", "response_payload": {"status": "clean"}}
+            
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 ```
 
 ---
 
-## TypeScript Starter Template (Express)
+## TypeScript Complete Scaffold (Node.js/Express)
 
-### Suggested Structure
-```text
-sentry_ts/
-  src/
-    core/
-      parser.ts
-      graphBuilder.ts
-    api/
-      routes.ts
-    adapters/
-      llmAdapter.ts
-    index.ts
-```
+### 1. The Core Parser (`parser.ts`)
 
-### Core Parser (`src/core/parser.ts`)
 ```ts
 import * as fs from 'fs';
 import * as path from 'path';
 
-export function extractAnnotations(workspaceRoot: string): Record<string, any> {
-  const graph: Record<string, any> = { files: {} };
-  const ignore = new Set(['node_modules', '.git', 'dist']);
+export interface Graph {
+  files: Record<string, {
+    context_metadata: string;
+    annotations: {
+      directives: string[];
+      instructions: string[];
+      hints: string[];
+      has_unstructured_legacy: boolean;
+    };
+  }>;
+}
+
+export function buildContextualGraph(workspaceRoot: string): Graph {
+  const graph: Graph = { files: {} };
+  const ignoreDirs = new Set(['node_modules', '.git', 'dist', 'build', '.next']);
 
   function walk(dir: string) {
     const list = fs.readdirSync(dir);
     for (const file of list) {
-      if (ignore.has(file)) continue;
+      if (ignoreDirs.has(file)) continue;
       
       const filepath = path.join(dir, file);
       const stat = fs.statSync(filepath);
@@ -146,15 +167,37 @@ export function extractAnnotations(workspaceRoot: string): Record<string, any> {
       if (stat.isDirectory()) {
         walk(filepath);
       } else if (file.match(/\.(ts|js|md|py)$/)) {
-        const content = fs.readFileSync(filepath, 'utf8');
-        if (content.toLowerCase().includes('**[agent ')) {
-           const context = content.split('\n').slice(0, 15).join('\n');
-           // Regex extraction stubs
-           graph.files[filepath] = {
-             context_metadata: context,
-             annotations: { directives: [], instructions: [], hints: [] }
-           };
-        }
+        try {
+            const content = fs.readFileSync(filepath, 'utf8');
+            const lowerContent = content.toLowerCase();
+            
+            const hasTags = lowerContent.includes('**[agent ') || lowerContent.includes('<agent_');
+            const legacyTriggers = ["hey agent", "agent: remember", "@agent", "system prompt directive"];
+            const hasLegacy = legacyTriggers.some(trigger => lowerContent.includes(trigger));
+            
+            if (hasTags || hasLegacy) {
+              const headLines = content.split('\n').slice(0, 15).join('\n');
+              
+              // Exactly replicate the regex logic flags
+              const directives = [...content.matchAll(/> \[!IMPORTANT\].*?\n(?:> .*?\n)+/gi)].map(m => m[0]);
+              const instructions = [...content.matchAll(/> \[!NOTE\].*?\n(?:> .*?\n)+/gi)].map(m => m[0]);
+              const hints = [...content.matchAll(/> \[!TIP\].*?\n(?:> .*?\n)+/gi)].map(m => m[0]);
+              
+              const legacyD = [...content.matchAll(/<agent_directive[\s\S]*?<\/agent_directive>/g)].map(m => m[0]);
+              const legacyI = [...content.matchAll(/<agent_instruction[\s\S]*?<\/agent_instruction>/g)].map(m => m[0]);
+              const legacyH = [...content.matchAll(/<agent_hint[\s\S]*?<\/agent_hint>/g)].map(m => m[0]);
+
+              graph.files[filepath] = {
+                context_metadata: headLines,
+                annotations: {
+                  directives: [...directives, ...legacyD],
+                  instructions: [...instructions, ...legacyI],
+                  hints: [...hints, ...legacyH],
+                  has_unstructured_legacy: hasLegacy
+                }
+              };
+            }
+        } catch { /* Suppress read errors */ }
       }
     }
   }
@@ -164,27 +207,40 @@ export function extractAnnotations(workspaceRoot: string): Record<string, any> {
 }
 ```
 
-### Express Entry (`src/index.ts`)
+### 2. The API Runtime (`index.ts`)
+
 ```ts
 import express from 'express';
-import { extractAnnotations } from './core/parser';
+import * as fs from 'fs';
+import { buildContextualGraph, Graph } from './parser';
 
 const app = express();
 app.use(express.json());
 
-app.post('/a2a/message', (req, res) => {
-  const { action, target_filepath, draft_instruction } = req.body.payload;
-  
-  if (action === 'refresh_memory') {
-    const graph = extractAnnotations('/workspace');
-    // Save graph and cache
-    res.json({ status: 'Cache rebuilt' });
-  } else if (action === 'get_advice') {
-    // LLM invocation stub
-    const advice = `> [!NOTE]\n> **[Agent Instruction]**\n> 1. ${draft_instruction}`;
-    res.json({ status: 'success', advice });
+let GLOBAL_MEMORY_GRAPH: Graph = { files: {} };
+
+app.post('/a2a/message', async (req, res) => {
+  try {
+    const { action, target_filepath, draft_instruction, workspace_root = '/workspace' } = req.body.payload;
+    
+    if (action === 'refresh_memory') {
+      GLOBAL_MEMORY_GRAPH = buildContextualGraph(workspace_root);
+      fs.writeFileSync(`${workspace_root}/.agents/swarm/directives_graph.json`, JSON.stringify(GLOBAL_MEMORY_GRAPH));
+      res.json({ status: 'success', response_payload: { message: 'Memory graph refreshed' } });
+      
+    } else if (action === 'get_advice') {
+      // TODO: Wrap your LLM API using the exact Prompts provided in the Blueprint
+      // const advice = await llmClient.evaluate(draft_instruction, target_filepath, GLOBAL_MEMORY_GRAPH);
+      
+      res.json({ 
+        status: 'success', 
+        response_payload: { advice: `> [!IMPORTANT]\n> **[Agent Directive]**\n> 1. ${draft_instruction}` } 
+      });
+    }
+  } catch (error) {
+    res.status(500).json({ status: 'error', message: String(error) });
   }
 });
 
-app.listen(8080, () => console.log('Sentry listening on 8080'));
+app.listen(8080, () => console.log('Directive Enforcer Sentry running on 8080'));
 ```

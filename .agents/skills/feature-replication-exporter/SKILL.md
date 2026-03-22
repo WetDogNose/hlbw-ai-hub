@@ -21,22 +21,24 @@ Before you generate any markdown files, take a moment to reason through the feat
 3. Define strong **Adapter Layers** for any external systems you identified in Step 1. The replication should never bind directly to a specific provider if an abstraction is safer.
 
 ### Step 3: Generate the Replication Blueprint
-Create a comprehensive blueprint file named `exports/replication/<feature-name>-replication-blueprint.md`. This file must act as a complete architecture and constraint document for the receiving agent.
+Create a comprehensive blueprint file named `exports/replication/<feature-name>-replication-blueprint.md`. This file must act as a complete, deeply technical architecture and constraint document that leaves ZERO ambiguity for the receiving agent.
 
 Ensure the blueprint includes at minimum:
 - **Purpose**: High-level target outcomes to replicate.
 - **Capability Contract**: What the feature *must* be able to do.
 - **Reference Architecture**: How abstract components (services, stores, adapters) logically interact.
-- **Data Models**: Agnostic schemas of the state/data structures.
-- **Tool/API Surface**: The interfaces the agent or user will call.
-- **Scheduling/Decision Policies** (if applicable): Explicit rules on how the system behaves.
-- **Security & Governance**: Guardrails, isolation, and access control.
-- **Verification Requirements**: A firm "Definition of Done" and a list of minimal contract tests the receiving toolchain *must* pass to prove compliance.
+- **Data Models**: Agnostic schemas of the state/data structures (include exact required fields).
+- **Core Logic & Heuristics**: If the feature relies on specific regex, parsing rules, or algorithms, YOU MUST include the exact technical logic in the blueprint.
+- **System Prompts & LLM Engineering**: If the feature relies on LLMs, provide the EXACT system prompts and constraint rules required to make it work.
+- **Tool/API Surface**: The exact interfaces, endpoints, and JSON schemas the agent or user will call.
+- **Scheduling/Decision Policies** (if applicable): Explicit rules on how system state transitions occur.
+- **Step-by-Step Implementation Sequence**: A granular, chronological checklist for an agent to follow, reducing all ambiguity over what to build first.
+- **Verification Requirements**: A firm "Definition of Done" and a list of detailed contract tests the receiving toolchain *must* pass to prove compliance.
 
 ### Step 4: Generate the Starter Templates
-Create a paired starter scaffold file named `exports/replication/<feature-name>-replication-starter-templates.md`. 
-1. Provide minimal viable code scaffolds demonstrating how to implement the blueprint in at least 2 relevant modern tech stacks (e.g., Python + TypeScript, or Go + Node.js).
-2. Include scaffolding for the core models, adapter interfaces, runtime orchestration, and API bindings. Focus on structure over deep logic.
+Create a paired starter core logic file named `exports/replication/<feature-name>-replication-starter-templates.md`. 
+1. Provide functional, production-grade code implementations demonstrating how to build the core engine of the blueprint in at least 2 relevant modern tech stacks (e.g., Python + TypeScript).
+2. **DO NOT USE EMPTY STUBS.** Your starter templates must contain fleshed-out core logic (e.g., actual file parsing routines, actual HTTP routing, actual adapter interface wiring). Instead of `// Stub: do X`, write the code that does X based on your deep code analysis.
 
 ### Step 5: Final Packaging & Output
 1. Write the previous step outputs to the `exports/replication/` directory (create the directory if it does not exist using the file writing tool).
