@@ -19,8 +19,8 @@ Maintain a global "memory graph" of all established rules, directives, and hints
 - **Toolchain Doctor / CI**: Runs periodically (or on push) to scan all `SKILL.md` and repository artifacts.
 - **Agent Memory Interceptor**:
 > [!IMPORTANT]
-> **[Agent Directive: Agent Workflow]**
-> Master IDE agents MUST call out to the Directive Enforcer via A2A messaging to validate changes BEFORE committing any `.md` artifact updates.
+> **[Agent Directive: Artifact Validation]**
+> Agents MUST ALWAYS consult the Directive Enforcer Sentry via A2A messaging to validate draft instruction changes BEFORE rewriting any `.md` tool rules or skill files or committing any `.md` artifact updates.
 
 ## Reference Architecture
 
@@ -41,10 +41,6 @@ The Directive Enforcer acts as a central middleware validation layer. Master Age
 ## Agent Triggers (Hints, Directives, Instructions)
 
 To ensure orchestrator/master agents use the feature reliably, the following hints/directives must be deployed in your global agent prompt (`GEMINI.md` / `system_instructions.txt`):
-
-> [!IMPORTANT]
-> **[Agent Directive: Artifact Updates]**
-> ALWAYS draft instruction changes on a scratchpad and sequentially query the Directive Enforcer Sentry to validate against global conflict constraints BEFORE rewriting any `.md` tool rules or skill files.
 
 > [!TIP]
 > **[Agent Hint: Resolving Loops]**
@@ -108,10 +104,37 @@ To ensure orchestrator/master agents use the feature reliably, the following hin
   "payload": {
     "action": "get_advice | validate_file | refresh_memory",
     "target_filepath": "<string>",
-    "draft_instruction": "<string>"
+    "draft_instruction": "<string>",
+    "workspace_root": "<string>"
   }
 }
 ```
+
+---
+
+## Tool/API Surface
+
+The Directive Enforcer operates via a single RPC-style HTTP endpoint designed for A2A communication.
+
+- **Endpoint**: `POST /a2a/message`
+  - **Payload**: The A2A Protocol Envelope (see Data Models).
+  - **Actions**:
+    - `get_advice`: Submits a draft instruction for the LLM to rewrite based on the workspace graph. Returns the rewritten instruction.
+    - `validate_file`: Forces the LLM to fully rewrite an existing file, stripping old legacy constraints and formatting them into Meta-Syntax.
+    - `refresh_memory`: Triggers a manual re-scan of the workspace graph.
+- **Port**: Typically bound to `8080` (or `8002` inside Docker depending on orchestration).
+
+## Scheduling/Decision Policies
+
+> [!IMPORTANT]
+> **[Agent Directive: Query Policy]**
+> Master IDE agents MUST query the Sentry's `get_advice` action BEFORE writing any tool rules or directives.
+> [!IMPORTANT]
+> **[Agent Directive: Memory Management]**
+> The `refresh_memory` action MUST be triggered asynchronously on IDE startup or via periodic CI/CD cron jobs to ensure the Memory Graph does not drift from the active filesystem state.
+> [!IMPORTANT]
+> **[Agent Directive: Conflict Resolution]**
+> If the LLM detects an unresolvable logical loop, the Sentry MUST revert the write and raise a fatal exception outlining the loop to the Master Agent.
 
 ---
 
@@ -127,7 +150,9 @@ To ensure orchestrator/master agents use the feature reliably, the following hin
 
 > [!NOTE]
 > **[Agent Instruction: System Prompt Injection]**
-> The following System Instruction MUST be injected verbatim into the LLM Engine's System Prompt.
+> 1. The primary System Instruction MUST be injected verbatim into the LLM Engine's System Prompt.
+> 2. The Meta-Syntax Formatting Rules MUST be injected verbatim into the LLM Engine's System Prompt.
+> 3. The File Validation Prompt MUST be injected verbatim into the LLM Engine's System Prompt for the `validate_file` action.
 
 ```text
 You are the Directive Enforcer A2A Agent, the Sentry of the workspace.
@@ -143,10 +168,6 @@ When evaluating a draft instruction or a file modification, you MUST strictly ch
 CRITICAL RULE FOR MIGRATION/ADVISORY:
 If rewriting or migrating an instruction to the new markdown format, you MUST NOT lose any fine-grained detail, specificity, or nuance. Preserve every exact technical constraint and condition.
 ```
-
-> [!NOTE]
-> **[Agent Instruction: System Prompt Injection]**
-> The following Meta-Syntax Formatting Rules MUST be injected verbatim into the LLM Engine's System Prompt.
 
 ```text
 RULE: DIRECTIVE GENERATION
@@ -171,10 +192,6 @@ Format:
 > **[Agent Hint: <Intent>]**
 > <Brief observation or context that aids decision-making, written objectively.>
 ```
-
-> [!NOTE]
-> **[Agent Instruction: System Prompt Injection]**
-> The following File Validation Prompt MUST be injected verbatim into the LLM Engine's System Prompt for the `validate_file` action.
 
 ```text
 EVALUATE AND MIGRATE ENTIRE FILE:

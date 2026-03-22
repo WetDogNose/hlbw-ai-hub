@@ -135,7 +135,6 @@ To eliminate "context rot" and perfectly align multi-agent workflows, all rules,
 **1. Create the AI Skill (`.agents/skills/directive-enforcer-sentry/SKILL.md`):**
 Instruct the AI on the architectural validation loop:
 > [!NOTE]
-> **[Agent Instruction: Directive Validation Loop]**
-> 1. If writing a new Agent Directive (`> [!IMPORTANT]`), Agent Instruction (`> [!NOTE]`), or Agent Hint (`> [!TIP]`), DO NOT write it directly to the file based on intuition.
-> 2. Execute the `directive-enforcer-sentry` payload snippet to query the continuous A2A Sentry microservice (`http://localhost:8080/a2a/message`).
-> 3. The Sentry will rewrite the instruction to prevent logical loops and context collisions across the entire massive workspace; paste the exact Sentry rewrite into the file.
+> **[Agent Instruction: Directive Validation]**
+> 1. When drafting new directives, instructions, or hints, agents MUST consult the Directive Enforcer Sentry.
+> 2. Follow the detailed Sentry consultation procedure outlined in `docs/features/directive-enforcer-sentry.md` to validate and apply the Sentry's strict Markdown rewrite.

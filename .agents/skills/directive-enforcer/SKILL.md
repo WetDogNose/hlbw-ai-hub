@@ -60,8 +60,3 @@ This skill deploys an A2A worker agent designed specifically to ensure that all 
 > [!TIP]
 > **[Agent Hint: System Invocation]**
 > The Directive Enforcer is automatically invoked by the Master Agent Coordinator (`scripts/swarm/manage-worktree.ts`) before any swarm branch is merged into the mainline.
-
-> [!NOTE]
-> **[Agent Instruction: Manual Validation]**
-> 1. To validate draft instructions against the holistic memory graph, POST to `http://localhost:8080/a2a/message`.
-> 2. Ensure the payload includes `action: "get_advice"`.
