@@ -8,7 +8,7 @@ graph TD
         F1["/workspace/.agents/skills/directive-enforcer/SKILL.md"]
         F2["/workspace/.agents/workers/directive-enforcer/main.py"]
         F3["/workspace/docs/agent-directive-enforcer.md"]
-        F4["/workspace/docs/features/sentry-advisory-protocol.md"]
+        F4["/workspace/docs/features/directive-enforcer-sentry.md"]
         F5["/workspace/docs/toolchain-prompt/prompt.md"]
         F6["/workspace/templates/adk-chat-interface/server.js"]
         F7["/workspace/templates/cloud-run/node/index.js"]

@@ -1,4 +1,4 @@
-# Directive Enforcer: Sentry Advisory Protocol
+# Directive Enforcer: Sentry Protocol
 
 The Directive Enforcer operates as a permanently running A2A Sentry Microservice. Its primary objective is combating context rot by ensuring all agent hints, instructions, and directives are universally uniform and logically sound across the entire `hlbw-ai-hub` workspace.
 
