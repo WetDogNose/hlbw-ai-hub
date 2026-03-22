@@ -7,8 +7,7 @@
           "> [!IMPORTANT]\n> **[Agent Directive: `<Domain>`]**\n> `<A single, concise sentence using MUST, MUST NOT, ALWAYS, or NEVER. No exposition.>`\n"
         ],
         "instructions": [
-          "> [!NOTE]\n> **[Agent Instruction: `<Action Name>`]**\n> \n> 1. `<Verb-first actionable command>`\n> 2. `<Verb-first actionable command>`\n",
-          "> [!NOTE]\n> **[Agent Instruction: Manual Validation]**\n> 1. To validate draft instructions against the holistic memory graph, POST to `http://localhost:8080/a2a/message`.\n"
+          "> [!NOTE]\n> **[Agent Instruction: `<Action Name>`]**\n> \n> 1. `<Verb-first actionable command>`\n> 2. `<Verb-first actionable command>`\n"
         ],
         "hints": [
           "> [!TIP]\n> **[Agent Hint: Rationale]**\n> Ambiguity in agent instructions leads to execution failures due to LLM's probabilistic interpretation of nuance.\n",
@@ -17,17 +16,17 @@
           "> [!TIP]\n> **[Agent Hint: Hint Nature]**\n> Hints offer non-binding optimization suggestions or contextual background information to aid decision-making.\n",
           "> [!TIP]\n> **[Agent Hint: `<Intent>`]**\n> `<Brief observation or context that aids decision-making, written objectively.>`\n",
           "> [!TIP]\n> **[Agent Hint: Operational Context]**\n> The `directive-enforcer` operates continuously as a Dockerized A2A microservice.\n",
-          "> [!TIP]\n> **[Agent Hint: System Invocation]**\n> The Directive Enforcer is automatically invoked by the Master Agent Coordinator (`scripts/swarm/manage-worktree.ts`) before any swarm branch is merged into the mainline.\n"
+          "> [!TIP]\n> **[Agent Hint: System Invocation]**\n"
         ],
         "has_unstructured_legacy": false
       }
     },
     "/workspace/.agents/workers/directive-enforcer/main.py": {
-      "context_metadata": "import os\nimport glob\nimport re\nimport json\nimport logging\nimport datetime\nfrom fastapi import FastAPI, HTTPException\nfrom pydantic import BaseModel\nimport uvicorn\nfrom otel_setup import init_telemetry\nfrom opentelemetry.instrumentation.fastapi import FastAPIInstrumentor\nfrom google import genai\nfrom google.genai import types\n\n> [!IMPORTANT]",
+      "context_metadata": "import os\nimport glob\nimport re\nimport json\nimport logging\nimport datetime\nfrom fastapi import FastAPI, HTTPException\nfrom pydantic import BaseModel\nimport uvicorn\nfrom otel_setup import init_telemetry\nfrom opentelemetry.instrumentation.fastapi import FastAPIInstrumentor\nfrom google import genai\nfrom google.genai import types\n\n# Evaluation of /workspace/.agents/workers/directive-enforcer/main.py:",
       "annotations": {
         "directives": [
-          "> [!IMPORTANT]\n> **[Agent Directive: Observability]**\n> OpenTelemetry initialization MUST NOT be removed.\n",
           "> [!IMPORTANT]\n> **[Agent Directive: <Domain>]**\n> <A single, concise sentence using MUST, MUST NOT, ALWAYS, or NEVER. No exposition.>\n",
+          "<agent_directive.*?</agent_directive>",
           "<agent_directive.*?</agent_directive>"
         ],
         "instructions": [
@@ -96,7 +95,7 @@
           "> [!IMPORTANT]\n> **[Agent Directive: Artifact Validation]**\n> Agents MUST ALWAYS consult the Directive Enforcer Sentry via A2A messaging to validate draft instruction changes BEFORE rewriting any `.md` tool rules or skill files or committing any `.md` artifact updates.\n",
           "> [!IMPORTANT]\n> **[Agent Directive: Scanner Logic]**\n> The scanner MUST identify files for tracking by detecting specific string triggers and MUST extract annotations using the exact provided regex patterns.\n",
           "> [!IMPORTANT]\n> **[Agent Directive: Context Extraction]**\n> The parser MUST extract exactly the first 15 lines of every matched file to ensure LLM context.\n",
-          "> [!IMPORTANT]\n> **[Agent Directive: Memory Management]**\n> The `refresh_memory` action MUST be triggered asynchronously on IDE startup or via periodic CI/CD cron jobs to ensure the Memory Graph does not drift from the active filesystem state.\n> [!IMPORTANT]\n> **[Agent Directive: Conflict Resolution]**\n> If the LLM detects an unresolvable logical loop, the Sentry MUST revert the write and raise a fatal exception outlining the loop to the Master Agent.\n",
+          "> [!IMPORTANT]\n> **[Agent Directive: Query Policy]**\n> Master IDE agents MUST query the Sentry's `get_advice` action BEFORE writing any tool rules or directives.\n> [!IMPORTANT]\n> **[Agent Directive: Memory Management]**\n> The `refresh_memory` action MUST be triggered asynchronously on IDE startup or via periodic CI/CD cron jobs to ensure the Memory Graph does not drift from the active filesystem state.\n> [!IMPORTANT]\n> **[Agent Directive: Conflict Resolution]**\n> If the LLM detects an unresolvable logical loop, the Sentry MUST revert the write and raise a fatal exception outlining the loop to the Master Agent.\n",
           "> [!IMPORTANT]\n> **[Agent Directive: LLM Configuration]**\n> The LLM Engine MUST be configured with a temperature of 0.0.\n",
           "> [!IMPORTANT]\n> **[Agent Directive: <Domain>]**\n> <A single, concise sentence using MUST, MUST NOT, ALWAYS, or NEVER. No exposition.>\n",
           "<agent_directive.*?</agent_directive>"
