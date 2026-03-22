@@ -568,7 +568,8 @@ const attemptSentryValidation = () => {
         payload: { action: "validate_workspace", workspace_root: "/workspace" }
     }));
     try {
-        const res = execSync(`curl -s -X POST -H "Content-Type: application/json" -d "@${tmpPayloadPath}" http://localhost:8080/a2a/message`, { stdio: 'pipe', encoding: 'utf8' }).trim();
+        const fetchScript = `fetch('http://localhost:8080/a2a/message', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: require('fs').readFileSync(process.argv[1], 'utf8') }).then(r=>r.text()).then(console.log).catch(e=>{process.exit(1);})`;
+        const res = execSync(`node -e "${fetchScript}" "${tmpPayloadPath}"`, { stdio: 'pipe', encoding: 'utf8' }).trim();
         fs.unlinkSync(tmpPayloadPath);
         return res;
     } catch (e) {
