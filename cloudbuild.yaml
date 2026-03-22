@@ -36,6 +36,7 @@ steps:
       - 'instances'
       - 'patch'
       - 'hlbw-ai-hub-db-instance'
+      - '--tier=db-f1-micro'
       - '--require-ssl'
       - '--enable-password-policy'
       - '--backup-start-time=03:00'
