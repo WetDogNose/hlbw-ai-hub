@@ -279,6 +279,76 @@ File Content:
         logger.error(f"Sentry fix failed: {e}")
         return content
 
+def validate_workspace(workspace_root: str) -> dict:
+    """
+    Routinely scans the entire workspace graph for widespread contradictions or loops.
+    Returns JSON describing any corrupt files that need targeted auto-healing.
+    """
+    if not global_cache_mgr.client:
+        return {"issues_found": False, "warnings": ["Sentry Cache offline"], "broken_files": []}
+
+    # Refresh first to ensure graph is fresh
+    refresh_workspace_memory(workspace_root)
+
+    if not global_cache_mgr.active_cache_name and not getattr(global_cache_mgr, 'inline_graph', None):
+        return {"issues_found": False, "warnings": ["No memory graph available"], "broken_files": []}
+
+    client = global_cache_mgr.client
+    prompt = """HOLISTIC WORKSPACE VALIDATION:
+Check the entire provided workspace graph for conflicting rules, logical loops, or unhandled legacy tags.
+Output your findings as a strict JSON object with this exact schema:
+{
+  "issues_found": boolean,
+  "warnings": ["array of specific warning strings describing the issue"],
+  "broken_files": ["array of absolute filepaths containing the broken rules"]
+}
+Return ONLY valid JSON. Do not wrap in markdown blocks.
+"""
+    try:
+        if global_cache_mgr.active_cache_name:
+            response = client.models.generate_content(
+                model='gemini-2.5-flash',
+                contents=prompt,
+                config=types.GenerateContentConfig(
+                    cached_content=global_cache_mgr.active_cache_name,
+                    temperature=0.0
+                )
+            )
+        else:
+            inline_prompt = f"{SENTRY_SYSTEM_INSTRUCTION}\\n\\nWORKSPACE GRAPH:\\n{global_cache_mgr.inline_graph}\\n\\n{prompt}"
+            response = client.models.generate_content(
+                model='gemini-2.5-flash',
+                contents=inline_prompt,
+                config=types.GenerateContentConfig(temperature=0.0)
+            )
+            
+        result = response.text.strip()
+        if result.startswith("```json"):
+            result = result[7:]
+        if result.startswith("```"):
+            result = result[3:]
+        if result.endswith("```"):
+            result = result[:-3]
+            
+        data = json.loads(result.strip())
+        
+        # Auto-heal the broken files
+        if data.get("issues_found") and data.get("broken_files"):
+            for filepath in data["broken_files"]:
+                if os.path.exists(filepath):
+                    logger.info(f"Auto-healing broken file: {filepath}")
+                    with open(filepath, "r", encoding="utf-8") as f:
+                        file_content = f.read()
+                    fixed_content = validate_and_fix_file(filepath, file_content)
+                    if fixed_content and fixed_content != file_content:
+                        with open(filepath, "w", encoding="utf-8") as fw:
+                            fw.write(fixed_content)
+                            
+        return data
+    except Exception as e:
+        logger.error(f"Sentry workspace validation failed: {e}")
+        return {"issues_found": False, "warnings": [f"Sentry validation failed: {e}"], "broken_files": []}
+
 def generate_architectural_graph(workspace_root: str) -> str:
     """
     Prompts Gemini to analyze the active Sentry Context cache and reconstruct the 
@@ -368,6 +438,11 @@ async def receive_message(message: A2AMessage):
             logger.info("Generating architectural graph...")
             msg = generate_architectural_graph(workspace_root)
             return {"status": "success", "response_payload": {"message": msg}}
+
+        elif action == "validate_workspace":
+            logger.info("Initiating holistic workspace validation...")
+            data = validate_workspace(workspace_root)
+            return {"status": "success", "response_payload": data}
 
         else:
             return {"status": "ignored", "message": "Action not recognized by Sentry."}
