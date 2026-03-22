@@ -50,3 +50,11 @@ The Sentry will respond within ~1 second using the Gemini Cache with:
 ### Swarm Validation Integration (`validate_file`)
 
 During continuous integration, the Master Agent Coordinator automatically hits the Sentry via `action: "validate_file"` before merging a sub-agent's worktree. If the sub-agent inserted a conflicting logic block, the Sentry will flag and rewrite it.
+
+---
+
+## Technical Integration
+
+For more information on how this Sentry operates architecturally within the `hlbw-ai-hub` (its Docker integration, deployment, and operation modes), refer to the **[Directive Enforcer Architecture Document](/workspace/docs/agent-directive-enforcer.md)**.
+
+For instructions on how you, as a sub-agent or IDE, must integrate with this microservice, consult the **[Directive Enforcer Sentry Skill](/workspace/.agents/skills/directive-enforcer-sentry/SKILL.md)**.
