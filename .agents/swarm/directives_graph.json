@@ -1,0 +1,131 @@
+{
+  "files": {
+    "/workspace/.agents/skills/directive-enforcer/SKILL.md": {
+      "context_metadata": "---\nname: \"Directive Enforcer Agent\"\ndescription: \"A specialized A2A worker agent that audits and enforces rigorous, unambiguous XML-based agent instructions.\"\n---\n\n# Directive Enforcer Agent\n\nThis skill deploys an A2A worker agent designed specifically to ensure that all hints, instructions, and directives provided to AI agents across `hlbw-ai-hub`'s artifacts remain unambiguous, non-cyclical, and uniform.\n\n## Background\n\nAmbiguity is the enemy of automation. Agents do not interpret nuance; they execute commands based on token probability. Loose text constraints (like \"Hey agent, remember to...\") engineer failure into pipelines.\n\n## The Three Tiers of Automated Execution\n",
+      "annotations": {
+        "directives": [
+          "<agent_directive priority=\"[CRITICAL|HIGH]\" domain=\"[Security|Format|Logic]\">\n  [A single, concise sentence using MUST, MUST NOT, ALWAYS, or NEVER. No exposition.]\n</agent_directive>"
+        ],
+        "instructions": [
+          "<agent_instruction execution_type=\"[sequential|conditional]\" target_action=\"[Action Name]\">\n  <step order=\"1\">[Verb-first actionable command]</step>\n  <step order=\"2\">[Verb-first actionable command]</step>\n</agent_instruction>"
+        ],
+        "hints": [
+          "<agent_hint intent=\"[Optimization|Context|Stylistic]\">\n  [Brief observation or context that aids decision-making, written objectively.]\n</agent_hint>"
+        ],
+        "has_unstructured_legacy": true
+      }
+    },
+    "/workspace/.agents/workers/directive-enforcer/main.py": {
+      "context_metadata": "import os\nimport glob\nimport re\nimport json\nimport logging\nimport datetime\nfrom fastapi import FastAPI, HTTPException\nfrom pydantic import BaseModel\nimport uvicorn\nfrom otel_setup import init_telemetry\nfrom opentelemetry.instrumentation.fastapi import FastAPIInstrumentor\nfrom google import genai\nfrom google.genai import types\n\n# <agent_directive priority=\"HIGH\" domain=\"Observability\">",
+      "annotations": {
+        "directives": [
+          "> [!IMPORTANT]\n> **[Agent Directive: <Domain>]**\n> <A single, concise sentence using MUST, MUST NOT, ALWAYS, or NEVER. No exposition.>\n",
+          "<agent_directive priority=\"HIGH\" domain=\"Observability\">\n# DO NOT remove OpenTelemetry initialization.\n# </agent_directive>",
+          "<agent_directive.*?</agent_directive>"
+        ],
+        "instructions": [
+          "> [!NOTE]\n> **[Agent Instruction: <Action Name>]**\n> 1. <Verb-first actionable command>\n> 2. <Verb-first actionable command>\n",
+          "<agent_instruction.*?</agent_instruction>"
+        ],
+        "hints": [
+          "> [!TIP]\n> **[Agent Hint: <Intent>]**\n> <Brief observation or context that aids decision-making, written objectively.>\n",
+          "<agent_hint.*?</agent_hint>"
+        ],
+        "has_unstructured_legacy": true
+      }
+    },
+    "/workspace/docs/agent-directive-enforcer.md": {
+      "context_metadata": "# Directive Enforcer Agent Documentation\n\nThe **Directive Enforcer** is a Python-based A2A worker agent built into `hlbw-ai-hub`. Its primary role is to enforce unambiguous, strict, Markdown Callout structures (Meta-Syntax) on any agent instructions, hints, or directives embedded across the workspace artifacts.\n\nThe enforcer resolves ambiguity by rejecting loose natural language prompts (e.g., *\"hello agent, don't forget to\"*), preventing infinite LLM loops, and consolidating conflicting logic.\n\n## 1. The Three Tiers of Automated Execution\n\nBecause AI agents can easily get confused by legacy comments like `\"make sure to run the tests\"`, the Directive Enforcer forces all instructions into three distinct, structured Markdown alerts: when modifying configuration files, boilerplates, or documentation.\n\n### The `<agent_directive>` (Markdown `> [!IMPORTANT]`)\nThese are explicit constraints that act as hard guardrails. They map directly to specific architectural domains (e.g., Security, Formatting, Logic).\n\n**Example:**\n```markdown",
+      "annotations": {
+        "directives": [
+          "> [!IMPORTANT]\n> **[Agent Directive: Security]**\n> Agents MUST NEVER commit raw Stripe API keys to any branch.\n"
+        ],
+        "instructions": [
+          "> [!NOTE]\n> **[Agent Instruction: Bootstrapping Service]**\n> 1. Read the environment file configuration.\n> 2. Spin up the docker-compose stack.\n> 3. Verify the container health endpoint returns 200.\n"
+        ],
+        "hints": [
+          "> [!TIP]\n> **[Agent Hint: Context]**\n> The authentication module is mocked in local development. Real Google SSO tokens will intentionally fail validation until deployed.\n"
+        ],
+        "has_unstructured_legacy": false
+      }
+    },
+    "/workspace/docs/features/sentry-advisory-protocol.md": {
+      "context_metadata": "# Directive Enforcer: Sentry Advisory Protocol\n\nThe Directive Enforcer operates as a permanently running A2A Sentry Microservice. Its primary objective is combating context rot by ensuring all agent hints, instructions, and directives are universally uniform and logically sound across the entire `hlbw-ai-hub` workspace.\n\n## Context Caching\n\nThe Sentry persists the entire workspace's logic graph into a `directives_graph.json` and loads it into a **Gemini Context Cache**. This grants the LLM instantaneous, cheap \"omniscience\" over every rule in every file\u2014allowing it to detect loops or cross-repo conflicts instantly.\n\n## Consulting the Sentry (For IDEs and CLI)\n\nAs an agent, if you are generating *new* instructions/directives for a user, you MUST consult the Sentry *before* writing the file or committing to git. This guarantees your instruction doesn't violate existing domain heuristics.\n\n### `get_advice` Interface\n\nYou can dispatch a standard HTTP POST request natively to the Sentry container to fetch feedback on a draft instruction.",
+      "annotations": {
+        "directives": [],
+        "instructions": [],
+        "hints": [],
+        "has_unstructured_legacy": false
+      }
+    },
+    "/workspace/docs/toolchain-prompt/prompt.md": {
+      "context_metadata": "# Master AI Toolchain Blueprint\n\n**System Prompt Directive for AI Agents:**\nYou are working in the `hlbw-ai-hub` repository. This is the **Master Agent Control Plane**. \nThis document is a technical blueprint detailing the exact agent instructions, scripts, and Model Context Protocol (MCP) servers necessary to achieve a high-velocity, self-healing, autonomous development environment across the entire organization.\n\n**CORE HUB BEHAVIORS (CRITICAL):**\n1. **MCP First:** Never use slow CLI commands if an MCP server (`ast-analyzer`, `app-tester`, `gcp-logging`) can fetch structured data instantly.\n2. **Swarm First:** Never attempt slow, sequential multi-file refactoring. Always dispatch parallel sub-agents using the Master Agent Coordinator workflow (`scripts/swarm`) when tackling wide changes.\n3. **Control Plane Hygiene:** Do not write domain business logic (e.g., React components, Prisma schemas) to this repository. This repository only writes infrastructure, workflow orchestration, and MCP server management code.\n\nMake sure to implement and maintain all 6 pillars in this workspace.\n\n## Pillar 1. The \"Toolchain Doctor\" (Self-Healing & Diagnostics)\n",
+      "annotations": {
+        "directives": [],
+        "instructions": [],
+        "hints": [],
+        "has_unstructured_legacy": true
+      }
+    },
+    "/workspace/templates/adk-chat-interface/server.js": {
+      "context_metadata": "const express = require('express');\nconst cors = require('cors');\nconst path = require('path');\nrequire('dotenv').config();\n\n> [!IMPORTANT]\n> **[Agent Directive: Security]**\n> OpenTelemetry initialization MUST NOT be removed.\nconst { initTelemetry } = require('./otelSetup');\n\nconst logger = initTelemetry('adk-chat-interface');\nconst app = express();\nconst port = process.env.PORT || 8080;\n\napp.use(cors());",
+      "annotations": {
+        "directives": [
+          "> [!IMPORTANT]\n> **[Agent Directive: Security]**\n> OpenTelemetry initialization MUST NOT be removed.\n"
+        ],
+        "instructions": [],
+        "hints": [],
+        "has_unstructured_legacy": false
+      }
+    },
+    "/workspace/templates/cloud-run/node/index.js": {
+      "context_metadata": "const express = require('express');\n> [!IMPORTANT]\n> **[Agent Directive: Logic]**\n> OpenTelemetry initialization MUST NOT be removed.\n> [!TIP]\n> **[Agent Hint: Context]**\n> Maintaining OpenTelemetry initialization ensures uniformity across hlbw-ai-hub services.\nconst { initTelemetry } = require('./otelSetup');\nconst logger = initTelemetry('node-cloudrun-agent');\nconst app = express();\n\n> [!IMPORTANT]\n> **[Agent Directive: Logic]**\n> The port variable MUST always be assigned using 'process.env.PORT'.\n> [!TIP]",
+      "annotations": {
+        "directives": [
+          "> [!IMPORTANT]\n> **[Agent Directive: Logic]**\n> OpenTelemetry initialization MUST NOT be removed.\n> [!TIP]\n> **[Agent Hint: Context]**\n> Maintaining OpenTelemetry initialization ensures uniformity across hlbw-ai-hub services.\n",
+          "> [!IMPORTANT]\n> **[Agent Directive: Logic]**\n> The port variable MUST always be assigned using 'process.env.PORT'.\n> [!TIP]\n> **[Agent Hint: Context]**\n> The default port for Cloud Run environments is 8080.\n"
+        ],
+        "instructions": [],
+        "hints": [
+          "> [!TIP]\n> **[Agent Hint: Context]**\n> Maintaining OpenTelemetry initialization ensures uniformity across hlbw-ai-hub services.\n",
+          "> [!TIP]\n> **[Agent Hint: Context]**\n> The default port for Cloud Run environments is 8080.\n"
+        ],
+        "has_unstructured_legacy": false
+      }
+    },
+    "/workspace/templates/docker/node/index.js": {
+      "context_metadata": "const http = require('http');\n> [!IMPORTANT]\n> **[Agent Directive: Logic]**\n> OpenTelemetry initialization MUST NOT be removed.\nconst { initTelemetry } = require('./otelSetup');\nconst logger = initTelemetry('node-docker-agent');\n\n> [!IMPORTANT]\n> **[Agent Directive: Logic]**\n> The PORT environment variable MUST ALWAYS be used for port configuration.\nconst port = process.env.PORT || 8080;\n\nconst server = http.createServer((req, res) => {\n  res.statusCode = 200;\n  res.setHeader('Content-Type', 'text/plain');",
+      "annotations": {
+        "directives": [
+          "> [!IMPORTANT]\n> **[Agent Directive: Logic]**\n> OpenTelemetry initialization MUST NOT be removed.\n",
+          "> [!IMPORTANT]\n> **[Agent Directive: Logic]**\n> The PORT environment variable MUST ALWAYS be used for port configuration.\n"
+        ],
+        "instructions": [],
+        "hints": [],
+        "has_unstructured_legacy": false
+      }
+    },
+    "/workspace/wrappers/a2a/main.py": {
+      "context_metadata": "import os\nfrom fastapi import FastAPI, HTTPException\nfrom pydantic import BaseModel\nimport uvicorn\nfrom otel_setup import init_telemetry\nfrom opentelemetry.instrumentation.fastapi import FastAPIInstrumentor\n\n> [!IMPORTANT]\n> **[Agent Directive: Security]**\n> OpenTelemetry initialization MUST NOT be removed.\nlogger = init_telemetry(\"a2a-wrapper\")\napp = FastAPI(title=\"A2A Agent Wrapper\", description=\"Agent-to-Agent Communication Wrapper\")\n\nFastAPIInstrumentor.instrument_app(app)\n",
+      "annotations": {
+        "directives": [
+          "> [!IMPORTANT]\n> **[Agent Directive: Security]**\n> OpenTelemetry initialization MUST NOT be removed.\n"
+        ],
+        "instructions": [],
+        "hints": [],
+        "has_unstructured_legacy": false
+      }
+    },
+    "/workspace/wrappers/mcp/index.js": {
+      "context_metadata": "import { Server } from \"@modelcontextprotocol/sdk/server/index.js\";\nimport { StdioServerTransport } from \"@modelcontextprotocol/sdk/server/stdio.js\";\nimport { CallToolRequestSchema, ListToolsRequestSchema } from \"@modelcontextprotocol/sdk/types.js\";\n\n> [!IMPORTANT]\n> **[Agent Directive: Logic]**\n> OpenTelemetry initialization MUST NOT be removed.\nimport { initTelemetry } from \"./otelSetup.js\";\n\nconst logger = initTelemetry('mcp-agent-wrapper');\n\nconst server = new Server({\n  name: \"mcp-wrapper-template\",\n  version: \"1.0.0\"\n}, {",
+      "annotations": {
+        "directives": [
+          "> [!IMPORTANT]\n> **[Agent Directive: Logic]**\n> OpenTelemetry initialization MUST NOT be removed.\n"
+        ],
+        "instructions": [],
+        "hints": [],
+        "has_unstructured_legacy": false
+      }
+    }
+  }
+}

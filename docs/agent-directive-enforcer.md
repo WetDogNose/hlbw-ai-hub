@@ -9,9 +9,11 @@ The enforcer resolves ambiguity by rejecting loose natural language prompts (e.g
 Because AI agents can easily get confused by legacy comments like `"make sure to run the tests"`, the Directive Enforcer forces all instructions into three distinct, structured Markdown alerts: when modifying configuration files, boilerplates, or documentation.
 
 ### The `<agent_directive>` (Markdown `> [!IMPORTANT]`)
+
 These are explicit constraints that act as hard guardrails. They map directly to specific architectural domains (e.g., Security, Formatting, Logic).
 
 **Example:**
+
 ```markdown
 > [!IMPORTANT]
 > **[Agent Directive: Security]**
@@ -19,9 +21,11 @@ These are explicit constraints that act as hard guardrails. They map directly to
 ```
 
 ### The `<agent_instruction>` (Markdown `> [!NOTE]`)
+
 These map to strict execution workflows, breaking down complex tasks into specific chronological steps.
 
 **Example:**
+
 ```markdown
 > [!NOTE]
 > **[Agent Instruction: Bootstrapping Service]**
@@ -31,49 +35,41 @@ These map to strict execution workflows, breaking down complex tasks into specif
 ```
 
 ### The `<agent_hint>` (Markdown `> [!TIP]`)
+
 These provide vital downstream situational context. They are non-blocking observations that help a future agent safely navigate the codebase.
 
 **Example:**
+
 ```markdown
 > [!TIP]
 > **[Agent Hint: Context]**
 > The authentication module is mocked in local development. Real Google SSO tokens will intentionally fail validation until deployed.
 ```
 
----
+## 2. Operating Architecture (The Sentry)
 
-## 2. Operating Modes (The Toolchain Doctor)
+The Directive Enforcer no longer runs as a sporadic CLI command. It operates as a continuous, Dockerized A2A Sentry microservice.
 
-The Directive Enforcer acts continuously across your workspace, but it can be managed natively via the `toolchain-doctor`. It operates in three distinct modes:
+### Holistic Context Caching
 
-### Mode 1: Identify (Static Auditor)
+On boot, the Sentry container maps the repository and extracts all agent annotations across the codebase into a Persistent JSON Graph. It then uploads this graph into a **Google GenAI Context Cache**, grating the LLM cheap and instantaneous "omniscience" over every rule in every file. (If the workspace is too small for context caching, it automatically routes the logic as an inline string payload).
 
-The default behavior of the toolchain validation step. It reads all `.js`, `.ts`, `.py`, and `.md` files. If it finds loose instructions or legacy prompts without the XML meta-syntax, it will fail the build pipeline.
+### Continuous Swarm Integration
 
-*   **Execution**: `npm run doctor:audit`
-*   **Result**: Prints the warnings identifying exactly which lines in which files violate the strict syntax constraints.
+During agent swarming operations, the Master Agent Coordinator automatically invokes the Sentry just before a Git merge occurs (`scripts/swarm/manage-worktree.ts`). The Sentry evaluates all modified files for conflicting logic, redundant guidelines, or malformed tags, and automatically rewrites the files safely before they touch the mainline branch.
 
-### Mode 2: Fix (LLM Auto-Healing)
+### Advisory Protocol (`get_advice`)
 
-Invokes the **Google GenAI SDK** (using `gemini-2.5-flash`) to actively resolve problems within the files in real-time.
-
-*   **Execution**: `npm run doctor:fix`
-*   **Result**: The agent parses the source code, searches for arbitrary constraints, evaluates existing tags for duplicate logic or looping instructions, and elegantly rewrites the file safely mapping everything to the strict Markdown callout structure. The original code remains completely untouched.
-
-### Mode 3: Graph (Architectural Mapping)
-
-Extracts all active Agent Directives, Instructions, and Hints from the raw files across the workspace and feeds them to the Gemini LLM to categorize their relationships.
-
-*   **Execution**: `npm run doctor:graph`
-*   **Result**: Exports a comprehensive Mermaid Diagram to `docs/agent-directives-graph.md` mapping how the directives interact with specific domains, files, and core concepts.
+The Antigravity IDE and Gemini CLI can asynchronously query the Sentry's `http://localhost:8080/a2a/message` endpoint to get LLM-driven architectural advice on a draft instruction relative to the entire cached workspace context.
 
 ---
 
 ## 3. Architecture & Location
 
-The Directive Enforcer runs seamlessly alongside the rest of the node-based Master Control Plane but uses an isolated Python ecosystem for high-compute LLM ingestion.
+The Directive Enforcer runs seamlessly alongside the rest of the node-based Master Control Plane but uses an isolated Python ecosystem for high-compute LLM processing.
 
-*   **Worker Source Code**: `.agents/workers/directive-enforcer/main.py`
-*   **Dependencies**: Uses `Requirements.txt` (FastAPI, opentelemetry, google-genai) heavily orchestrated by `scripts/bootstrap.mjs` on install.
-*   **Invocation**: Receives standard A2A Messages via port execution but is also exposed directly via CLI flags in `scripts/toolchain-doctor.js`.
-*   **Skill Definitions**: The semantic breakdown of the worker is stored in `.agents/skills/directive-enforcer/SKILL.md`.
+* **Worker Source Code**: `.agents/workers/directive-enforcer/main.py`
+* **Docker Container**: `.agents/workers/directive-enforcer/Dockerfile`
+* **Dependencies**: Uses `requirements.txt` (FastAPI, opentelemetry, google-genai).
+* **Invocation**: Deployed via isolated Docker run mapping the workspace volume to `/workspace`. Listens continuously on Port `8080`.
+* **Skill Definitions**: The semantic breakdown of the worker is stored in `.agents/skills/directive-enforcer/SKILL.md`.

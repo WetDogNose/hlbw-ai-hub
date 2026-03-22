@@ -1,6 +1,6 @@
 ---
 name: "Directive Enforcer Agent"
-description: "A specialized A2A worker agent that audits and enforces rigorous, unambiguous XML-based agent instructions."
+description: "A specialized A2A worker agent that audits and enforces rigorous, unambiguous Markdown Callout-based agent instructions."
 ---
 
 # Directive Enforcer Agent
@@ -17,43 +17,37 @@ Ambiguity is the enemy of automation. Agents do not interpret nuance; they execu
 
 Directives act at the highest priority level and usually revolve around constraints (e.g., security, strict formatting rules). They use absolute language ("MUST", "NEVER").
 
-**Meta-Syntax Target**:
+**Meta-Syntax Target (Markdown Callout Standard)**:
 
-```xml
-<agent_directive priority="[CRITICAL|HIGH]" domain="[Security|Format|Logic]">
-  [A single, concise sentence using MUST, MUST NOT, ALWAYS, or NEVER. No exposition.]
-</agent_directive>
-```
+> [!IMPORTANT]
+> **[Agent Directive: `<Domain>`]**
+> `<A single, concise sentence using MUST, MUST NOT, ALWAYS, or NEVER. No exposition.>`
 
 ### 2. The Agent Instruction (The Standard Operating Procedure)
 
 Instructions define sequential or conditional logic. They break down a task into enumerable, actionable steps.
 
-**Meta-Syntax Target**:
+**Meta-Syntax Target (Markdown Callout Standard)**:
 
-```xml
-<agent_instruction execution_type="[sequential|conditional]" target_action="[Action Name]">
-  <step order="1">[Verb-first actionable command]</step>
-  <step order="2">[Verb-first actionable command]</step>
-</agent_instruction>
-```
+> [!NOTE]
+> **[Agent Instruction: `<Action Name>`]**
+> 
+> 1. `<Verb-first actionable command>`
+> 2. `<Verb-first actionable command>`
 
 ### 3. The Agent Hint (The Contextual Leverage)
 
 Hints provide optimization vectors or contextual backgrounds without strictly constraining behavior.
 
-**Meta-Syntax Target**:
+**Meta-Syntax Target (Markdown Callout Standard)**:
 
-```xml
-<agent_hint intent="[Optimization|Context|Stylistic]">
-  [Brief observation or context that aids decision-making, written objectively.]
-</agent_hint>
-```
+> [!TIP]
+> **[Agent Hint: `<Intent>`]**
+> `<Brief observation or context that aids decision-making, written objectively.>`
 
 ## How To Trigger
 
-The `directive-enforcer` tool can be triggered via standard A2A message dispatch or asynchronously analyzed on the workspace via the `toolchain-doctor`.
+The `directive-enforcer` operates continuously as a Dockerized A2A microservice.
 
-```bash
-npm run toolchain-doctor -- --audit-directives
-```
+- **Continuous Integration**: It is automatically invoked by the Master Agent Coordinator (`scripts/swarm/manage-worktree.ts`) before any swarm branch is merged into the mainline.
+- **Manual Advisory**: Agents and IDEs can POST to `http://localhost:8080/a2a/message` with `action: "get_advice"` to validate draft instructions against the holistic memory graph.

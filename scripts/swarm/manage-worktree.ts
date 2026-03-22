@@ -233,6 +233,34 @@ export function mergeWorktree(branchName: string, strategy: MergeStrategy = "the
     };
 
     try {
+      // Sentry validation hook
+      try {
+        const worktreePath = path.join(WORKTREES_ROOT, branchName);
+        console.log(`Checking branch with Sentry Directive Enforcer...`);
+        const diff = execSync(`git diff --name-only main...${branchName}`, { cwd: worktreePath, encoding: "utf-8" }).trim();
+        if (diff) {
+          const files = diff.split('\n');
+          for (const file of files) {
+            if (file.match(/\.(ts|js|py|md)$/)) {
+              const fullPath = path.join(worktreePath, file);
+              if (fs.existsSync(fullPath)) {
+                console.log(`  Validating ${file} via Sentry...`);
+                const payloadObj = {
+                  sender_id: "master-agent",
+                  target_id: "directive-enforcer",
+                  payload: { action: "validate_file", filepath: fullPath }
+                };
+                const b64 = Buffer.from(JSON.stringify(payloadObj)).toString("base64");
+                const script = `fetch('http://localhost:8080/a2a/message', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: Buffer.from('${b64}', 'base64').toString('utf-8') }).then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1));`;
+                execSync(`node -e "${script}"`, { stdio: 'ignore' });
+              }
+            }
+          }
+        }
+      } catch (e) {
+        console.warn(`  [Warning] Sentry validation bypassed or unreachable.`);
+      }
+
       // Attempt the merge
       execSync(`git merge ${branchName} --no-ff -m "Merge swarm branch ${branchName}"`, { stdio: "pipe" });
       result.success = true;

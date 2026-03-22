@@ -30,7 +30,11 @@ async def receive_message(message: A2AMessage):
     logger.info(f"Received A2A message from {message.sender_id} to {message.target_id}")
     
     try:
-        # TODO: Route the message to the internal agent logic here
+        > [!NOTE]
+        > **[Agent Instruction: Integrate Internal Agent Logic]**
+        > 1. Route `message.payload` to the designated internal agent's processing logic.
+        > 2. Capture and process the internal agent's execution outcome.
+        > 3. Populate `response_payload` with the internal agent's processed result or acknowledgment.
         
         # Process payload
         # ...

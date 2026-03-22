@@ -10,9 +10,6 @@ console.log('🩺 Starting Toolchain Doctor...\n');
 const args = process.argv.slice(2);
 const isUpdate = args.includes('--update');
 const isMcpRefresh = args.includes('--mcp-refresh');
-const isAuditDirectives = args.includes('--audit-directives');
-const isFixDirectives = args.includes('--fix-directives');
-const isGraphDirectives = args.includes('--graph-directives');
 
 if (isUpdate) {
     console.log('🔄 Update flag detected. Launching Toolchain Updater...\n');
@@ -21,21 +18,6 @@ if (isUpdate) {
         process.exit(0);
     } catch (e) {
         console.error(`🚨 Toolchain Updater failed: ${e.message}\n`);
-        process.exit(1);
-    }
-}
-
-if (isAuditDirectives || isFixDirectives || isGraphDirectives) {
-    const mode = isGraphDirectives ? 'graph' : (isFixDirectives ? 'fix' : 'identify');
-    const verb = mode === 'fix' ? 'Enforcing' : (mode === 'graph' ? 'Mapping' : 'Auditing');
-    console.log(`🛡️  ${verb} Agent Directives across workspace [Mode: ${mode}]...\n`);
-    try {
-        const agentPy = path.join(__dirname, '..', '.agents', 'workers', 'directive-enforcer', 'main.py');
-        const pythonCmd = process.platform === 'win32' ? path.join(__dirname, '..', '.venv', 'Scripts', 'python.exe') : path.join(__dirname, '..', '.venv', 'bin', 'python');
-        execSync(`"${pythonCmd}" "${agentPy}" --cli-run "${path.join(__dirname, '..')}" --mode ${mode}`, { stdio: 'inherit' });
-        process.exit(0); // Only run the enforcement, exit correctly afterward
-    } catch (e) {
-        console.error(`🚨 Directive Enforcer failed: ${e.message}\n`);
         process.exit(1);
     }
 }
