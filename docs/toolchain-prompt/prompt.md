@@ -104,3 +104,13 @@ Standardize how pipelines and runner environments are built to prevent ad-hoc an
 * "If the user asks to create or deploy a CI/CD pipeline, you MUST look in `docs/templates/pipelines.md` for guidance."
 * "Never invent a GitHub Actions workflow from scratch. Always copy the base templates located inside `templates/pipelines/github-actions/`."
 * "If queried about GitHub Actions runners or self-hosted infrastructure, refer the user immediately to `docs/templates/pipelines/gha-runners.md` which explains standard vs. self-hosted runners."
+
+## Pillar 8. Agent Directive Enforcement (Sentry Validation)
+
+To eliminate "context rot" and perfectly align multi-agent workflows, all rules, hints, and instructions for other agents MUST be rigorously verified and converted to explicit Markdown Callouts.
+
+**1. Create the AI Skill (`.agents/skills/directive-enforcer-sentry/SKILL.md`):**
+Instruct the AI on the architectural validation loop:
+* "If you are writing a new Agent Directive (`> [!IMPORTANT]`), Agent Instruction (`> [!NOTE]`), or Agent Hint (`> [!TIP]`), you MUST NOT write it directly to the file based on intuition."
+* "You MUST execute the `directive-enforcer-sentry` payload snippet to query the continuous A2A Sentry microservice (`http://localhost:8080/a2a/message`)."
+* "The Sentry will rewrite your instruction to prevent logical loops and context collisions across your entire massive workspace. You MUST paste the exact Sentry rewrite into the file."
