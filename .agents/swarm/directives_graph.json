@@ -55,6 +55,21 @@
         "has_unstructured_legacy": false
       }
     },
+    "/workspace/docs/agent-directives-graph.md": {
+      "context_metadata": "# Agent Directives Graph\n\nThis graph visualizes the relationships between codebase files, the agent directives, instructions, and hints they contain, and the core architectural concepts these rules address. It serves as a comprehensive overview to combat context rot and ensure logical consistency across the multi-agent workspace.\n\n```mermaid\ngraph TD\n  subgraph Codebase Files\n    F_0[\"/workspace/.agents/skills/directive-enforcer/SKILL.md\"]\n    F_1[\"/workspace/.agents/workers/directive-enforcer/main.py\"]\n    F_2[\"/workspace/docs/agent-directive-enforcer.md\"]\n    F_3[\"/workspace/docs/agent-directives-graph.md\"]\n    F_4[\"/workspace/docs/features/directive-enforcer-sentry.md\"]\n    F_5[\"/workspace/docs/toolchain-prompt/prompt.md\"]\n    F_6[\"/workspace/exports/replication/directive-enforcer-replication-blueprint.md\"]\n    F_7[\"/workspace/exports/replication/directive-enforcer-replication-starter-templates.md\"]",
+      "annotations": {
+        "directives": [
+          "<agent_directive.*?</agent_directive>"
+        ],
+        "instructions": [
+          "<agent_instruction.*?</agent_instruction>"
+        ],
+        "hints": [
+          "<agent_hint.*?</agent_hint>"
+        ],
+        "has_unstructured_legacy": false
+      }
+    },
     "/workspace/docs/features/directive-enforcer-sentry.md": {
       "context_metadata": "# Directive Enforcer: Sentry Protocol\n\nThe Directive Enforcer operates as a permanently running A2A Sentry Microservice. Its primary objective is combating context rot by ensuring all agent hints, instructions, and directives are universally uniform and logically sound across the entire `hlbw-ai-hub` workspace.\n\n## Context Caching\n\nThe Sentry persists the entire workspace's logic graph into a `directives_graph.json` and loads it into a **Gemini Context Cache**. This grants the LLM instantaneous, cheap \"omniscience\" over every rule in every file\u2014allowing it to detect loops or cross-repo conflicts instantly.\n\n## Consulting the Sentry (For IDEs and CLI)\n\n\n> [!NOTE]\n> **[Agent Instruction: Sentry Consultation Procedure]**\n> 1. When generating new instructions or directives, prepare a draft instruction.\n> 2. Dispatch an HTTP POST request to the Sentry's A2A message endpoint (`http://localhost:8080/a2a/message`) with the `get_advice` action, target filepath, and draft instruction.",
       "annotations": {
@@ -86,6 +101,21 @@
         ],
         "hints": [],
         "has_unstructured_legacy": true
+      }
+    },
+    "/workspace/exports/replication/agent-directives-graph.md": {
+      "context_metadata": "# Agent Directives Graph\n\nThis graph visualizes the relationships between codebase files, the agent directives, instructions, and hints they contain, and the core architectural concepts these rules address. It serves as a comprehensive overview to combat context rot and ensure logical consistency across the multi-agent workspace.\n\n```mermaid\ngraph TD\n  subgraph Codebase Files\n    F_0[\"/workspace/.agents/skills/directive-enforcer/SKILL.md\"]\n    F_1[\"/workspace/.agents/workers/directive-enforcer/main.py\"]\n    F_2[\"/workspace/docs/agent-directive-enforcer.md\"]\n    F_3[\"/workspace/docs/agent-directives-graph.md\"]\n    F_4[\"/workspace/docs/features/directive-enforcer-sentry.md\"]\n    F_5[\"/workspace/docs/toolchain-prompt/prompt.md\"]\n    F_6[\"/workspace/exports/replication/directive-enforcer-replication-blueprint.md\"]\n    F_7[\"/workspace/exports/replication/directive-enforcer-replication-starter-templates.md\"]",
+      "annotations": {
+        "directives": [
+          "<agent_directive.*?</agent_directive>"
+        ],
+        "instructions": [
+          "<agent_instruction.*?</agent_instruction>"
+        ],
+        "hints": [
+          "<agent_hint.*?</agent_hint>"
+        ],
+        "has_unstructured_legacy": false
       }
     },
     "/workspace/exports/replication/directive-enforcer-replication-blueprint.md": {
