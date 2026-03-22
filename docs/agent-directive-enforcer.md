@@ -60,7 +60,7 @@ During agent swarming operations, the Master Agent Coordinator automatically inv
 
 ### Advisory Protocol (`get_advice`)
 
-The Antigravity IDE and Gemini CLI MUST consult the Sentry's `http://localhost:8080/a2a/message` endpoint to get LLM-driven architectural advice on a draft instruction relative to the entire cached workspace context. The exact usage rules and node fetching script constraints for agents are standardized within the **[Directive Enforcer Sentry Skill](/workspace/.agents/skills/directive-enforcer-sentry/SKILL.md)**.
+The Sentry's `http://localhost:8080/a2a/message` endpoint offers LLM-driven architectural advice on draft instructions, leveraging the entire cached workspace context. For the explicit directives on when and how agents MUST consult the Sentry, refer to the [Directive Enforcer Sentry Protocol](/workspace/docs/features/directive-enforcer-sentry.md) and the [Directive Enforcer Sentry Skill](/workspace/.agents/skills/directive-enforcer-sentry/SKILL.md).
 
 For an in-depth explanation of the Sentry's automated validation rules, semantic logic enforcement, and the JSON payload schema, please refer to the **[Directive Enforcer Sentry Protocol](/workspace/docs/features/directive-enforcer-sentry.md)**.
 
@@ -70,9 +70,9 @@ For an in-depth explanation of the Sentry's automated validation rules, semantic
 
 The Directive Enforcer runs seamlessly alongside the rest of the node-based Master Control Plane but uses an isolated Python ecosystem for high-compute LLM processing.
 
-* **Worker Source Code**: `.agents/workers/directive-enforcer/main.py`
-* **Docker Container**: `.agents/workers/directive-enforcer/Dockerfile`
-* **Dependencies**: Uses `requirements.txt` (FastAPI, opentelemetry, google-genai).
-* **Invocation**: Deployed via isolated Docker run mapping the workspace volume to `/workspace`. Listens continuously on Port `8080`.
-* **Worker Skill**: The semantic breakdown of the internal Sentry is in `.agents/skills/directive-enforcer/SKILL.md`.
-* **Advisory Caller Skill**: The required instructions for IDE agents / sub-agents to invoke the Sentry are maintained in **[`.agents/skills/directive-enforcer-sentry/SKILL.md`](/workspace/.agents/skills/directive-enforcer-sentry/SKILL.md)**.
+*   **Worker Source Code**: `.agents/workers/directive-enforcer/main.py`
+*   **Docker Container**: `.agents/workers/directive-enforcer/Dockerfile`
+*   **Dependencies**: Uses `requirements.txt` (FastAPI, opentelemetry, google-genai).
+*   **Invocation**: Deployed via isolated Docker run mapping the workspace volume to `/workspace`. Listens continuously on Port `8080`.
+*   **Worker Skill**: The semantic breakdown of the internal Sentry is in `.agents/skills/directive-enforcer/SKILL.md`.
+*   **Advisory Caller Skill**: The required instructions for IDE agents / sub-agents to invoke the Sentry are maintained in **[`.agents/skills/directive-enforcer-sentry/SKILL.md`](/workspace/.agents/skills/directive-enforcer-sentry/SKILL.md)**.

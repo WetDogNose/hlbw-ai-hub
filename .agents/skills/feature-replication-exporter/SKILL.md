@@ -27,12 +27,13 @@ Ensure the blueprint includes at minimum:
 - **Feature Intent**: A key description of the primary role and intent of the feature (e.g., "The Directive Enforcer is a Python-based A2A worker agent... Its primary role is to enforce unambiguous, strict Meta-Syntax... The enforcer resolves ambiguity by rejecting loose prompts...").
 - **Purpose & Target Outcomes**: High-level target outcomes to replicate.
 - **Integration Points**: Exactly where and how this feature is wired into the broader ecosystem/toolchain to function properly.
+- **Originating Tech Stack & Context**: (Reference Only) High-level overview of the exact tech choices, databases, frameworks, or cloud services the original feature was built on, serving purely as an educational building block to understand its design origins.
 - **Agent Triggers (Hints, Directives, Instructions)**: The exact agent hints, directives, and instructions required to reliably integrate it and have it triggered by agents at the right time.
 - **Capability Contract**: What the feature *must* be able to do.
-- **Reference Architecture**: How abstract components (services, stores, adapters) logically interact.
+- **Reference Architecture**: A Mermaid architectural diagram and text outlining how abstract components (services, stores, adapters) logically interact.
 - **Data Models**: Agnostic schemas of the state/data structures (include exact required fields).
 - **Core Logic & Heuristics**: If the feature relies on specific regex, parsing rules, or algorithms, YOU MUST include the exact technical logic in the blueprint.
-- **System Prompts & LLM Engineering**: If the feature relies on LLMs, provide the EXACT system prompts and constraint rules required to make it work.
+- **System Prompts & LLM Engineering**: If the feature relies on LLMs, provide the EXACT system prompts, critical prompt snippets that affect the AI portion of the functionality, and constraint rules required to make it work.
 - **Tool/API Surface**: The exact interfaces, endpoints, and JSON schemas the agent or user will call.
 - **Scheduling/Decision Policies** (if applicable): Explicit rules on how system state transitions occur.
 - **Step-by-Step Implementation Sequence**: A granular, chronological checklist for an agent to follow, reducing all ambiguity over what to build first.

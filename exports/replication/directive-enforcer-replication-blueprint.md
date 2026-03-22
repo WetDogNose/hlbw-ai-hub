@@ -8,10 +8,35 @@ The Directive Enforcer is a Python-based A2A worker agent built into a global to
 
 Maintain a global "memory graph" of all established rules, directives, and hints across a codebase to prevent context rot. Automatically rewrite loose, human-like agent instructions into a strict, machine-enforceable meta-syntax while globally resolving logic conflicts.
 
+## Originating Tech Stack & Context (Reference Only)
+
+- **Language/Compute**: Built initially as a Python script orchestrated as an A2A (Agent-to-Agent) worker within a Next.js/TypeScript monorepo. It relies on standard library Python data structures (`os.walk`, `re`).
+- **Data Persistence**: Originally cached the JSON memory graph to standard filesystem `.agents/swarm/directives_graph.json`. Designed to offload this exact structure to an LLM Context Caching layer (like Google Vertex AI Context Cache or OpenAI) for massive repositories.
+- **LLM Provider**: Originally built against Google Gemini 1.5 Pro (temperature 0) to exploit 2-million token windows for massive workspace context graphs.
+
 ## Integration Points
 
 - **Toolchain Doctor / CI**: Runs periodically (or on push) to scan all `SKILL.md` and repository artifacts.
-- **Agent Memory Interceptor**: Any master IDE agent drafting a task or updating a `.md` artifact must call out to the Directive Enforcer via A2A messaging to validate their changes *before* committing.
+- **Agent Memory Interceptor**:
+> [!IMPORTANT]
+> **[Agent Directive: Agent Workflow]**
+> Master IDE agents MUST call out to the Directive Enforcer via A2A messaging to validate changes BEFORE committing any `.md` artifact updates.
+
+## Reference Architecture
+
+```mermaid
+graph TD
+    A[Master IDE Agent] -->|1. A2A Message: Draft Instruction| B(Directive Enforcer Sentry)
+    C[Toolchain Doctor / CI] -->|1. Trigger Background Scan| B
+    B -->|2. Read/Parse| D{Workspace Artifacts}
+    D -->|3. Extract| E[(JSON Memory Graph)]
+    E -.->|4. Upload Context| F[LLM Context Cache]
+    F -->|5. Evaluate Draft vs Graph| G[LLM Engine temp:0.0]
+    G -->|6. Validated Rewrite| B
+    B -->|7. Return Response / Commit| A
+```
+
+The Directive Enforcer acts as a central middleware validation layer. Master Agents or CI routines dispatch draft instructions or trigger scans to the Sentry. The Sentry parses workspace artifacts to maintain a memory graph, which is fed into an LLM engine with massive context capabilities to resolve logical collisions and rewrite instructions into strict Meta-Syntax safely.
 
 ## Agent Triggers (Hints, Directives, Instructions)
 
@@ -27,16 +52,20 @@ To ensure orchestrator/master agents use the feature reliably, the following hin
 
 ## Capability Contract
 
-1. **Parser & Graph Builder**: Recursively scan the codebase, isolating files with annotation triggers, extracting the exact first 15 lines of context, and the raw annotations via regex.
-2. **Context Caching Layer**: Offload or inline the JSON graph to an LLM capable of holding massive context windows to evaluate drafts against existing rules.
-3. **Advisory Validation (`get_advice`)**: Pass a draft instruction to the LLM. The LLM MUST evaluate Global Conflicts, Logical Loops, and Contextual Alignment, returning a safely rewritten instruction.
-4. **Continuous Validation (`validate_file`)**: Rewrite files safely in CI/CD without mutilating surrounding logic.
+> [!NOTE]
+> **[Agent Instruction: Capability Contract]**
+> 1. Recursively scan the codebase, isolating files with annotation triggers, extracting the exact first 15 lines of context, and raw annotations via regex.
+> 2. Offload or inline the JSON graph to an LLM capable of holding massive context windows to evaluate drafts against existing rules.
+> 3. Pass a draft instruction to the LLM; the LLM MUST evaluate Global Conflicts, Logical Loops, and Contextual Alignment, returning a safely rewritten instruction.
+> 4. Rewrite files safely in CI/CD without mutilating surrounding logic.
 
 ---
 
 ## Core Logic & Heuristics
 
-The scanner MUST identify files requiring tracking by detecting specific string triggers and MUST extract annotations via the following exact regex patterns. Do not deviate from these patterns.
+> [!IMPORTANT]
+> **[Agent Directive: Scanner Logic]**
+> The scanner MUST identify files for tracking by detecting specific string triggers and MUST extract annotations using the exact provided regex patterns.
 
 **Detection Triggers**:
 - `**[agent `
@@ -50,7 +79,9 @@ The scanner MUST identify files requiring tracking by detecting specific string 
 - Legacy D/I/H: `r'<agent_directive.*?</agent_directive>'` (with DOTALL)
 
 **Context Windowing**:
-For every matched file, extract exactly the first 15 lines (`splitlines()[:15]`). This guarantees the LLM understands the file's primary purpose.
+> [!IMPORTANT]
+> **[Agent Directive: Context Extraction]**
+> The parser MUST extract exactly the first 15 lines of every matched file to ensure LLM context.
 
 ---
 
@@ -86,7 +117,17 @@ For every matched file, extract exactly the first 15 lines (`splitlines()[:15]`)
 
 ## System Prompts & LLM Engineering
 
-The core value of this feature rests completely on the exact wording of the LLM prompts. **You must configure your LLM Engine with temperature 0.0 and the following exact System Instruction:**
+> [!TIP]
+> **[Agent Hint: LLM Engineering]**
+> The effectiveness of this feature is entirely dependent on the precise wording of the LLM prompts.
+
+> [!IMPORTANT]
+> **[Agent Directive: LLM Configuration]**
+> The LLM Engine MUST be configured with a temperature of 0.0.
+
+> [!NOTE]
+> **[Agent Instruction: System Prompt Injection]**
+> The following System Instruction MUST be injected verbatim into the LLM Engine's System Prompt.
 
 ```text
 You are the Directive Enforcer A2A Agent, the Sentry of the workspace.
@@ -103,7 +144,10 @@ CRITICAL RULE FOR MIGRATION/ADVISORY:
 If rewriting or migrating an instruction to the new markdown format, you MUST NOT lose any fine-grained detail, specificity, or nuance. Preserve every exact technical constraint and condition.
 ```
 
-**Meta-Syntax Formatting Rules (Inject these into the System Prompt):**
+> [!NOTE]
+> **[Agent Instruction: System Prompt Injection]**
+> The following Meta-Syntax Formatting Rules MUST be injected verbatim into the LLM Engine's System Prompt.
+
 ```text
 RULE: DIRECTIVE GENERATION
 When inserting constraints or absolute rules into an artifact, you MUST use the following syntactic standard to ensure downstream compliance. Never output loose constraints.
@@ -128,7 +172,10 @@ Format:
 > <Brief observation or context that aids decision-making, written objectively.>
 ```
 
-**File Validation Prompt (`validate_file` action):**
+> [!NOTE]
+> **[Agent Instruction: System Prompt Injection]**
+> The following File Validation Prompt MUST be injected verbatim into the LLM Engine's System Prompt for the `validate_file` action.
+
 ```text
 EVALUATE AND MIGRATE ENTIRE FILE:
 Target File: {filepath}
@@ -147,17 +194,21 @@ File Content:
 
 ## Step-by-Step Implementation Sequence
 
-1. **Build the Parser**: Implement a standalone function to walk directories, ignore artifacts (`node_modules`, `dist`), read target files (`.ts`, `.py`, `.md`), apply the string triggers, and run the regex extraction logic.
-2. **Setup Persistent Storage**: Ensure the resulting JSON graph is written to disk (e.g., `.agents/swarm/directives_graph.json`) to act as the primary Source of Truth.
-3. **Build LLM Adapter**: Abstract your LLM API. Implement logic to either inline the JSON graph into the prompt (for small codebases) or upload the JSON to an LLM Context Cache (for massive codebases).
-4. **Stand up API Routing**: Implement HTTP endpoints (e.g., `POST /a2a/message`) parsing the envelope to route to `get_advice` or `validate_file`.
-5. **Implement `validate_file` Sanitization**: Ensure the output stream from the LLM strips backtick fences (```) before writing directly to the disk, preventing file corruption.
+> [!NOTE]
+> **[Agent Instruction: Implementation Sequence]**
+> 1. Implement a standalone function to walk directories, ignore artifacts (`node_modules`, `dist`), read target files (`.ts`, `.py`, `.md`), apply string triggers, and run regex extraction logic.
+> 2. Ensure the resulting JSON graph is written to disk (e.g., `.agents/swarm/directives_graph.json`) to act as the primary Source of Truth.
+> 3. Abstract your LLM API; implement logic to either inline the JSON graph into the prompt (for small codebases) or upload the JSON to an LLM Context Cache (for massive codebases).
+> 4. Implement HTTP endpoints (e.g., `POST /a2a/message`) parsing the envelope to route to `get_advice` or `validate_file`.
+> 5. Ensure the output stream from the LLM strips backtick fences (```) before writing directly to the disk, preventing file corruption.
 
 ---
 
 ## Verification Requirements (Definition of Done)
 
-1. **Parser Integrity Test**: Create a dummy file with legacy `<agent_directive>` tags and new Markdown Callout tags. Assert that the Parser exacts both to the JSON graph.
-2. **Circular Dependency Test**: Cache a rule "A requires B". Submit draft "B requires A". Assert LLM rejects.
-3. **Format Rigidity Test**: Submit draft "hey, don't forget to close the server". Assert LLM returns exactly the `> [!NOTE]` meta-syntax structure with numbered steps.
-4. **File Mutilation Test (`validate_file`)**: Submit a 500-line TypeScript file with a single rule. Assert the output file contains the exactly translated rule and perfectly preserves the other 495 lines of TypeScript logic.
+> [!NOTE]
+> **[Agent Instruction: Verification Requirements]**
+> 1. Create a dummy file with legacy `<agent_directive>` tags and new Markdown Callout tags; assert that the Parser extracts both to the JSON graph.
+> 2. Cache a rule "A requires B"; submit draft "B requires A"; assert LLM rejects.
+> 3. Submit draft "hey, don't forget to close the server"; assert LLM returns exactly the `> [!NOTE]` meta-syntax structure with numbered steps.
+> 4. Submit a 500-line TypeScript file with a single rule; assert the output file contains the exactly translated rule and perfectly preserves the other 495 lines of TypeScript logic.

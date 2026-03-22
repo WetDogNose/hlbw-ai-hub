@@ -8,7 +8,16 @@ The Sentry persists the entire workspace's logic graph into a `directives_graph.
 
 ## Consulting the Sentry (For IDEs and CLI)
 
-As an agent, if you are generating *new* instructions/directives for a user, you MUST consult the Sentry *before* writing the file or committing to git. This guarantees your instruction doesn't violate existing domain heuristics.
+> [!TIP]
+> **[Agent Hint: Sentry Consultation Mandate]**
+> Agents are required to consult the Directive Enforcer Sentry when generating new instructions or directives for users, prior to writing files or committing to git, to ensure compliance with established domain heuristics and global directives.
+
+> [!NOTE]
+> **[Agent Instruction: Sentry Consultation Procedure]**
+> 1. When generating new instructions or directives, prepare a draft instruction.
+> 2. Dispatch an HTTP POST request to the Sentry's A2A message endpoint (`http://localhost:8080/a2a/message`) with the `get_advice` action, target filepath, and draft instruction.
+> 3. Review the Sentry's response for evaluation results and the exact, strict Markdown rewrite.
+> 4. Apply the Sentry's rewrite to the target file.
 
 ### How The Sentry Evaluates Instructions
 

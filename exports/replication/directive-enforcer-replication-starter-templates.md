@@ -3,7 +3,9 @@
 ## Purpose
 This companion guide provides functional, production-ready code scaffolding built directly from the Blueprint constraints. No empty stubs. These code fragments handle the File System extraction and HTTP API routing layer required for the Sentry. 
 
-You must integrate an LLM provider (e.g., Gemini Flash, GPT-4o) using the specific Prompts outlined in the Blueprint.
+> [!NOTE]
+> **[Agent Instruction: Sentry Setup]**
+> 1. Integrate an LLM provider (e.g., Gemini Flash, GPT-4o) using the specific Prompts outlined in the Blueprint.
 
 ---
 
@@ -68,6 +70,12 @@ def build_contextual_graph(workspace_root: str) -> dict:
 
 ### 2. The API Runtime (`main.py`)
 Provides the endpoints for IDEs or Swarm orchestrators to hit `get_advice` asynchronously.
+
+> [!NOTE]
+> **[Agent Instruction: API Runtime Integration]**
+> 1. Implement the mechanism to trigger LLM Context Cache uploads.
+> 2. Invoke the LLM with System Prompts from the Blueprint to generate advice for `get_advice` requests.
+> 3. Invoke the LLM with the 'validate_file' Prompt from the Blueprint to process `validate_file` requests.
 
 ```python
 import os
@@ -208,6 +216,12 @@ export function buildContextualGraph(workspaceRoot: string): Graph {
 ```
 
 ### 2. The API Runtime (`index.ts`)
+
+> [!NOTE]
+> **[Agent Instruction: API Runtime Integration]**
+> 1. Implement the mechanism to trigger LLM Context Cache uploads.
+> 2. Invoke the LLM with System Prompts from the Blueprint to generate advice for `get_advice` requests.
+> 3. Invoke the LLM with the 'validate_file' Prompt from the Blueprint to process `validate_file` requests.
 
 ```ts
 import express from 'express';

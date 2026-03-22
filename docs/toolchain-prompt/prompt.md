@@ -1,13 +1,21 @@
 # Master AI Toolchain Blueprint
 
 **System Prompt Directive for AI Agents:**
-You are working in the `hlbw-ai-hub` repository. This is the **Master Agent Control Plane**. 
+You are working in the `hlbw-ai-hub` repository. This is the **Master Agent Control Plane**.
 This document is a technical blueprint detailing the exact agent instructions, scripts, and Model Context Protocol (MCP) servers necessary to achieve a high-velocity, self-healing, autonomous development environment across the entire organization.
 
 **CORE HUB BEHAVIORS (CRITICAL):**
-1. **MCP First:** Never use slow CLI commands if an MCP server (`ast-analyzer`, `app-tester`, `gcp-logging`) can fetch structured data instantly.
-2. **Swarm First:** Never attempt slow, sequential multi-file refactoring. Always dispatch parallel sub-agents using the Master Agent Coordinator workflow (`scripts/swarm`) when tackling wide changes.
-3. **Control Plane Hygiene:** Do not write domain business logic (e.g., React components, Prisma schemas) to this repository. This repository only writes infrastructure, workflow orchestration, and MCP server management code.
+> [!IMPORTANT]
+> **[Agent Directive: Core Behavior]**
+> Agents MUST NEVER use slow CLI commands if an MCP server (`ast-analyzer`, `app-tester`, `gcp-logging`) can fetch structured data instantly.
+
+> [!IMPORTANT]
+> **[Agent Directive: Core Behavior]**
+> Agents MUST NEVER attempt slow, sequential multi-file refactoring; they MUST ALWAYS dispatch parallel sub-agents using the Master Agent Coordinator workflow (`scripts/swarm`) when tackling wide changes.
+
+> [!IMPORTANT]
+> **[Agent Directive: Core Behavior]**
+> Agents MUST NOT write domain business logic (e.g., React components, Prisma schemas) to this repository; this repository MUST ONLY contain infrastructure, workflow orchestration, and MCP server management code.
 
 Make sure to implement and maintain all 6 pillars in this workspace.
 
@@ -25,11 +33,13 @@ Implement a script that does the following on execution:
 
 **2. Create the AI Skill (`.agents/skills/toolchain-doctor/SKILL.md`):**
 Write instructions for the AI Agent:
-* "When the user asks you to 'fix the toolchain' or if a git hook fails, run the doctor script."
-* "If the doctor reports a missing `SKILL.md` for a folder, you MUST synthesize a new `SKILL.md` explaining how the AI should use the scripts inside that folder."
-* "If there are syntax errors in the tools, use your coding abilities to fix them."
-* "If there are missing environment keys, instruct the user on what to add. DO NOT commit secrets."
-* "If you see orphaned script files in the root that look like tools, move them to the script directory."
+> [!NOTE]
+> **[Agent Instruction: Toolchain Doctor Execution]**
+> 1. If the user asks to 'fix the toolchain' or if a git hook fails, run the doctor script.
+> 2. If the doctor reports a missing `SKILL.md` for a folder, synthesize a new `SKILL.md` explaining how the AI MUST use the scripts inside that folder.
+> 3. If syntax errors exist in the tools, use coding abilities to fix them.
+> 4. If environment keys are missing, instruct the user on what to add; DO NOT commit secrets.
+> 5. If orphaned script files are found in the root that resemble tools, move them to the script directory.
 
 ## Pillar 2. Model Context Protocol (MCP) Optimizations
 
@@ -37,12 +47,17 @@ To stop the AI from slowly grepping files or reading massive source codes sequen
 
 **1. Create the AI Skill (`.agents/skills/mcp-optimizations/SKILL.md`):**
 Write strict instructions for the AI Agent:
-* "**CRITICAL RULE:** Prioritize specialized MCP tools over sequential filesystem tools (`grep_search`, `view_file`)."
-* "**AST Analyzer:** Use abstract syntax tree resolution tools instead of reading whole files to understand components and dependencies."
-* "**Task Delegator:** Use sub-agent delegation tools to run parallel agents for wide refactoring."
-* "**Infrastructure Analyzer:** Use context-fetching tools for instant architectural and database schema context instead of manually searching configuration files."
-* "**Cloud Logging & Tracing:** Use direct MCP log fetchers instead of slow OS-level CLI commands."
-* "**Database Actions:** Use direct MCP SQL/query tools instead of manual CLI proxy commands."
+> [!IMPORTANT]
+> **[Agent Directive: MCP Prioritization]**
+> Agents MUST ALWAYS prioritize specialized MCP tools over sequential filesystem tools (`grep_search`, `view_file`).
+
+> [!NOTE]
+> **[Agent Instruction: MCP Tool Usage]**
+> 1. Use abstract syntax tree resolution tools (e.g., AST Analyzer) instead of reading whole files to understand components and dependencies.
+> 2. Use sub-agent delegation tools (e.g., Task Delegator) to run parallel agents for wide refactoring.
+> 3. Use context-fetching tools (e.g., Infrastructure Analyzer) for instant architectural and database schema context instead of manually searching configuration files.
+> 4. Use direct MCP log fetchers (e.g., Cloud Logging & Tracing) instead of slow OS-level CLI commands.
+> 5. Use direct MCP SQL/query tools (e.g., Database Actions) instead of manual CLI proxy commands.
 
 ## Pillar 3. Autonomous Testing & Validation
 
@@ -53,9 +68,11 @@ Build a local Model Context Protocol server that wraps your repository's testing
 
 **2. Create the AI Skill (`.agents/skills/app-tester/SKILL.md`):**
 Instruct the AI on the autonomous testing loop:
-* "If you modify code, you MUST analyze the diff scope and run the corresponding pipeline natively via the MCP testing tools."
-* "Map specific changes to logical testing bounds (e.g., UI changes trigger unit tests, database changes trigger integration tests)."
-* "If the MCP testing tool returns an error, catch the stack trace, fix the implementation locally, and recursively re-run the tool until it passes."
+> [!NOTE]
+> **[Agent Instruction: Autonomous Testing Loop]**
+> 1. If code is modified, analyze the diff scope and run the corresponding pipeline natively via the MCP testing tools.
+> 2. Map specific changes to logical testing bounds (e.g., UI changes trigger unit tests, database changes trigger integration tests).
+> 3. If the MCP testing tool returns an error, catch the stack trace, fix the implementation locally, and recursively re-run the tool until it passes.
 
 ## Pillar 4. Systems-Level Memory Tracking
 
@@ -66,19 +83,21 @@ Modify your test run scripts to pipe execution through a memory tracker that out
 
 **2. Create the AI Skill (`.agents/skills/memory-analyzer/SKILL.md`):**
 Instruct the AI:
-* "When tests fail due to memory, scan the logs directory for the latest tracker logs."
-* "Compare the 'Top Aggregated Applications' sections between snapshots."
-* "If specific tools or databases continuously grow without releasing memory across multiple tests, identify the leak."
-* "Apply common fixes: Ensure database disconnects in test teardowns, check MCP server LRU caches, or force manual garbage collection."
+> [!NOTE]
+> **[Agent Instruction: Memory Analysis]**
+> 1. When tests fail due to memory, scan the logs directory for the latest tracker logs.
+> 2. Compare the 'Top Aggregated Applications' sections between snapshots.
+> 3. If specific tools or databases continuously grow without releasing memory across multiple tests, identify the leak.
+> 4. Apply common fixes, including ensuring database disconnects in test teardowns, checking MCP server LRU caches, or forcing manual garbage collection.
 
 ## Pillar 5. Environment & Infrastructure Tooling
 
 Automate the mundane setup and configuration tasks via explicit skills:
 
-* **Bootstrap Environment (`.agents/skills/bootstrap-environment/SKILL.md`):** Instructs the AI to autonomously install dependencies and handle external service authentication upon initial clone.
-* **Coverage Reporter (`.agents/skills/coverage-reporter/SKILL.md`):** Instructs the AI to run comprehensive test coverage commands and write reports into the logs directory for the user.
-* **Production Database Triage (`.agents/skills/production-db-triage/SKILL.md`):** Links to a read-only MCP tool allowing the agent to safely read live user states without writing destructive commands.
-* **Repo Cleaner (`.agents/skills/repo-cleaner/SKILL.md`):** A skill pointing to a cleanup script to purge old logs, test coverage outputs, and temporary files.
+*   **Bootstrap Environment (`.agents/skills/bootstrap-environment/SKILL.md`):** Instructs the AI to autonomously install dependencies and handle external service authentication upon initial clone.
+*   **Coverage Reporter (`.agents/skills/coverage-reporter/SKILL.md`):** Instructs the AI to run comprehensive test coverage commands and write reports into the logs directory for the user.
+*   **Production Database Triage (`.agents/skills/production-db-triage/SKILL.md`):** Links to a read-only MCP tool allowing the agent to safely read live user states without writing destructive commands.
+*   **Repo Cleaner (`.agents/skills/repo-cleaner/SKILL.md`):** A skill pointing to a cleanup script to purge old logs, test coverage outputs, and temporary files.
 
 ## Pillar 6. Turbo-Enabled Workflows (`.agents/workflows/`)
 
@@ -86,9 +105,11 @@ Establish a directory of standardized `.md` files that the AI can execute withou
 
 **1. Create Workflow Markdown Files:**
 For every repetitive task, create a markdown file (e.g., `.agents/workflows/scaffold-component.md`).
-- Include standard company boilerplates.
-- Include exact terminal commands to run.
-- Inject the string `// turbo-all` at the top of the file so the AI is authorized to execute the bash commands automatically without waiting for user permission.
+> [!NOTE]
+> **[Agent Instruction: Workflow File Creation]**
+> 1. Include standard company boilerplates.
+> 2. Include exact terminal commands to run.
+> 3. Inject the string `// turbo-all` at the top of the file to authorize the AI to execute the bash commands automatically without waiting for user permission.
 
 **Examples to include:**
 - Scaffolding new components or modules.
@@ -101,9 +122,11 @@ For every repetitive task, create a markdown file (e.g., `.agents/workflows/scaf
 Standardize how pipelines and runner environments are built to prevent ad-hoc and brittle configurations.
 
 **1. Update Agent Directives:**
-* "If the user asks to create or deploy a CI/CD pipeline, you MUST look in `docs/templates/pipelines.md` for guidance."
-* "Never invent a GitHub Actions workflow from scratch. Always copy the base templates located inside `templates/pipelines/github-actions/`."
-* "If queried about GitHub Actions runners or self-hosted infrastructure, refer the user immediately to `docs/templates/pipelines/gha-runners.md` which explains standard vs. self-hosted runners."
+> [!NOTE]
+> **[Agent Instruction: CI/CD Pipeline Creation]**
+> 1. If the user asks to create or deploy a CI/CD pipeline, look in `docs/templates/pipelines.md` for guidance.
+> 2. NEVER invent a GitHub Actions workflow from scratch; ALWAYS copy the base templates located inside `templates/pipelines/github-actions/`.
+> 3. If queried about GitHub Actions runners or self-hosted infrastructure, refer the user immediately to `docs/templates/pipelines/gha-runners.md` for explanations on standard vs. self-hosted runners.
 
 ## Pillar 8. Agent Directive Enforcement (Sentry Validation)
 
@@ -111,6 +134,8 @@ To eliminate "context rot" and perfectly align multi-agent workflows, all rules,
 
 **1. Create the AI Skill (`.agents/skills/directive-enforcer-sentry/SKILL.md`):**
 Instruct the AI on the architectural validation loop:
-* "If you are writing a new Agent Directive (`> [!IMPORTANT]`), Agent Instruction (`> [!NOTE]`), or Agent Hint (`> [!TIP]`), you MUST NOT write it directly to the file based on intuition."
-* "You MUST execute the `directive-enforcer-sentry` payload snippet to query the continuous A2A Sentry microservice (`http://localhost:8080/a2a/message`)."
-* "The Sentry will rewrite your instruction to prevent logical loops and context collisions across your entire massive workspace. You MUST paste the exact Sentry rewrite into the file."
+> [!NOTE]
+> **[Agent Instruction: Directive Validation Loop]**
+> 1. If writing a new Agent Directive (`> [!IMPORTANT]`), Agent Instruction (`> [!NOTE]`), or Agent Hint (`> [!TIP]`), DO NOT write it directly to the file based on intuition.
+> 2. Execute the `directive-enforcer-sentry` payload snippet to query the continuous A2A Sentry microservice (`http://localhost:8080/a2a/message`).
+> 3. The Sentry will rewrite the instruction to prevent logical loops and context collisions across the entire massive workspace; paste the exact Sentry rewrite into the file.

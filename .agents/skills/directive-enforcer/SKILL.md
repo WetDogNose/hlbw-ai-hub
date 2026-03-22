@@ -7,15 +7,17 @@ description: "A specialized A2A worker agent that audits and enforces rigorous, 
 
 This skill deploys an A2A worker agent designed specifically to ensure that all hints, instructions, and directives provided to AI agents across `hlbw-ai-hub`'s artifacts remain unambiguous, non-cyclical, and uniform.
 
-## Background
-
-Ambiguity is the enemy of automation. Agents do not interpret nuance; they execute commands based on token probability. Loose text constraints (like "Hey agent, remember to...") engineer failure into pipelines.
+> [!TIP]
+> **[Agent Hint: Rationale]**
+> Ambiguity in agent instructions leads to execution failures due to LLM's probabilistic interpretation of nuance.
 
 ## The Three Tiers of Automated Execution
 
 ### 1. The Agent Directive (The Ironclad Law)
 
-Directives act at the highest priority level and usually revolve around constraints (e.g., security, strict formatting rules). They use absolute language ("MUST", "NEVER").
+> [!TIP]
+> **[Agent Hint: Directive Nature]**
+> Directives establish high-priority, absolute constraints using terms like MUST or NEVER, typically for security or strict formatting.
 
 **Meta-Syntax Target (Markdown Callout Standard)**:
 
@@ -25,7 +27,9 @@ Directives act at the highest priority level and usually revolve around constrai
 
 ### 2. The Agent Instruction (The Standard Operating Procedure)
 
-Instructions define sequential or conditional logic. They break down a task into enumerable, actionable steps.
+> [!TIP]
+> **[Agent Hint: Instruction Nature]**
+> Instructions outline sequential or conditional logic, detailing tasks as enumerated, actionable steps.
 
 **Meta-Syntax Target (Markdown Callout Standard)**:
 
@@ -37,7 +41,9 @@ Instructions define sequential or conditional logic. They break down a task into
 
 ### 3. The Agent Hint (The Contextual Leverage)
 
-Hints provide optimization vectors or contextual backgrounds without strictly constraining behavior.
+> [!TIP]
+> **[Agent Hint: Hint Nature]**
+> Hints offer non-binding optimization suggestions or contextual background information to aid decision-making.
 
 **Meta-Syntax Target (Markdown Callout Standard)**:
 
@@ -47,7 +53,15 @@ Hints provide optimization vectors or contextual backgrounds without strictly co
 
 ## How To Trigger
 
-The `directive-enforcer` operates continuously as a Dockerized A2A microservice.
+> [!TIP]
+> **[Agent Hint: Operational Context]**
+> The `directive-enforcer` operates continuously as a Dockerized A2A microservice.
 
-- **Continuous Integration**: It is automatically invoked by the Master Agent Coordinator (`scripts/swarm/manage-worktree.ts`) before any swarm branch is merged into the mainline.
-- **Manual Advisory**: Agents and IDEs can POST to `http://localhost:8080/a2a/message` with `action: "get_advice"` to validate draft instructions against the holistic memory graph.
+> [!TIP]
+> **[Agent Hint: System Invocation]**
+> The Directive Enforcer is automatically invoked by the Master Agent Coordinator (`scripts/swarm/manage-worktree.ts`) before any swarm branch is merged into the mainline.
+
+> [!NOTE]
+> **[Agent Instruction: Manual Validation]**
+> 1. To validate draft instructions against the holistic memory graph, POST to `http://localhost:8080/a2a/message`.
+> 2. Ensure the payload includes `action: "get_advice"`.

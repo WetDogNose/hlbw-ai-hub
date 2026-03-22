@@ -1,18 +1,25 @@
 {
   "files": {
     "/workspace/.agents/skills/directive-enforcer/SKILL.md": {
-      "context_metadata": "---\nname: \"Directive Enforcer Agent\"\ndescription: \"A specialized A2A worker agent that audits and enforces rigorous, unambiguous Markdown Callout-based agent instructions.\"\n---\n\n# Directive Enforcer Agent\n\nThis skill deploys an A2A worker agent designed specifically to ensure that all hints, instructions, and directives provided to AI agents across `hlbw-ai-hub`'s artifacts remain unambiguous, non-cyclical, and uniform.\n\n## Background\n\nAmbiguity is the enemy of automation. Agents do not interpret nuance; they execute commands based on token probability. Loose text constraints (like \"Hey agent, remember to...\") engineer failure into pipelines.\n\n## The Three Tiers of Automated Execution\n",
+      "context_metadata": "---\nname: \"Directive Enforcer Agent\"\ndescription: \"A specialized A2A worker agent that audits and enforces rigorous, unambiguous Markdown Callout-based agent instructions.\"\n---\n\n# Directive Enforcer Agent\n\nThis skill deploys an A2A worker agent designed specifically to ensure that all hints, instructions, and directives provided to AI agents across `hlbw-ai-hub`'s artifacts remain unambiguous, non-cyclical, and uniform.\n\n> [!TIP]\n> **[Agent Hint: Rationale]**\n> Ambiguity in agent instructions leads to execution failures due to LLM's probabilistic interpretation of nuance.\n\n## The Three Tiers of Automated Execution\n",
       "annotations": {
         "directives": [
           "> [!IMPORTANT]\n> **[Agent Directive: `<Domain>`]**\n> `<A single, concise sentence using MUST, MUST NOT, ALWAYS, or NEVER. No exposition.>`\n"
         ],
         "instructions": [
-          "> [!NOTE]\n> **[Agent Instruction: `<Action Name>`]**\n> \n> 1. `<Verb-first actionable command>`\n> 2. `<Verb-first actionable command>`\n"
+          "> [!NOTE]\n> **[Agent Instruction: `<Action Name>`]**\n> \n> 1. `<Verb-first actionable command>`\n> 2. `<Verb-first actionable command>`\n",
+          "> [!NOTE]\n> **[Agent Instruction: Manual Validation]**\n> 1. To validate draft instructions against the holistic memory graph, POST to `http://localhost:8080/a2a/message`.\n"
         ],
         "hints": [
-          "> [!TIP]\n> **[Agent Hint: `<Intent>`]**\n> `<Brief observation or context that aids decision-making, written objectively.>`\n"
+          "> [!TIP]\n> **[Agent Hint: Rationale]**\n> Ambiguity in agent instructions leads to execution failures due to LLM's probabilistic interpretation of nuance.\n",
+          "> [!TIP]\n> **[Agent Hint: Directive Nature]**\n> Directives establish high-priority, absolute constraints using terms like MUST or NEVER, typically for security or strict formatting.\n",
+          "> [!TIP]\n> **[Agent Hint: Instruction Nature]**\n> Instructions outline sequential or conditional logic, detailing tasks as enumerated, actionable steps.\n",
+          "> [!TIP]\n> **[Agent Hint: Hint Nature]**\n> Hints offer non-binding optimization suggestions or contextual background information to aid decision-making.\n",
+          "> [!TIP]\n> **[Agent Hint: `<Intent>`]**\n> `<Brief observation or context that aids decision-making, written objectively.>`\n",
+          "> [!TIP]\n> **[Agent Hint: Operational Context]**\n> The `directive-enforcer` operates continuously as a Dockerized A2A microservice.\n",
+          "> [!TIP]\n> **[Agent Hint: System Invocation]**\n> The Directive Enforcer is automatically invoked by the Master Agent Coordinator (`scripts/swarm/manage-worktree.ts`) before any swarm branch is merged into the mainline.\n"
         ],
-        "has_unstructured_legacy": true
+        "has_unstructured_legacy": false
       }
     },
     "/workspace/.agents/workers/directive-enforcer/main.py": {
@@ -48,21 +55,88 @@
         "has_unstructured_legacy": false
       }
     },
-    "/workspace/docs/features/sentry-advisory-protocol.md": {
-      "context_metadata": "# Directive Enforcer: Sentry Advisory Protocol\n\nThe Directive Enforcer operates as a permanently running A2A Sentry Microservice. Its primary objective is combating context rot by ensuring all agent hints, instructions, and directives are universally uniform and logically sound across the entire `hlbw-ai-hub` workspace.\n\n## Context Caching\n\nThe Sentry persists the entire workspace's logic graph into a `directives_graph.json` and loads it into a **Gemini Context Cache**. This grants the LLM instantaneous, cheap \"omniscience\" over every rule in every file\u2014allowing it to detect loops or cross-repo conflicts instantly.\n\n## Consulting the Sentry (For IDEs and CLI)\n\nAs an agent, if you are generating *new* instructions/directives for a user, you MUST consult the Sentry *before* writing the file or committing to git. This guarantees your instruction doesn't violate existing domain heuristics.\n\n### `get_advice` Interface\n\nYou can dispatch a standard HTTP POST request natively to the Sentry container to fetch feedback on a draft instruction.",
+    "/workspace/docs/features/directive-enforcer-sentry.md": {
+      "context_metadata": "# Directive Enforcer: Sentry Protocol\n\nThe Directive Enforcer operates as a permanently running A2A Sentry Microservice. Its primary objective is combating context rot by ensuring all agent hints, instructions, and directives are universally uniform and logically sound across the entire `hlbw-ai-hub` workspace.\n\n## Context Caching\n\nThe Sentry persists the entire workspace's logic graph into a `directives_graph.json` and loads it into a **Gemini Context Cache**. This grants the LLM instantaneous, cheap \"omniscience\" over every rule in every file\u2014allowing it to detect loops or cross-repo conflicts instantly.\n\n## Consulting the Sentry (For IDEs and CLI)\n\n> [!TIP]\n> **[Agent Hint: Sentry Consultation Mandate]**\n> Agents are required to consult the Directive Enforcer Sentry when generating new instructions or directives for users, prior to writing files or committing to git, to ensure compliance with established domain heuristics and global directives.\n\n> [!NOTE]",
       "annotations": {
         "directives": [],
-        "instructions": [],
-        "hints": [],
+        "instructions": [
+          "> [!NOTE]\n> **[Agent Instruction: Sentry Consultation Procedure]**\n> 1. When generating new instructions or directives, prepare a draft instruction.\n> 2. Dispatch an HTTP POST request to the Sentry's A2A message endpoint (`http://localhost:8080/a2a/message`) with the `get_advice` action, target filepath, and draft instruction.\n> 3. Review the Sentry's response for evaluation results and the exact, strict Markdown rewrite.\n> 4. Apply the Sentry's rewrite to the target file.\n"
+        ],
+        "hints": [
+          "> [!TIP]\n> **[Agent Hint: Sentry Consultation Mandate]**\n> Agents are required to consult the Directive Enforcer Sentry when generating new instructions or directives for users, prior to writing files or committing to git, to ensure compliance with established domain heuristics and global directives.\n"
+        ],
         "has_unstructured_legacy": false
       }
     },
     "/workspace/docs/toolchain-prompt/prompt.md": {
-      "context_metadata": "# Master AI Toolchain Blueprint\n\n**System Prompt Directive for AI Agents:**\nYou are working in the `hlbw-ai-hub` repository. This is the **Master Agent Control Plane**. \nThis document is a technical blueprint detailing the exact agent instructions, scripts, and Model Context Protocol (MCP) servers necessary to achieve a high-velocity, self-healing, autonomous development environment across the entire organization.\n\n**CORE HUB BEHAVIORS (CRITICAL):**\n1. **MCP First:** Never use slow CLI commands if an MCP server (`ast-analyzer`, `app-tester`, `gcp-logging`) can fetch structured data instantly.\n2. **Swarm First:** Never attempt slow, sequential multi-file refactoring. Always dispatch parallel sub-agents using the Master Agent Coordinator workflow (`scripts/swarm`) when tackling wide changes.\n3. **Control Plane Hygiene:** Do not write domain business logic (e.g., React components, Prisma schemas) to this repository. This repository only writes infrastructure, workflow orchestration, and MCP server management code.\n\nMake sure to implement and maintain all 6 pillars in this workspace.\n\n## Pillar 1. The \"Toolchain Doctor\" (Self-Healing & Diagnostics)\n",
+      "context_metadata": "# Master AI Toolchain Blueprint\n\n**System Prompt Directive for AI Agents:**\nYou are working in the `hlbw-ai-hub` repository. This is the **Master Agent Control Plane**.\nThis document is a technical blueprint detailing the exact agent instructions, scripts, and Model Context Protocol (MCP) servers necessary to achieve a high-velocity, self-healing, autonomous development environment across the entire organization.\n\n**CORE HUB BEHAVIORS (CRITICAL):**\n> [!IMPORTANT]\n> **[Agent Directive: Core Behavior]**\n> Agents MUST NEVER use slow CLI commands if an MCP server (`ast-analyzer`, `app-tester`, `gcp-logging`) can fetch structured data instantly.\n\n> [!IMPORTANT]\n> **[Agent Directive: Core Behavior]**\n> Agents MUST NEVER attempt slow, sequential multi-file refactoring; they MUST ALWAYS dispatch parallel sub-agents using the Master Agent Coordinator workflow (`scripts/swarm`) when tackling wide changes.\n",
       "annotations": {
-        "directives": [],
-        "instructions": [],
-        "hints": [],
+        "directives": [
+          "> [!IMPORTANT]\n> **[Agent Directive: Core Behavior]**\n> Agents MUST NEVER use slow CLI commands if an MCP server (`ast-analyzer`, `app-tester`, `gcp-logging`) can fetch structured data instantly.\n",
+          "> [!IMPORTANT]\n> **[Agent Directive: Core Behavior]**\n> Agents MUST NEVER attempt slow, sequential multi-file refactoring; they MUST ALWAYS dispatch parallel sub-agents using the Master Agent Coordinator workflow (`scripts/swarm`) when tackling wide changes.\n",
+          "> [!IMPORTANT]\n> **[Agent Directive: Core Behavior]**\n> Agents MUST NOT write domain business logic (e.g., React components, Prisma schemas) to this repository; this repository MUST ONLY contain infrastructure, workflow orchestration, and MCP server management code.\n",
+          "> [!IMPORTANT]\n> **[Agent Directive: MCP Prioritization]**\n> Agents MUST ALWAYS prioritize specialized MCP tools over sequential filesystem tools (`grep_search`, `view_file`).\n",
+          "> [!IMPORTANT]`), Agent Instruction (`> [!NOTE]`), or Agent Hint (`> [!TIP]`), DO NOT write it directly to the file based on intuition.\n> 2. Execute the `directive-enforcer-sentry` payload snippet to query the continuous A2A Sentry microservice (`http://localhost:8080/a2a/message`).\n"
+        ],
+        "instructions": [
+          "> [!NOTE]\n> **[Agent Instruction: Toolchain Doctor Execution]**\n> 1. If the user asks to 'fix the toolchain' or if a git hook fails, run the doctor script.\n> 2. If the doctor reports a missing `SKILL.md` for a folder, synthesize a new `SKILL.md` explaining how the AI MUST use the scripts inside that folder.\n> 3. If syntax errors exist in the tools, use coding abilities to fix them.\n> 4. If environment keys are missing, instruct the user on what to add; DO NOT commit secrets.\n> 5. If orphaned script files are found in the root that resemble tools, move them to the script directory.\n",
+          "> [!NOTE]\n> **[Agent Instruction: MCP Tool Usage]**\n> 1. Use abstract syntax tree resolution tools (e.g., AST Analyzer) instead of reading whole files to understand components and dependencies.\n> 2. Use sub-agent delegation tools (e.g., Task Delegator) to run parallel agents for wide refactoring.\n> 3. Use context-fetching tools (e.g., Infrastructure Analyzer) for instant architectural and database schema context instead of manually searching configuration files.\n> 4. Use direct MCP log fetchers (e.g., Cloud Logging & Tracing) instead of slow OS-level CLI commands.\n> 5. Use direct MCP SQL/query tools (e.g., Database Actions) instead of manual CLI proxy commands.\n",
+          "> [!NOTE]\n> **[Agent Instruction: Autonomous Testing Loop]**\n> 1. If code is modified, analyze the diff scope and run the corresponding pipeline natively via the MCP testing tools.\n> 2. Map specific changes to logical testing bounds (e.g., UI changes trigger unit tests, database changes trigger integration tests).\n> 3. If the MCP testing tool returns an error, catch the stack trace, fix the implementation locally, and recursively re-run the tool until it passes.\n",
+          "> [!NOTE]\n> **[Agent Instruction: Memory Analysis]**\n> 1. When tests fail due to memory, scan the logs directory for the latest tracker logs.\n> 2. Compare the 'Top Aggregated Applications' sections between snapshots.\n> 3. If specific tools or databases continuously grow without releasing memory across multiple tests, identify the leak.\n> 4. Apply common fixes, including ensuring database disconnects in test teardowns, checking MCP server LRU caches, or forcing manual garbage collection.\n",
+          "> [!NOTE]\n> **[Agent Instruction: Workflow File Creation]**\n> 1. Include standard company boilerplates.\n> 2. Include exact terminal commands to run.\n> 3. Inject the string `// turbo-all` at the top of the file to authorize the AI to execute the bash commands automatically without waiting for user permission.\n",
+          "> [!NOTE]\n> **[Agent Instruction: CI/CD Pipeline Creation]**\n> 1. If the user asks to create or deploy a CI/CD pipeline, look in `docs/templates/pipelines.md` for guidance.\n> 2. NEVER invent a GitHub Actions workflow from scratch; ALWAYS copy the base templates located inside `templates/pipelines/github-actions/`.\n> 3. If queried about GitHub Actions runners or self-hosted infrastructure, refer the user immediately to `docs/templates/pipelines/gha-runners.md` for explanations on standard vs. self-hosted runners.\n",
+          "> [!NOTE]\n> **[Agent Instruction: Directive Validation Loop]**\n> 1. If writing a new Agent Directive (`> [!IMPORTANT]`), Agent Instruction (`> [!NOTE]`), or Agent Hint (`> [!TIP]`), DO NOT write it directly to the file based on intuition.\n> 2. Execute the `directive-enforcer-sentry` payload snippet to query the continuous A2A Sentry microservice (`http://localhost:8080/a2a/message`).\n"
+        ],
+        "hints": [
+          "> [!TIP]`), DO NOT write it directly to the file based on intuition.\n> 2. Execute the `directive-enforcer-sentry` payload snippet to query the continuous A2A Sentry microservice (`http://localhost:8080/a2a/message`).\n"
+        ],
+        "has_unstructured_legacy": true
+      }
+    },
+    "/workspace/exports/replication/directive-enforcer-replication-blueprint.md": {
+      "context_metadata": "# Directive Enforcer Sentry Replication Blueprint\n\n## Feature Intent\n\nThe Directive Enforcer is a Python-based A2A worker agent built into a global toolchain. Its primary role is to enforce unambiguous, strict, Markdown Callout structures (Meta-Syntax) on any agent instructions, hints, or directives embedded across workspace artifacts. The enforcer resolves ambiguity by rejecting loose natural language prompts (e.g., \"hello agent, don't forget to\"), preventing infinite LLM loops, and consolidating conflicting logic.\n\n## Purpose & Target Outcomes\n\nMaintain a global \"memory graph\" of all established rules, directives, and hints across a codebase to prevent context rot. Automatically rewrite loose, human-like agent instructions into a strict, machine-enforceable meta-syntax while globally resolving logic conflicts.\n\n## Originating Tech Stack & Context (Reference Only)\n\n- **Language/Compute**: Built initially as a Python script orchestrated as an A2A (Agent-to-Agent) worker within a Next.js/TypeScript monorepo. It relies on standard library Python data structures (`os.walk`, `re`).\n- **Data Persistence**: Originally cached the JSON memory graph to standard filesystem `.agents/swarm/directives_graph.json`. Designed to offload this exact structure to an LLM Context Caching layer (like Google Vertex AI Context Cache or OpenAI) for massive repositories.\n- **LLM Provider**: Originally built against Google Gemini 1.5 Pro (temperature 0) to exploit 2-million token windows for massive workspace context graphs.",
+      "annotations": {
+        "directives": [
+          "> [!IMPORTANT]\n> **[Agent Directive: Agent Workflow]**\n> Master IDE agents MUST call out to the Directive Enforcer via A2A messaging to validate changes BEFORE committing any `.md` artifact updates.\n",
+          "> [!IMPORTANT]\n> **[Agent Directive: Artifact Updates]**\n> ALWAYS draft instruction changes on a scratchpad and sequentially query the Directive Enforcer Sentry to validate against global conflict constraints BEFORE rewriting any `.md` tool rules or skill files.\n",
+          "> [!IMPORTANT]\n> **[Agent Directive: Scanner Logic]**\n> The scanner MUST identify files for tracking by detecting specific string triggers and MUST extract annotations using the exact provided regex patterns.\n",
+          "> [!IMPORTANT]\n> **[Agent Directive: Context Extraction]**\n> The parser MUST extract exactly the first 15 lines of every matched file to ensure LLM context.\n",
+          "> [!IMPORTANT]\n> **[Agent Directive: LLM Configuration]**\n> The LLM Engine MUST be configured with a temperature of 0.0.\n",
+          "> [!IMPORTANT]\n> **[Agent Directive: <Domain>]**\n> <A single, concise sentence using MUST, MUST NOT, ALWAYS, or NEVER. No exposition.>\n",
+          "<agent_directive.*?</agent_directive>"
+        ],
+        "instructions": [
+          "> [!NOTE]\n> **[Agent Instruction: Capability Contract]**\n> 1. Recursively scan the codebase, isolating files with annotation triggers, extracting the exact first 15 lines of context, and raw annotations via regex.\n> 2. Offload or inline the JSON graph to an LLM capable of holding massive context windows to evaluate drafts against existing rules.\n> 3. Pass a draft instruction to the LLM; the LLM MUST evaluate Global Conflicts, Logical Loops, and Contextual Alignment, returning a safely rewritten instruction.\n> 4. Rewrite files safely in CI/CD without mutilating surrounding logic.\n",
+          "> [!NOTE]\n> **[Agent Instruction: System Prompt Injection]**\n> The following System Instruction MUST be injected verbatim into the LLM Engine's System Prompt.\n",
+          "> [!NOTE]\n> **[Agent Instruction: System Prompt Injection]**\n> The following Meta-Syntax Formatting Rules MUST be injected verbatim into the LLM Engine's System Prompt.\n",
+          "> [!NOTE]\n> **[Agent Instruction: <Action Name>]**\n> 1. <Verb-first actionable command>\n> 2. <Verb-first actionable command>\n",
+          "> [!NOTE]\n> **[Agent Instruction: System Prompt Injection]**\n> The following File Validation Prompt MUST be injected verbatim into the LLM Engine's System Prompt for the `validate_file` action.\n",
+          "> [!NOTE]\n> **[Agent Instruction: Implementation Sequence]**\n> 1. Implement a standalone function to walk directories, ignore artifacts (`node_modules`, `dist`), read target files (`.ts`, `.py`, `.md`), apply string triggers, and run regex extraction logic.\n> 2. Ensure the resulting JSON graph is written to disk (e.g., `.agents/swarm/directives_graph.json`) to act as the primary Source of Truth.\n> 3. Abstract your LLM API; implement logic to either inline the JSON graph into the prompt (for small codebases) or upload the JSON to an LLM Context Cache (for massive codebases).\n> 4. Implement HTTP endpoints (e.g., `POST /a2a/message`) parsing the envelope to route to `get_advice` or `validate_file`.\n> 5. Ensure the output stream from the LLM strips backtick fences (```) before writing directly to the disk, preventing file corruption.\n",
+          "> [!NOTE]\n> **[Agent Instruction: Verification Requirements]**\n> 1. Create a dummy file with legacy `<agent_directive>` tags and new Markdown Callout tags; assert that the Parser extracts both to the JSON graph.\n> 2. Cache a rule \"A requires B\"; submit draft \"B requires A\"; assert LLM rejects.\n> 3. Submit draft \"hey, don't forget to close the server\"; assert LLM returns exactly the `> [!NOTE]` meta-syntax structure with numbered steps.\n"
+        ],
+        "hints": [
+          "> [!TIP]\n> **[Agent Hint: Resolving Loops]**\n> If you encounter conflicting steps in `task.md` or a skill instruction, ping the Directive Enforcer A2A interface to scan the workspace and advise on which directive holds precedence.\n",
+          "> [!TIP]\n> **[Agent Hint: LLM Engineering]**\n> The effectiveness of this feature is entirely dependent on the precise wording of the LLM prompts.\n",
+          "> [!TIP]\n> **[Agent Hint: <Intent>]**\n> <Brief observation or context that aids decision-making, written objectively.>\n"
+        ],
+        "has_unstructured_legacy": true
+      }
+    },
+    "/workspace/exports/replication/directive-enforcer-replication-starter-templates.md": {
+      "context_metadata": "# Directive Enforcer Sentry Starter Templates\n\n## Purpose\nThis companion guide provides functional, production-ready code scaffolding built directly from the Blueprint constraints. No empty stubs. These code fragments handle the File System extraction and HTTP API routing layer required for the Sentry. \n\n> [!NOTE]\n> **[Agent Instruction: Sentry Setup]**\n> 1. Integrate an LLM provider (e.g., Gemini Flash, GPT-4o) using the specific Prompts outlined in the Blueprint.\n\n---\n\n## Python Complete Scaffold (FastAPI)\n\n### 1. The Core Parser (`parser.py`)\nThis extracts exactly the contextual annotations specified by the regex logic.",
+      "annotations": {
+        "directives": [
+          "<agent_directive.*?</agent_directive>"
+        ],
+        "instructions": [
+          "> [!NOTE]\n> **[Agent Instruction: Sentry Setup]**\n> 1. Integrate an LLM provider (e.g., Gemini Flash, GPT-4o) using the specific Prompts outlined in the Blueprint.\n",
+          "> [!NOTE]\n> **[Agent Instruction: API Runtime Integration]**\n> 1. Implement the mechanism to trigger LLM Context Cache uploads.\n> 2. Invoke the LLM with System Prompts from the Blueprint to generate advice for `get_advice` requests.\n> 3. Invoke the LLM with the 'validate_file' Prompt from the Blueprint to process `validate_file` requests.\n",
+          "> [!NOTE]\n> **[Agent Instruction: API Runtime Integration]**\n> 1. Implement the mechanism to trigger LLM Context Cache uploads.\n> 2. Invoke the LLM with System Prompts from the Blueprint to generate advice for `get_advice` requests.\n> 3. Invoke the LLM with the 'validate_file' Prompt from the Blueprint to process `validate_file` requests.\n",
+          "<agent_instruction.*?</agent_instruction>"
+        ],
+        "hints": [
+          "<agent_hint.*?</agent_hint>"
+        ],
         "has_unstructured_legacy": true
       }
     },

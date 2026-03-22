@@ -558,11 +558,52 @@ try {
 
 // 13. Global Sentry Validation (LLM Logic Scan)
 console.log('\\n--- Global Sentry Logic Validation ---');
-try {
-    const curlCommand = `curl -s -X POST -H "Content-Type: application/json" -d "{\\"sender_id\\": \\"toolchain-doctor\\", \\"target_id\\": \\"directive-enforcer\\", \\"payload\\": {\\"action\\": \\"validate_workspace\\", \\"workspace_root\\": \\"/workspace\\"}}" http://localhost:8080/a2a/message`;
-    const responseStr = execSync(curlCommand, { stdio: 'pipe', encoding: 'utf8' }).trim();
-    
-    if (responseStr) {
+
+const attemptSentryValidation = () => {
+    const os = require('os');
+    const tmpPayloadPath = path.join(os.tmpdir(), `sentry-payload-${Date.now()}.json`);
+    fs.writeFileSync(tmpPayloadPath, JSON.stringify({
+        sender_id: "toolchain-doctor",
+        target_id: "directive-enforcer",
+        payload: { action: "validate_workspace", workspace_root: "/workspace" }
+    }));
+    try {
+        const res = execSync(`curl -s -X POST -H "Content-Type: application/json" -d "@${tmpPayloadPath}" http://localhost:8080/a2a/message`, { stdio: 'pipe', encoding: 'utf8' }).trim();
+        fs.unlinkSync(tmpPayloadPath);
+        return res;
+    } catch (e) {
+        if (fs.existsSync(tmpPayloadPath)) fs.unlinkSync(tmpPayloadPath);
+        return null; // offline or failed
+    }
+};
+
+let responseStr = attemptSentryValidation();
+
+if (!responseStr || responseStr === "") {
+    logInfo('Sentry is currently offline. Attempting auto-boot sequence...');
+    try {
+        require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
+        const apiKey = process.env.GEMINI_API_KEY;
+        if (apiKey) {
+            try { execSync('docker rm -f sentry-validation-worker', { stdio: 'ignore' }); } catch(err){}
+            execSync(`docker run -d --rm --name sentry-validation-worker -p 8080:8080 -v "${path.resolve(__dirname, '..').replace(/\\\\/g, '/')}:/workspace" -e GEMINI_API_KEY="${apiKey}" directive-enforcer`, { stdio: 'ignore' });
+            logSuccess('Sentry container booted in background! Waiting 3s for API to warm up...');
+            execSync('node -e "setTimeout(()=>{}, 3000)"');
+            
+            responseStr = attemptSentryValidation();
+            if (!responseStr) {
+                logError('Sentry booted, but API is unresponsive. Skipping logic check.');
+            }
+        } else {
+            logInfo('GEMINI_API_KEY missing from .env. Cannot auto-boot Sentry. Skipping logic check.');
+        }
+    } catch (e) {
+        logInfo('Auto-boot failed (Docker offline or image not built). Skipping logic check.');
+    }
+}
+
+if (responseStr) {
+    try {
         const res = JSON.parse(responseStr);
         if (res.status === 'success' && res.response_payload) {
             const data = res.response_payload;
@@ -578,13 +619,11 @@ try {
                 logSuccess('Sentry logic scan passed gracefully. No conflicts detected.');
             }
         } else {
-            logInfo('Sentry is currently offline or unreachable. Skipping logic check.');
+            logInfo('Sentry responded with an unexpected payload. Skipping logic check.');
         }
-    } else {
-        logInfo('Sentry is currently offline. Skipping logic check.');
+    } catch (e) {
+        logError('Sentry returned malformed JSON. Skipping logic check.');
     }
-} catch (e) {
-    logInfo('Sentry is currently offline. Skipping holistic workspace validation.');
 }
 
 

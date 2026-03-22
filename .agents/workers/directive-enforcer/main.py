@@ -56,7 +56,7 @@ When evaluating a draft instruction or a file modification, you MUST strictly ch
 3. Contextual Alignment: Given the file's path and metadata in the graph, does this directive belong in THIS file? Or is it misaligned and belongs elsewhere?
 
 CRITICAL RULE FOR MIGRATION/ADVISORY:
-If rewriting or migrating an instruction to the new markdown format, you MUST NOT lose any fine-grained detail, specificity, or nuance. Preserve every exact technical constraint and condition. If you lose specificity, the multi-agent swarms will fail.
+If rewriting or migrating an instruction to the new markdown format, you MUST NOT lose any fine-grained detail, specificity, or nuance. Preserve every exact technical constraint and condition. Furthermore, you MUST preserve all surrounding human-readable prose, exposition, and transitional sentences intended for engineers; do not arbitrarily delete regular markdown paragraphs. If you lose specificity, the multi-agent swarms will fail.
 
 {DIRECTIVE_RULE}
 {INSTRUCTION_RULE}
@@ -242,8 +242,9 @@ Target File: {filepath}
 1. Evaluate all agent rules in this file against the global graph for contextual alignment and conflicts.
 2. If conflicts or loops exist, rewrite the rules safely.
 3. If legacy tags or ambiguous wording exist, migrate them to the new Markdown Callout standard.
-4. CRITICAL: Preserve all original nuance and specific constraints when rewriting.
-5. ONLY output the raw file content, preserving all other native code and logic perfectly. Do not wrap in markdown codeblocks.
+4. CRITICAL: Do NOT delete human-readable prose, explanations, or transitional sentences in the document. Only structure/rewrite the specific constraint blocks. Leave the surrounding exposition intact for human developers.
+5. CRITICAL: Preserve all original nuance and specific constraints when rewriting.
+6. ONLY output the raw file content, preserving all other native code and logic perfectly. Do not wrap in markdown codeblocks.
 
 File Content:
 {content}
