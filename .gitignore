@@ -49,3 +49,7 @@ next-env.d.ts
 node_modules/
 .gemini/settings.json
 .gemini/
+# gemini-cli settings
+.gemini/
+# GitHub App credentials
+gha-creds-*.json
