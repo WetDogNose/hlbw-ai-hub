@@ -1,8 +1,29 @@
 # Directive Enforcer Sentry Replication Blueprint
 
-## Purpose
+## Feature Intent
+
+The Directive Enforcer is a Python-based A2A worker agent built into a global toolchain. Its primary role is to enforce unambiguous, strict, Markdown Callout structures (Meta-Syntax) on any agent instructions, hints, or directives embedded across workspace artifacts. The enforcer resolves ambiguity by rejecting loose natural language prompts (e.g., "hello agent, don't forget to"), preventing infinite LLM loops, and consolidating conflicting logic.
+
+## Purpose & Target Outcomes
 
 Maintain a global "memory graph" of all established rules, directives, and hints across a codebase to prevent context rot. Automatically rewrite loose, human-like agent instructions into a strict, machine-enforceable meta-syntax while globally resolving logic conflicts.
+
+## Integration Points
+
+- **Toolchain Doctor / CI**: Runs periodically (or on push) to scan all `SKILL.md` and repository artifacts.
+- **Agent Memory Interceptor**: Any master IDE agent drafting a task or updating a `.md` artifact must call out to the Directive Enforcer via A2A messaging to validate their changes *before* committing.
+
+## Agent Triggers (Hints, Directives, Instructions)
+
+To ensure orchestrator/master agents use the feature reliably, the following hints/directives must be deployed in your global agent prompt (`GEMINI.md` / `system_instructions.txt`):
+
+> [!IMPORTANT]
+> **[Agent Directive: Artifact Updates]**
+> ALWAYS draft instruction changes on a scratchpad and sequentially query the Directive Enforcer Sentry to validate against global conflict constraints BEFORE rewriting any `.md` tool rules or skill files.
+
+> [!TIP]
+> **[Agent Hint: Resolving Loops]**
+> If you encounter conflicting steps in `task.md` or a skill instruction, ping the Directive Enforcer A2A interface to scan the workspace and advise on which directive holds precedence.
 
 ## Capability Contract
 

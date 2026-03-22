@@ -24,7 +24,10 @@ Before you generate any markdown files, take a moment to reason through the feat
 Create a comprehensive blueprint file named `exports/replication/<feature-name>-replication-blueprint.md`. This file must act as a complete, deeply technical architecture and constraint document that leaves ZERO ambiguity for the receiving agent.
 
 Ensure the blueprint includes at minimum:
-- **Purpose**: High-level target outcomes to replicate.
+- **Feature Intent**: A key description of the primary role and intent of the feature (e.g., "The Directive Enforcer is a Python-based A2A worker agent... Its primary role is to enforce unambiguous, strict Meta-Syntax... The enforcer resolves ambiguity by rejecting loose prompts...").
+- **Purpose & Target Outcomes**: High-level target outcomes to replicate.
+- **Integration Points**: Exactly where and how this feature is wired into the broader ecosystem/toolchain to function properly.
+- **Agent Triggers (Hints, Directives, Instructions)**: The exact agent hints, directives, and instructions required to reliably integrate it and have it triggered by agents at the right time.
 - **Capability Contract**: What the feature *must* be able to do.
 - **Reference Architecture**: How abstract components (services, stores, adapters) logically interact.
 - **Data Models**: Agnostic schemas of the state/data structures (include exact required fields).
