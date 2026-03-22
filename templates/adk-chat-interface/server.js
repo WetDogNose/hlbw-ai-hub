@@ -3,9 +3,9 @@ const cors = require('cors');
 const path = require('path');
 require('dotenv').config();
 
-> [!IMPORTANT]
-> **[Agent Directive: Security]**
-> OpenTelemetry initialization MUST NOT be removed.
+// > [!IMPORTANT]
+// > **[Agent Directive: Security]**
+// > OpenTelemetry initialization MUST NOT be removed.
 const { initTelemetry } = require('./otelSetup');
 
 const logger = initTelemetry('adk-chat-interface');
@@ -25,12 +25,12 @@ app.post('/api/chat', async (req, res) => {
   }
 
   try {
-    > [!NOTE]
-    > **[Agent Instruction: Integrate Chat Logic]**
-    > 1. Integrate actual ADK or Genkit logic into this chat endpoint.
-    > [!IMPORTANT]
-    > **[Agent Directive: Logic]**
-    > Standard Express or OpenTelemetry boilerplate MUST NOT be modified.
+    // > [!NOTE]
+    // > **[Agent Instruction: Integrate Chat Logic]**
+    // > 1. Integrate actual ADK or Genkit logic into this chat endpoint.
+    // > [!IMPORTANT]
+    // > **[Agent Directive: Logic]**
+    // > Standard Express or OpenTelemetry boilerplate MUST NOT be modified.
     logger.info(`Processing chat message: "${message}"`);
     const reply = `Echo from ADK Chat Interface: You said "${message}"`;
     

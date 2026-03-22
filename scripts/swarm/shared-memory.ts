@@ -9,6 +9,8 @@ import { getTracer } from "./tracing";
 import { appendAudit } from "./audit";
 import fs from "node:fs";
 
+const ACTOR = process.env.WORKER_ID || "shared-memory";
+
 // --- MCP Client Connection ---
 
 let sharedClient: Client | null = null;
@@ -70,7 +72,7 @@ export async function storeEntity(
           entities: [{ name, type, observations }],
         },
       });
-      await appendAudit({ actor: "shared-memory", action: "memory.entity_stored", entityType: type, entityId: name, metadata: { observationCount: observations.length } });
+      await appendAudit({ actor: ACTOR, action: "memory.entity_stored", entityType: type, entityId: name, metadata: { observationCount: observations.length } });
     } catch (err: any) {
       span.recordException(err);
       console.error(`SharedMemory: Failed to store entity "${name}":`, err.message);
@@ -93,7 +95,7 @@ export async function addObservations(entityName: string, observations: string[]
       },
     });
     await appendAudit({ 
-      actor: "shared-memory", 
+      actor: ACTOR, 
       action: "memory.observations_added", 
       entityType: "observation", 
       entityId: entityName, 
@@ -117,7 +119,7 @@ export async function createRelation(source: string, target: string, relationTyp
       },
     });
     await appendAudit({ 
-      actor: "shared-memory", 
+      actor: ACTOR, 
       action: "memory.relation_created", 
       entityType: "relation", 
       entityId: `${source}->${target}`, 
@@ -195,7 +197,7 @@ export async function removeEntity(name: string): Promise<void> {
       name: "delete_entities",
       arguments: { entityNames: [name] },
     });
-    await appendAudit({ actor: "shared-memory", action: "memory.entity_removed", entityType: "entity", entityId: name });
+    await appendAudit({ actor: ACTOR, action: "memory.entity_removed", entityType: "entity", entityId: name });
   } catch (err: any) {
     console.error(`SharedMemory: Failed to remove entity "${name}":`, err.message);
   }

@@ -2,9 +2,9 @@ import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { CallToolRequestSchema, ListToolsRequestSchema } from "@modelcontextprotocol/sdk/types.js";
 
-> [!IMPORTANT]
-> **[Agent Directive: Logic]**
-> OpenTelemetry initialization MUST NOT be removed.
+// > [!IMPORTANT]
+// > **[Agent Directive: Logic]**
+// > OpenTelemetry initialization MUST NOT be removed.
 import { initTelemetry } from "./otelSetup.js";
 
 const logger = initTelemetry('mcp-agent-wrapper');
@@ -39,12 +39,12 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
 
 // Handle tool execution
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
-  > [!NOTE]
-  > **[Agent Instruction: Tool Request Handling]**
-  > 1. Integrate tool requests with internal agent logic.
-  > [!IMPORTANT]
-  > **[Agent Directive: Logic]**
-  > Domain-heavy execution logic MUST NOT be placed directly within this handler.
+  // > [!NOTE]
+  // **[Agent Instruction: Tool Request Handling]**
+  // 1. Integrate tool requests with internal agent logic.
+  // [!IMPORTANT]
+  // **[Agent Directive: Logic]**
+  // Domain-heavy execution logic MUST NOT be placed directly within this handler.
   if (request.params.name === "example_tool") {
     const input = request.params.arguments.input;
     // TODO: Route to internal agent logic

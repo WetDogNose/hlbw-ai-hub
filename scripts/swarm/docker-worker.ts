@@ -60,6 +60,7 @@ export async function spawnDockerWorker(taskId: string, instructionPayload: stri
       if (process.env.GEMINI_API_KEY) envKeys.GEMINI_API_KEY = process.env.GEMINI_API_KEY;
       if (carrier.traceparent) envKeys.TRACEPARENT = carrier.traceparent;
       if (carrier.tracestate) envKeys.TRACESTATE = carrier.tracestate;
+      envKeys.WORKER_ID = worker.id;
 
       const imageName = agentType === "python" ? "wot-box-python-worker:latest" : "wot-box-worker:latest";
       const command = agentType === "python"
@@ -72,8 +73,7 @@ export async function spawnDockerWorker(taskId: string, instructionPayload: stri
           imageName,
           mountVolume: absoluteWorktreePath,
           envKeys: envKeys,
-          command,
-          extraBinds: [`${hostAuditDir}:/workspace/.agents/swarm`]
+          command
         }
       });
 

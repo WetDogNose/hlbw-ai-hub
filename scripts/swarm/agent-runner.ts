@@ -27,6 +27,52 @@ async function run() {
     
     await tracer.startActiveSpan("Agent:Lifecycle", {}, activeContext, async (rootSpan) => {
 
+    // --- SENTRY VALIDATION ---
+    console.log("Validating instruction via Directive Enforcer Sentry...");
+    try {
+        const b64 = Buffer.from(JSON.stringify({
+            sender_id: "agent-runner",
+            target_id: "directive-enforcer",
+            payload: { action: "get_advice", draft_instruction: instruction }
+        })).toString("base64");
+        
+        // Use a 5s timeout for Sentry
+        const script = `
+            const http = require('http');
+            const data = Buffer.from('${b64}', 'base64').toString();
+            const req = http.request('http://localhost:8080/a2a/message', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(data) },
+                timeout: 5000
+            }, (res) => {
+                let body = '';
+                res.on('data', d => body += d);
+                res.on('end', () => {
+                    if (res.statusCode === 200) {
+                        const json = JSON.parse(body);
+                        console.log(JSON.stringify(json.response_payload));
+                        process.exit(0);
+                    } else process.exit(1);
+                });
+            });
+            req.on('error', () => process.exit(1));
+            req.write(data);
+            req.end();
+        `;
+        const adviceJson = execSync(`node -e "${script}"`, { encoding: 'utf-8' }).trim();
+        if (adviceJson) {
+            const advice = JSON.parse(adviceJson);
+            if (advice.advice) {
+                console.log(`\x1b[33m[SENTRY ADVICE RECEIVED]\x1b[0m\n${advice.advice}\n`);
+                // Append advice to instruction for the agent
+                instruction += `\n\nIMPORTANT ARCHITECTURAL ADVICE FROM SENTRY:\n${advice.advice}`;
+            }
+        }
+    } catch (e) {
+        console.warn("\x1b[31m[Warning]\x1b[0m Sentry unreachable or validation failed. Proceeding with caution.");
+    }
+    // -------------------------
+
     const model = genAI.getGenerativeModel({ 
         model: 'gemini-2.5-flash',
         systemInstruction: "You are an autonomous AI swarm worker inside an isolated repository worktree. You have access to bash commands, file reading, and file writing. Execute your assigned instruction and write your output to the required location. When you are completely finished, output the exact word 'DONE'. Use tools to discover codebase context before acting. Always use standard paths under /workspace.",

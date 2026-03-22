@@ -164,60 +164,45 @@
       }
     },
     "/workspace/templates/adk-chat-interface/server.js": {
-      "context_metadata": "const express = require('express');\nconst cors = require('cors');\nconst path = require('path');\nrequire('dotenv').config();\n\n> [!IMPORTANT]\n> **[Agent Directive: Security]**\n> OpenTelemetry initialization MUST NOT be removed.\nconst { initTelemetry } = require('./otelSetup');\n\nconst logger = initTelemetry('adk-chat-interface');\nconst app = express();\nconst port = process.env.PORT || 8080;\n\napp.use(cors());",
+      "context_metadata": "const express = require('express');\nconst cors = require('cors');\nconst path = require('path');\nrequire('dotenv').config();\n\n// > [!IMPORTANT]\n// > **[Agent Directive: Security]**\n// > OpenTelemetry initialization MUST NOT be removed.\nconst { initTelemetry } = require('./otelSetup');\n\nconst logger = initTelemetry('adk-chat-interface');\nconst app = express();\nconst port = process.env.PORT || 8080;\n\napp.use(cors());",
       "annotations": {
-        "directives": [
-          "> [!IMPORTANT]\n> **[Agent Directive: Security]**\n> OpenTelemetry initialization MUST NOT be removed.\n"
-        ],
+        "directives": [],
         "instructions": [],
         "hints": [],
         "has_unstructured_legacy": false
       }
     },
     "/workspace/templates/cloud-run/node/index.js": {
-      "context_metadata": "const express = require('express');\n> [!IMPORTANT]\n> **[Agent Directive: Logic]**\n> OpenTelemetry initialization MUST NOT be removed.\n> [!TIP]\n> **[Agent Hint: Context]**\n> Maintaining OpenTelemetry initialization ensures uniformity across hlbw-ai-hub services.\nconst { initTelemetry } = require('./otelSetup');\nconst logger = initTelemetry('node-cloudrun-agent');\nconst app = express();\n\n> [!IMPORTANT]\n> **[Agent Directive: Logic]**\n> The port variable MUST always be assigned using 'process.env.PORT'.\n> [!TIP]",
+      "context_metadata": "const express = require('express');\n// > [!IMPORTANT]\n// > **[Agent Directive: Logic]**\n// > OpenTelemetry initialization MUST NOT be removed.\n// > [!TIP]\n// > **[Agent Hint: Context]**\n// > Maintaining OpenTelemetry initialization ensures uniformity across hlbw-ai-hub services.\nconst { initTelemetry } = require('./otelSetup');\nconst logger = initTelemetry('node-cloudrun-agent');\nconst app = express();\n\n// > [!IMPORTANT]\n// > **[Agent Directive: Logic]**\n// > The port variable MUST always be assigned using 'process.env.PORT'.\n// > [!TIP]",
       "annotations": {
-        "directives": [
-          "> [!IMPORTANT]\n> **[Agent Directive: Logic]**\n> OpenTelemetry initialization MUST NOT be removed.\n> [!TIP]\n> **[Agent Hint: Context]**\n> Maintaining OpenTelemetry initialization ensures uniformity across hlbw-ai-hub services.\n",
-          "> [!IMPORTANT]\n> **[Agent Directive: Logic]**\n> The port variable MUST always be assigned using 'process.env.PORT'.\n> [!TIP]\n> **[Agent Hint: Context]**\n> The default port for Cloud Run environments is 8080.\n"
-        ],
+        "directives": [],
         "instructions": [],
-        "hints": [
-          "> [!TIP]\n> **[Agent Hint: Context]**\n> Maintaining OpenTelemetry initialization ensures uniformity across hlbw-ai-hub services.\n",
-          "> [!TIP]\n> **[Agent Hint: Context]**\n> The default port for Cloud Run environments is 8080.\n"
-        ],
+        "hints": [],
         "has_unstructured_legacy": false
       }
     },
     "/workspace/templates/docker/node/index.js": {
-      "context_metadata": "const http = require('http');\n> [!IMPORTANT]\n> **[Agent Directive: Logic]**\n> OpenTelemetry initialization MUST NOT be removed.\nconst { initTelemetry } = require('./otelSetup');\nconst logger = initTelemetry('node-docker-agent');\n\n> [!IMPORTANT]\n> **[Agent Directive: Logic]**\n> The PORT environment variable MUST ALWAYS be used for port configuration.\nconst port = process.env.PORT || 8080;\n\nconst server = http.createServer((req, res) => {\n  res.statusCode = 200;\n  res.setHeader('Content-Type', 'text/plain');",
+      "context_metadata": "const http = require('http');\n// > [!IMPORTANT]\n// > **[Agent Directive: Logic]**\n// > OpenTelemetry initialization MUST NOT be removed.\nconst { initTelemetry } = require('./otelSetup');\nconst logger = initTelemetry('node-docker-agent');\n\n// > [!IMPORTANT]\n// > **[Agent Directive: Logic]**\n// > The PORT environment variable MUST ALWAYS be used for port configuration.\nconst port = process.env.PORT || 8080;\n\nconst server = http.createServer((req, res) => {\n  res.statusCode = 200;\n  res.setHeader('Content-Type', 'text/plain');",
       "annotations": {
-        "directives": [
-          "> [!IMPORTANT]\n> **[Agent Directive: Logic]**\n> OpenTelemetry initialization MUST NOT be removed.\n",
-          "> [!IMPORTANT]\n> **[Agent Directive: Logic]**\n> The PORT environment variable MUST ALWAYS be used for port configuration.\n"
-        ],
+        "directives": [],
         "instructions": [],
         "hints": [],
         "has_unstructured_legacy": false
       }
     },
     "/workspace/wrappers/a2a/main.py": {
-      "context_metadata": "import os\nfrom fastapi import FastAPI, HTTPException\nfrom pydantic import BaseModel\nimport uvicorn\nfrom otel_setup import init_telemetry\nfrom opentelemetry.instrumentation.fastapi import FastAPIInstrumentor\n\n> [!IMPORTANT]\n> **[Agent Directive: Security]**\n> OpenTelemetry initialization MUST NOT be removed.\nlogger = init_telemetry(\"a2a-wrapper\")\napp = FastAPI(title=\"A2A Agent Wrapper\", description=\"Agent-to-Agent Communication Wrapper\")\n\nFastAPIInstrumentor.instrument_app(app)\n",
+      "context_metadata": "import os\nfrom fastapi import FastAPI, HTTPException\nfrom pydantic import BaseModel\nimport uvicorn\nfrom otel_setup import init_telemetry\nfrom opentelemetry.instrumentation.fastapi import FastAPIInstrumentor\n\n# > [!IMPORTANT]\n# > **[Agent Directive: Security]**\n# > OpenTelemetry initialization MUST NOT be removed.\nlogger = init_telemetry(\"a2a-wrapper\")\napp = FastAPI(title=\"A2A Agent Wrapper\", description=\"Agent-to-Agent Communication Wrapper\")\n\nFastAPIInstrumentor.instrument_app(app)\n",
       "annotations": {
-        "directives": [
-          "> [!IMPORTANT]\n> **[Agent Directive: Security]**\n> OpenTelemetry initialization MUST NOT be removed.\n"
-        ],
+        "directives": [],
         "instructions": [],
         "hints": [],
         "has_unstructured_legacy": false
       }
     },
     "/workspace/wrappers/mcp/index.js": {
-      "context_metadata": "import { Server } from \"@modelcontextprotocol/sdk/server/index.js\";\nimport { StdioServerTransport } from \"@modelcontextprotocol/sdk/server/stdio.js\";\nimport { CallToolRequestSchema, ListToolsRequestSchema } from \"@modelcontextprotocol/sdk/types.js\";\n\n> [!IMPORTANT]\n> **[Agent Directive: Logic]**\n> OpenTelemetry initialization MUST NOT be removed.\nimport { initTelemetry } from \"./otelSetup.js\";\n\nconst logger = initTelemetry('mcp-agent-wrapper');\n\nconst server = new Server({\n  name: \"mcp-wrapper-template\",\n  version: \"1.0.0\"\n}, {",
+      "context_metadata": "import { Server } from \"@modelcontextprotocol/sdk/server/index.js\";\nimport { StdioServerTransport } from \"@modelcontextprotocol/sdk/server/stdio.js\";\nimport { CallToolRequestSchema, ListToolsRequestSchema } from \"@modelcontextprotocol/sdk/types.js\";\n\n// > [!IMPORTANT]\n// > **[Agent Directive: Logic]**\n// > OpenTelemetry initialization MUST NOT be removed.\nimport { initTelemetry } from \"./otelSetup.js\";\n\nconst logger = initTelemetry('mcp-agent-wrapper');\n\nconst server = new Server({\n  name: \"mcp-wrapper-template\",\n  version: \"1.0.0\"\n}, {",
       "annotations": {
-        "directives": [
-          "> [!IMPORTANT]\n> **[Agent Directive: Logic]**\n> OpenTelemetry initialization MUST NOT be removed.\n"
-        ],
+        "directives": [],
         "instructions": [],
         "hints": [],
         "has_unstructured_legacy": false

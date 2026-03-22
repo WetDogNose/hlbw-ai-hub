@@ -3,6 +3,10 @@
 
 import fs from "node:fs/promises";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const AUDIT_DIR = path.join(process.cwd(), ".agents", "swarm");
 const AUDIT_PATH = path.join(AUDIT_DIR, "audit.jsonl");
@@ -25,7 +29,8 @@ export async function appendAudit(entry: Omit<AuditEntry, "timestamp">): Promise
     timestamp: new Date().toISOString(),
     ...entry,
   };
-  console.log(`[AUDIT] Appending to ${path.resolve(AUDIT_PATH)}`);
+  // Use stderr for logging to avoid polluting tool outputs if called via MCP
+  console.error(`[AUDIT] Appending to ${path.resolve(AUDIT_PATH)}`);
   await fs.appendFile(AUDIT_PATH, JSON.stringify(full) + "\n", "utf-8");
 }
 
@@ -39,8 +44,8 @@ export async function readAuditLog(limit = 50): Promise<AuditEntry[]> {
   }
 }
 
-// CLI usage
-if (require.main === module) {
+// CLI usage (ESM equivalent)
+if (process.argv[1] === __filename) {
   readAuditLog(100).then((entries) => {
     console.log(JSON.stringify(entries, null, 2));
   });
