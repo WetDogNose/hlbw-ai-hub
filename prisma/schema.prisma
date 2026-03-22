@@ -57,3 +57,89 @@ model VerificationToken {
 
   @@unique([identifier, token])
 }
+
+model AISetting {
+  id                String   @id @default(cuid())
+  isActive                    Boolean  @default(false)
+  createdAt                   DateTime @default(now())
+  updatedAt                   DateTime @updatedAt
+  
+  // Pipeline Mode: "SINGLE_PASS" or "THREE_STAGE"
+  pipelineMode                String   @default("THREE_STAGE")
+  generatedSinglePassPrompt   String   @default("")
+  
+  // Image Preprocessing
+  imageCompressionEnabled     Boolean  @default(true)
+  imageMaxResolution          Int      @default(2048)
+  imageCompressionQuality     Int      @default(80)
+  
+  // Deduplication
+  deduplicationEnabled        Boolean  @default(true)
+  deduplicationPromptTemplate String   @default("")
+
+  // Pipeline Parameters
+  paddingPercentage           Float    @default(5.0)
+  maxOutputTokens             Int      @default(8192)
+  topP                        Float    @default(1.0)
+  topK                        Int      @default(40)
+
+  // Stage 1 (Spatial)
+  stage1Enabled               Boolean  @default(false)
+  stage1Model                 String   @default("gemini-2.5-flash")
+  stage1SystemInstruction     String   @default("")
+  stage1Prompt                String
+  stage1Temperature           Float    @default(0.0)
+
+  // Stage 2 (Vision)
+  stage2Model                 String   @default("gemini-2.5-flash")
+  stage2SystemInstruction     String   @default("")
+  stage2Prompt                String
+  stage2Temperature           Float    @default(0.4)
+}
+
+model AppearanceSetting {
+  id                String   @id @default(cuid())
+  isActive          Boolean  @default(false)
+  createdAt         DateTime @default(now())
+
+  // Base / Backgrounds
+  bgPrimary         String   @default("#0f172a") 
+  bgSecondary       String   @default("#1e293b") 
+  bgTertiary        String   @default("#334155")
+  customHtmlBackground String @default("")
+  customHtmlBackgroundEnabled Boolean @default(true)
+
+  // Typography
+  textPrimary       String   @default("#f8fafc")
+  textSecondary     String   @default("#cbd5e1")
+  textMuted         String   @default("#94a3b8")
+  fontFamily        String   @default("Inter, sans-serif") 
+  titleGradientStart String  @default("#60a5fa") 
+  titleGradientEnd   String  @default("#c084fc") 
+
+  // Accents / Buttons
+  accentColor       String   @default("#3b82f6") 
+  accentHover       String   @default("#2563eb")
+
+  // Status / Alerts
+  dangerColor       String   @default("#ef4444")
+  successColor      String   @default("#10b981")
+  warningColor      String   @default("#f59e0b")
+  infoColor         String   @default("#3b82f6")
+  purpleColor       String   @default("#a855f7")
+
+  // Structural & Layout
+  borderColor       String   @default("#334155")
+  borderRadiusSm    String   @default("4px")
+  borderRadiusMd    String   @default("8px")
+  borderRadiusLg    String   @default("16px")
+  borderRadiusFull  String   @default("9999px")
+}
+
+model SystemSetting {
+  id                  String   @id @default(cuid())
+  isActive            Boolean  @default(false)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  autoApproveNewUsers Boolean  @default(false)
+}

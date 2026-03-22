@@ -1,4 +1,5 @@
 #!/bin/bash
+# // turbo-all
 # A local script to mimic the `ci-validation.yml` pipeline checks natively before deploying or pushing.
 set -e
 

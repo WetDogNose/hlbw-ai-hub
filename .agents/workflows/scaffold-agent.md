@@ -1,6 +1,7 @@
 ---
 description: How to scaffold a new standard multi-agent Agent (A2A) with proper wrappers and container templates.
 ---
+// turbo-all
 # Scaffold Agent Workflow
 
 When you are asked to create a new AI agent within the `hlbw-ai-hub` (or `wot-box`), follow these mandatory steps to utilize the standardized ecosystem templates.

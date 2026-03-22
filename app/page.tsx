@@ -1,5 +1,5 @@
 import { Activity, Server, Cpu, Layers } from "lucide-react";
-import { ThemeToggle } from "@/components/theme-toggle";
+import Link from "next/link";
 
 export default function Home() {
   return (
@@ -15,7 +15,7 @@ export default function Home() {
       </section>
 
       <div className="card-grid">
-        <div className="glass-panel stat-card">
+        <div className="card stat-card">
           <div className="stat-icon-wrapper text-blue-500 bg-blue-500/10">
             <Cpu size={24} />
           </div>
@@ -23,7 +23,7 @@ export default function Home() {
           <div className="stat-label">Active Nodes</div>
         </div>
 
-        <div className="glass-panel stat-card">
+        <div className="card stat-card">
           <div className="stat-icon-wrapper text-purple-500 bg-purple-500/10">
             <Server size={24} />
           </div>
@@ -31,7 +31,7 @@ export default function Home() {
           <div className="stat-label">Connected MCPs</div>
         </div>
 
-        <div className="glass-panel stat-card">
+        <div className="card stat-card">
           <div className="stat-icon-wrapper text-emerald-500 bg-emerald-500/10">
             <Layers size={24} />
           </div>
@@ -39,7 +39,7 @@ export default function Home() {
           <div className="stat-label">Swarms Dispatched</div>
         </div>
 
-        <div className="glass-panel stat-card">
+        <div className="card stat-card">
           <div className="stat-icon-wrapper text-amber-500 bg-amber-500/10">
             <Activity size={24} />
           </div>
@@ -50,8 +50,10 @@ export default function Home() {
         </div>
       </div>
 
-      <div className="fixed bottom-8 right-8 z-50">
-        <ThemeToggle />
+      <div className="header-actions mt-8">
+        <Link href="/admin/stats" className="btn btn-primary">
+          Open Admin Control Plane
+        </Link>
       </div>
     </main>
   );

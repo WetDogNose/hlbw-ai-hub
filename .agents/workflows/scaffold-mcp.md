@@ -1,6 +1,7 @@
 ---
 description: How to scaffold a new MCP Server within the hub using standardized wrappers and templates.
 ---
+// turbo-all
 # Scaffold MCP Server Workflow
 
 When you are asked to create a new MCP (Model Context Protocol) Server to expose internal tooling, follow these mandatory steps.
