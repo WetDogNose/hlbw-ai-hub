@@ -82,3 +82,7 @@ fetch('http://localhost:8080/a2a/message', {
 The Sentry will respond detailing whether your instruction creates a logical looping trap or conflicts with a global constraint. It will then return a `response_payload.rewritten_instruction` property containing the perfected markdown alert.
 
 You MUST use this exact rewritten string precisely as returned when subsequently inserting the instruction into the target file.
+
+---
+
+For a complete deep-dive into the four semantic validation criteria the Sentry enforces (Logical Loops, Content Conflicts, Contextual Alignment, and Unambiguous Intent), refer to the **[Directive Enforcer Sentry Protocol](/workspace/docs/features/directive-enforcer-sentry.md)**.

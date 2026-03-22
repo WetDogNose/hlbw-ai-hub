@@ -62,6 +62,8 @@ During agent swarming operations, the Master Agent Coordinator automatically inv
 
 The Antigravity IDE and Gemini CLI MUST consult the Sentry's `http://localhost:8080/a2a/message` endpoint to get LLM-driven architectural advice on a draft instruction relative to the entire cached workspace context. The exact usage rules and node fetching script constraints for agents are standardized within the **[Directive Enforcer Sentry Skill](/workspace/.agents/skills/directive-enforcer-sentry/SKILL.md)**.
 
+For an in-depth explanation of the Sentry's automated validation rules, semantic logic enforcement, and the JSON payload schema, please refer to the **[Directive Enforcer Sentry Protocol](/workspace/docs/features/directive-enforcer-sentry.md)**.
+
 ---
 
 ## 3. Architecture & Location
