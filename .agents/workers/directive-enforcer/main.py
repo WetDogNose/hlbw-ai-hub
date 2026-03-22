@@ -414,6 +414,7 @@ Using the entire workspace graph, generate a single comprehensive Mermaid `graph
 3. Group related core themes into a `subgraph Core Concepts`, and link the rules to those concepts.
 4. Draw arrows from the files to the rules they contain (`-- "contains" -->`).
 5. Output ONLY the raw markdown containing the title `# Agent Directives Graph`, a brief description, and the ````mermaid` codeblock. Do not include any other markdown chat formatting around the document.
+6. CRITICAL: Do NOT use literal double quotes (") inside node labels. Convert all inner double quotes to single quotes (') so the Mermaid parser does not crash.
 """
     try:
         if global_cache_mgr.active_cache_name:
@@ -434,6 +435,10 @@ Using the entire workspace graph, generate a single comprehensive Mermaid `graph
             )
 
         result = response.text
+        
+        # Safety net to fix unescaped double quotes inside Mermaid labels
+        result = re.sub(r'\["(.*?)"\]', lambda m: '["' + m.group(1).replace('"', "'") + '"]', result)
+        
         out_path = os.path.join(workspace_root, "docs", "agent-directives-graph.md")
         os.makedirs(os.path.dirname(out_path), exist_ok=True)
         with open(out_path, "w", encoding="utf-8") as fw:
