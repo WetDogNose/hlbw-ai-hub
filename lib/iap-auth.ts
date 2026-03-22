@@ -28,31 +28,7 @@ export async function getIapUser(): Promise<IapUser | null> {
     return null;
   }
 
-  try {
-    const dbUser = await prisma.user.findUnique({
-      where: { email },
-      select: { id: true, email: true, name: true, role: true },
-    });
-
-    const isAdminEmail = email === process.env.ADMIN_EMAIL;
-
-    // Force the ADMIN role for the designated ADMIN_EMAIL, even if DB says otherwise
-    if (dbUser) {
-      if (isAdminEmail && dbUser.role !== "ADMIN") {
-        return { ...dbUser, role: "ADMIN" };
-      }
-      return dbUser;
-    }
-
-    // Return a default constructed user if not provisioned yet
-    const assumedRole = isAdminEmail ? "ADMIN" : "USER";
-    return { id: email, email, name: email.split("@")[0], role: assumedRole };
-  } catch (e) {
-    console.warn(
-      "IAP Auth: Failed to fetch user from DB, falling back to basic header data:",
-      e,
-    );
-    const assumedRole = email === process.env.ADMIN_EMAIL ? "ADMIN" : "USER";
-    return { id: email, email, name: email.split("@")[0], role: assumedRole };
-  }
+  const isAdminEmail = email === process.env.ADMIN_EMAIL;
+  const assumedRole = isAdminEmail ? "ADMIN" : "USER";
+  return { id: email, email, name: email.split("@")[0], role: assumedRole };
 }
