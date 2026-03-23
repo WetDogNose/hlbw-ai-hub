@@ -34,10 +34,25 @@ export async function GET(req: Request) {
       let tableSizes: any[] = [];
 
       try {
+        const getApproxCount = async (tableName: string) => {
+          const res = await prisma.$queryRaw<Array<{ estimate: bigint }>>`
+            SELECT reltuples::bigint as estimate
+            FROM pg_class
+            WHERE relname = ${tableName};
+          `;
+          if (res.length > 0 && Number(res[0].estimate) > 0) {
+            return Number(res[0].estimate);
+          }
+          // Fallback to strict count for tiny/empty tables or generic errors
+          return (prisma as any)[tableName.toLowerCase()]
+            .count()
+            .catch(() => 0);
+        };
+
         [userCount, sessionCount, accountCount] = await Promise.all([
-          prisma.user.count(),
-          prisma.session.count(),
-          prisma.account.count(),
+          getApproxCount("User"),
+          getApproxCount("Session"),
+          getApproxCount("Account"),
         ]);
 
         const dbSizeQuery = await prisma.$queryRaw<Array<{ size: bigint }>>`

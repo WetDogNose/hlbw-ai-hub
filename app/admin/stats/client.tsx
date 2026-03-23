@@ -4,137 +4,180 @@ import useSWR from "swr";
 import { Activity, Database, Server, Users } from "lucide-react";
 
 const fetcher = async (url: string) => {
-    const res = await fetch(url);
-    const data = await res.json();
-    if (!res.ok) {
-        throw new Error(data?.error || 'An error occurred while fetching the data.');
-    }
-    return data;
+  const res = await fetch(url);
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(
+      data?.error || "An error occurred while fetching the data.",
+    );
+  }
+  return data;
 };
 
 export default function StatsClient() {
-    const { data: appStats, isValidating: isStatsLoading, error: statsError } = useSWR<any>(
-        '/api/admin/stats',
-        fetcher,
-        {
-            revalidateOnFocus: false,
-            refreshInterval: 60000
-        }
-    );
+  const {
+    data: appStats,
+    isValidating: isStatsLoading,
+    error: statsError,
+  } = useSWR<any>("/api/admin/stats", fetcher, {
+    revalidateOnFocus: false,
+    refreshInterval: 60000,
+  });
 
-    return (
-        <div className="card" style={{ width: "100%", display: "flex", flexDirection: "column" }}>
-            <div style={{ padding: "1.5rem", borderBottom: "1px solid var(--border-color)", display: "flex", alignItems: "center", justifyContent: "space-between", color: "var(--text-primary)", flexWrap: "wrap", gap: "1rem" }}>
-                <h2 style={{ fontSize: "1.25rem", fontWeight: "bold", margin: 0, display: "flex", alignItems: "center", gap: "0.75rem" }}>
-                    <Activity size={24} style={{ color: "var(--accent-color)" }} />
-                    App Stats
-                </h2>
+  return (
+    <div className="flex flex-col w-full gap-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
+      <div className="flex items-center justify-between flex-wrap gap-4 pb-4 border-b border-slate-700/50">
+        <h2 className="text-xl font-bold m-0 flex items-center gap-3 text-slate-100">
+          <Activity className="w-6 h-6 text-blue-500 drop-shadow-[0_0_8px_rgba(59,130,246,0.6)]" />
+          App Stats
+        </h2>
+      </div>
+
+      <div className="flex flex-col gap-8">
+        {isStatsLoading && !appStats ? (
+          <div className="flex justify-center p-12 text-slate-400 animate-pulse">
+            Loading stats...
+          </div>
+        ) : statsError ? (
+          <div className="text-red-400 p-4 bg-red-500/10 border border-red-500/20 rounded-xl">
+            Error loading stats: {statsError.message}
+          </div>
+        ) : appStats ? (
+          <>
+            {/* DB Overview */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="p-6 bg-slate-800/40 backdrop-blur-md rounded-xl border border-slate-700/50 hover:border-blue-500/30 transition-colors shadow-lg group">
+                <div className="flex items-center gap-2 text-slate-400 mb-2 text-sm uppercase tracking-wider font-bold group-hover:text-blue-400 transition-colors">
+                  <Database size={16} /> Database Size
+                </div>
+                <div className="text-3xl font-bold tracking-tight text-slate-100">
+                  {(appStats.database.totalSizeBytes / 1024 / 1024).toFixed(2)}{" "}
+                  <span className="text-lg text-slate-500 font-medium">MB</span>
+                </div>
+                <div className="text-sm text-slate-500 mt-1">
+                  Total Postgres DB Size
+                </div>
+              </div>
+              <div className="p-6 bg-slate-800/40 backdrop-blur-md rounded-xl border border-slate-700/50 hover:border-purple-500/30 transition-colors shadow-lg group">
+                <div className="flex items-center gap-2 text-slate-400 mb-2 text-sm uppercase tracking-wider font-bold group-hover:text-purple-400 transition-colors">
+                  <Users size={16} /> Total Users
+                </div>
+                <div className="text-3xl font-bold tracking-tight text-slate-100">
+                  {appStats.counts.users}
+                </div>
+                <div className="text-sm text-slate-500 mt-1">
+                  Accounts: {appStats.counts.accounts}
+                </div>
+              </div>
+              <div className="p-6 bg-slate-800/40 backdrop-blur-md rounded-xl border border-slate-700/50 hover:border-emerald-500/30 transition-colors shadow-lg group">
+                <div className="flex items-center gap-2 text-slate-400 mb-2 text-sm uppercase tracking-wider font-bold group-hover:text-emerald-400 transition-colors">
+                  <Activity size={16} /> Sessions
+                </div>
+                <div className="text-3xl font-bold tracking-tight text-slate-100">
+                  {appStats.counts.sessions}
+                </div>
+                <div className="text-sm text-slate-500 mt-1">
+                  Active Database Sessions
+                </div>
+              </div>
             </div>
-            
-            <div style={{ padding: "1.5rem", display: "flex", flexDirection: "column", gap: "2rem" }}>
-                {isStatsLoading && !appStats ? (
-                    <div style={{ display: "flex", justifyContent: "center", padding: "3rem" }}>Loading stats...</div>
-                ) : statsError ? (
-                    <div style={{ color: "var(--danger-color)", padding: "1rem", backgroundColor: "rgba(239, 68, 68, 0.1)", borderRadius: "8px" }}>Error loading stats: {statsError.message}</div>
-                ) : appStats ? (
-                    <>
-                        {/* DB Overview */}
-                        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "1rem" }}>
-                            <div style={{ padding: "1.5rem", backgroundColor: "var(--bg-tertiary)", borderRadius: "12px", border: "1px solid var(--border-color)" }}>
-                                <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", color: "var(--text-secondary)", marginBottom: "0.5rem", fontSize: "0.875rem", textTransform: "uppercase", letterSpacing: "0.05em", fontWeight: "bold" }}>
-                                    <Database size={16} /> Database Size
-                                </div>
-                                <div style={{ fontSize: "1.5rem", fontWeight: "bold" }}>
-                                    {(appStats.database.totalSizeBytes / 1024 / 1024).toFixed(2)} MB
-                                </div>
-                                <div style={{ fontSize: "0.875rem", color: "var(--text-secondary)", marginTop: "0.25rem" }}>
-                                    Total Postgres DB Size
-                                </div>
-                            </div>
-                            <div style={{ padding: "1.5rem", backgroundColor: "var(--bg-tertiary)", borderRadius: "12px", border: "1px solid var(--border-color)" }}>
-                                <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", color: "var(--text-secondary)", marginBottom: "0.5rem", fontSize: "0.875rem", textTransform: "uppercase", letterSpacing: "0.05em", fontWeight: "bold" }}>
-                                    <Users size={16} /> Total Users
-                                </div>
-                                <div style={{ fontSize: "1.5rem", fontWeight: "bold" }}>
-                                    {appStats.counts.users}
-                                </div>
-                                <div style={{ fontSize: "0.875rem", color: "var(--text-secondary)", marginTop: "0.25rem" }}>
-                                    Accounts: {appStats.counts.accounts}
-                                </div>
-                            </div>
-                            <div style={{ padding: "1.5rem", backgroundColor: "var(--bg-tertiary)", borderRadius: "12px", border: "1px solid var(--border-color)" }}>
-                                <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", color: "var(--text-secondary)", marginBottom: "0.5rem", fontSize: "0.875rem", textTransform: "uppercase", letterSpacing: "0.05em", fontWeight: "bold" }}>
-                                    <Activity size={16} /> Sessions
-                                </div>
-                                <div style={{ fontSize: "1.5rem", fontWeight: "bold" }}>
-                                    {appStats.counts.sessions}
-                                </div>
-                                <div style={{ fontSize: "0.875rem", color: "var(--text-secondary)", marginTop: "0.25rem" }}>
-                                    Active Database Sessions
-                                </div>
-                            </div>
-                        </div>
 
-                        {/* System Details */}
-                        <div>
-                            <h3 style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "1rem", fontWeight: "600", marginBottom: "1rem", color: "var(--text-primary)" }}>
-                                <Server size={18} /> System & Deployment Info
-                            </h3>
-                            <div style={{ overflowX: "auto", border: "1px solid var(--border-color)", borderRadius: "8px" }}>
-                                <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "0.875rem" }}>
-                                    <tbody>
-                                        <tr style={{ borderBottom: "1px solid var(--border-color)" }}>
-                                            <th style={{ padding: "0.75rem", color: "var(--text-secondary)", fontWeight: "600", width: "40%" }}>Git Hash (Version)</th>
-                                            <td style={{ padding: "0.75rem", fontFamily: "monospace" }}>{appStats.system.gitHash}</td>
-                                        </tr>
-                                        <tr style={{ borderBottom: "1px solid var(--border-color)" }}>
-                                            <th style={{ padding: "0.75rem", color: "var(--text-secondary)", fontWeight: "600" }}>Container Revision</th>
-                                            <td style={{ padding: "0.75rem", fontFamily: "monospace" }}>{appStats.system.containerRevision}</td>
-                                        </tr>
-                                        <tr style={{ borderBottom: "1px solid var(--border-color)" }}>
-                                            <th style={{ padding: "0.75rem", color: "var(--text-secondary)", fontWeight: "600" }}>Start Time (UTC)</th>
-                                            <td style={{ padding: "0.75rem" }}>{new Date(appStats.system.startTime).toLocaleString()}</td>
-                                        </tr>
-                                        <tr style={{ borderBottom: "1px solid var(--border-color)" }}>
-                                            <th style={{ padding: "0.75rem", color: "var(--text-secondary)", fontWeight: "600" }}>Uptime</th>
-                                            <td style={{ padding: "0.75rem" }}>{Math.floor(appStats.system.uptimeSeconds / 60 / 60)}h {Math.floor((appStats.system.uptimeSeconds / 60) % 60)}m</td>
-                                        </tr>
-                                        <tr>
-                                            <th style={{ padding: "0.75rem", color: "var(--text-secondary)", fontWeight: "600" }}>Node.js Version</th>
-                                            <td style={{ padding: "0.75rem", fontFamily: "monospace" }}>{appStats.system.nodeVersion}</td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-
-                        {/* DB Tables */}
-                        <div>
-                            <h3 style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "1rem", fontWeight: "600", marginBottom: "1rem", color: "var(--text-primary)" }}>
-                                <Database size={18} /> Top Tables by Size
-                            </h3>
-                            <div style={{ overflowX: "auto", border: "1px solid var(--border-color)", borderRadius: "8px" }}>
-                                <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "0.875rem" }}>
-                                    <thead>
-                                        <tr style={{ backgroundColor: "var(--bg-tertiary)", borderBottom: "1px solid var(--border-color)", color: "var(--text-secondary)", textTransform: "uppercase", fontSize: "0.75rem" }}>
-                                            <th style={{ padding: "0.75rem", fontWeight: "600" }}>Table Name</th>
-                                            <th style={{ padding: "0.75rem", fontWeight: "600", textAlign: "right" }}>Size</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {appStats.database.tableSizes.slice(0, 10).map((t: any) => (
-                                            <tr key={t.tableName} style={{ borderBottom: "1px solid var(--border-color)", backgroundColor: "transparent" }} >
-                                                <td style={{ padding: "0.75rem", color: "var(--text-primary)", fontFamily: "monospace" }}>{t.tableName}</td>
-                                                <td style={{ padding: "0.75rem", textAlign: "right", color: "var(--text-secondary)" }}>{(t.sizeBytes / 1024).toFixed(2)} KB</td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </>
-                ) : null}
+            {/* System Details */}
+            <div>
+              <h3 className="flex items-center gap-2 text-base font-semibold mb-4 text-slate-200">
+                <Server size={18} className="text-indigo-400" /> System &
+                Deployment Info
+              </h3>
+              <div className="overflow-x-auto border border-slate-700/50 rounded-xl bg-slate-800/20 shadow-inner">
+                <table className="w-full text-left text-sm">
+                  <tbody className="divide-y divide-slate-700/50">
+                    <tr className="hover:bg-slate-800/40 transition-colors">
+                      <th className="p-4 text-slate-400 font-medium w-2/5">
+                        Git Hash (Version)
+                      </th>
+                      <td className="p-4 font-mono text-slate-300">
+                        {appStats.system.gitHash}
+                      </td>
+                    </tr>
+                    <tr className="hover:bg-slate-800/40 transition-colors">
+                      <th className="p-4 text-slate-400 font-medium">
+                        Container Revision
+                      </th>
+                      <td className="p-4 font-mono text-slate-300">
+                        {appStats.system.containerRevision}
+                      </td>
+                    </tr>
+                    <tr className="hover:bg-slate-800/40 transition-colors">
+                      <th className="p-4 text-slate-400 font-medium">
+                        Start Time (UTC)
+                      </th>
+                      <td className="p-4 text-slate-300">
+                        {new Date(appStats.system.startTime).toLocaleString()}
+                      </td>
+                    </tr>
+                    <tr className="hover:bg-slate-800/40 transition-colors">
+                      <th className="p-4 text-slate-400 font-medium">Uptime</th>
+                      <td className="p-4 text-slate-300">
+                        <span className="font-semibold text-slate-200">
+                          {Math.floor(appStats.system.uptimeSeconds / 60 / 60)}
+                        </span>
+                        h{" "}
+                        <span className="font-semibold text-slate-200">
+                          {Math.floor(
+                            (appStats.system.uptimeSeconds / 60) % 60,
+                          )}
+                        </span>
+                        m
+                      </td>
+                    </tr>
+                    <tr className="hover:bg-slate-800/40 transition-colors">
+                      <th className="p-4 text-slate-400 font-medium">
+                        Node.js Version
+                      </th>
+                      <td className="p-4 font-mono text-slate-300">
+                        {appStats.system.nodeVersion}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
             </div>
-        </div>
-    );
+
+            {/* DB Tables */}
+            <div>
+              <h3 className="flex items-center gap-2 text-base font-semibold mb-4 text-slate-200">
+                <Database size={18} className="text-amber-400" /> Top Tables by
+                Size
+              </h3>
+              <div className="overflow-x-auto border border-slate-700/50 rounded-xl bg-slate-800/20 shadow-inner">
+                <table className="w-full text-left text-sm">
+                  <thead>
+                    <tr className="bg-slate-800/60 border-b border-slate-700/50 text-slate-400 uppercase text-xs tracking-wider">
+                      <th className="p-4 font-semibold">Table Name</th>
+                      <th className="p-4 font-semibold text-right">Size</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-700/50">
+                    {appStats.database.tableSizes.slice(0, 10).map((t: any) => (
+                      <tr
+                        key={t.tableName}
+                        className="hover:bg-slate-800/40 transition-colors"
+                      >
+                        <td className="p-4 text-slate-300 font-mono">
+                          {t.tableName}
+                        </td>
+                        <td className="p-4 text-right text-slate-400 font-medium">
+                          {(t.sizeBytes / 1024).toFixed(2)} KB
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </>
+        ) : null}
+      </div>
+    </div>
+  );
 }

@@ -51,10 +51,10 @@ git commit --allow-empty --no-verify -m "chore: bump version to $gitHash for dep
 7. Tag and push to trigger Cloud Build deployment — **SafeToAutoRun: true** (approved deployment action)
 // turbo
 ```powershell
-git tag -f prod-build && git push origin master && git push origin prod-build --force
+git tag -f prod-build && git push origin main && git push origin prod-build --force
 ```
 
-**CRITICAL NOTE:** Google Cloud Build is explicitly configured to ONLY trigger a deployment when the `prod-build` tag is pushed. Standard commits to `master` will not trigger a build.
+**CRITICAL NOTE:** Google Cloud Build is explicitly configured to ONLY trigger a deployment when the `prod-build` tag is pushed. Standard commits to `main` will not trigger a build.
 
 > [!TIP]
 > **Agent Efficiency Hint:** After triggering the deployment, use the `read_gcp_logs` tool from `gcp-logging-mcp` or tools from `gcp-trace-mcp` to autonomously verify the Cloud Build pipeline succeeded or diagnose any production issues quickly, rather than waiting for the user to check or using slow CLI commands.
