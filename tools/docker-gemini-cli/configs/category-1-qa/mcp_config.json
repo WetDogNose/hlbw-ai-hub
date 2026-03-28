@@ -1,0 +1,16 @@
+{
+  "mcpServers": {
+    "ast-analyzer-mcp": {
+      "command": "C:\\Program Files\\nodejs\\node.exe",
+      "args": [
+        "C:\\Users\\Jason\\repos\\hlbw-ai-hub\\.agents\\mcp-servers\\ast-analyzer\\dist\\index.js"
+      ]
+    },
+    "infrastructure-analyzer-mcp": {
+      "command": "C:\\Program Files\\nodejs\\node.exe",
+      "args": [
+        "C:\\Users\\Jason\\repos\\hlbw-ai-hub\\.agents\\mcp-servers\\infrastructure-analyzer\\dist\\index.js"
+      ]
+    }
+  }
+}

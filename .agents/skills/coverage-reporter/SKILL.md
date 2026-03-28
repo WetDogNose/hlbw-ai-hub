@@ -14,11 +14,11 @@ This skill should be used when the user requests to generate a comprehensive tes
 
 ## Instructions
 1. First, inform the user that you are generating the comprehensive test coverage suite. Explain that this process may take several minutes because it triggers all validation layers (Unit, Database, Security, End-to-End, and Toolchain Diagnostics).
-2. Execute the coverage script by running the following command in the root of the project using the terminal:
+2. Because this operation is resource-intensive, **do not execute it in the main IDE terminal**. Instead, you MUST spawn a background `1_qa` Sub-Agent to handle the load:
    ```bash
-   npm run test:coverage
+   npx tsx scripts/swarm/docker-worker.ts spawn <taskId> "main" "Run npm run test:coverage and report back when finished" ts "1_qa"
    ```
-3. Wait for the command to fully complete. The outputs will be published securely to the `logs/coverage/` directory:
+3. Wait for the Sub-Agent to fully complete its work and gracefully exit. The outputs will be published securely to the `logs/coverage/` directory:
    - **Unit Tests**: `logs/coverage/unit-coverage.txt` (and `logs/coverage/unit/` for jest lcov HTML/LCOV reports)
    - **Database Tests**: `logs/coverage/db-coverage.txt`
    - **Security Tests**: `logs/coverage/security-coverage.txt`

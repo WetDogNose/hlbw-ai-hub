@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "dynamic-postgres-mcp": {
+      "command": "C:\\Program Files\\nodejs\\node.exe",
+      "args": [
+        "C:\\Users\\Jason\\repos\\hlbw-ai-hub\\scripts\\mcp-dynamic-postgres.mjs"
+      ]
+    }
+  }
+}

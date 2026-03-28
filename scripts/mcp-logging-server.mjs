@@ -37,6 +37,10 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
                 inputSchema: {
                     type: "object",
                     properties: {
+                         projectId: {
+                             type: "string",
+                             description: "Optional GCP Project ID. Defaults to the environment configured project.",
+                         },
                         filter: {
                             type: "string",
                             description: "Advanced logging filter string (e.g. 'severity>=ERROR' or 'resource.type=\"cloud_run_revision\"')",
@@ -67,10 +71,11 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             const filter = args.filter || "";
             const limit = args.limit || 50;
             const orderBy = args.orderBy || "timestamp desc";
+            const projectId = args.projectId || PROJECT_ID;
 
             const res = await logging.entries.list({
                 requestBody: {
-                    resourceNames: [`projects/${PROJECT_ID}`],
+                    resourceNames: [`projects/${projectId}`],
                     filter: filter,
                     pageSize: limit,
                     orderBy: orderBy,

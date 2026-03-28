@@ -38,6 +38,10 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
                 inputSchema: {
                     type: "object",
                     properties: {
+                        projectId: {
+                            type: "string",
+                            description: "Optional GCP Project ID. Defaults to the environment configured project.",
+                        },
                         limit: {
                             type: "number",
                             description: "Number of traces to return (default 10).",
@@ -63,6 +67,10 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
                 inputSchema: {
                     type: "object",
                     properties: {
+                        projectId: {
+                            type: "string",
+                            description: "Optional GCP Project ID. Defaults to the environment configured project.",
+                        },
                         traceId: {
                             type: "string",
                             description: "The trace ID to fetch.",
@@ -119,12 +127,13 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         if (name === "list_recent_traces") {
             const limit = args.limit || 10;
             const filter = args.filter || undefined;
+            const projectId = args.projectId || PROJECT_ID;
 
             const endTime = args.endTime ? new Date(args.endTime) : new Date();
             const startTime = args.startTime ? new Date(args.startTime) : new Date(endTime.getTime() - 60 * 60 * 1000);
 
             const res = await cloudtrace.projects.traces.list({
-                projectId: PROJECT_ID,
+                projectId: projectId,
                 filter: filter,
                 pageSize: limit,
                 startTime: startTime.toISOString(),
@@ -142,12 +151,13 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             };
         } else if (name === "get_trace_details") {
             const traceId = args.traceId;
+            const projectId = args.projectId || PROJECT_ID;
             if (!traceId) {
                 throw new Error("traceId is required");
             }
 
             const res = await cloudtrace.projects.traces.get({
-                projectId: PROJECT_ID,
+                projectId: projectId,
                 traceId: traceId,
             });
 

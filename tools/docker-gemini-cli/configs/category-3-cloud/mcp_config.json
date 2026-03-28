@@ -1,0 +1,23 @@
+{
+  "mcpServers": {
+    "gcp-trace-mcp": {
+      "command": "C:\\Program Files\\nodejs\\node.exe",
+      "args": [
+        "C:\\Users\\Jason\\repos\\hlbw-ai-hub\\scripts\\mcp-trace-server.mjs"
+      ]
+    },
+    "gcp-logging-mcp": {
+      "command": "C:\\Program Files\\nodejs\\node.exe",
+      "args": [
+        "C:\\Users\\Jason\\repos\\hlbw-ai-hub\\scripts\\mcp-logging-server.mjs"
+      ]
+    },
+    "cloudrun": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@google-cloud/cloud-run-mcp"
+      ]
+    }
+  }
+}

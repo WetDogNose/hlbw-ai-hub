@@ -19,7 +19,7 @@ Copy the `wrappers/mcp/` directory into your new server project.
 This guarantees you are using the approved `@modelcontextprotocol/sdk` or Python equivalent.
 
 ## Step 3: Registration
-If the MCP server is intended to be used locally within the hub immediately, register it inside the `mcp.json` file pointing to its new `index.js` wrapper file.
+If the MCP server is intended to be used locally within the hub immediately, you MUST register it inside the appropriate Swarm Sub-Agent configuration inside `tools/docker-gemini-cli/configs/<category>/mcp_config.json` depending on its domain (e.g., `3_cloud`, `4_db`). DO NOT register it in the root IDE `mcp_config.json` unless it is a core orchestration tool for the Master Agent.
 
 ## Maintenance Notes
 Always ensure that the `@modelcontextprotocol/sdk` package version defined in your new server matches the version stored in the root `wrappers/mcp/package.json` template. Do not diverge dependencies lightly. If you must update the MCP SDK version for your specific server, proactively update the template to keep the ecosystem in sync.

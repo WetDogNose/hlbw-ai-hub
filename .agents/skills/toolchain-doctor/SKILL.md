@@ -17,6 +17,7 @@ This skill provides you (the AI Agent) with instructions on how to maintain the 
 1. **Run the Diagnostic:**
    Run the following Node script to get a health report:
    // turbo
+
    ```bash
    node scripts/toolchain-doctor.js
    ```
@@ -25,15 +26,15 @@ This skill provides you (the AI Agent) with instructions on how to maintain the 
    - **Missing SKILL.md**: If the doctor reports a skill directory is missing a `SKILL.md`, you MUST synthesize a new `SKILL.md` for that folder based on its contents (e.g., if there are `.sh` scripts inside, write a `SKILL.md` explaining how the AI should use them).
    - **Syntax Errors**: If a script in `scripts/` fails the syntax check, use your code-editing tools to fix the syntax error.
    - **Missing `.env` keys**: Compare `.env.example` with `.env` and instruct the user on exactly what keys they need to add. DO NOT commit or save actual secrets into tracking.
-   - **MCP Server Synchronization**: If the doctor reports that MCP configurations are out of sync, it will automatically synchronize the servers between the Antigravity IDE (`~/.gemini/antigravity/mcp_config.json`) and the Gemini CLI (`~/.gemini/mcp.json`, `.gemini/settings.json`, `.gemini/mcp.json`). This ensures that any new MCP servers created in Antigravity are immediately available to the CLI.
+   - **Swarm Toolchain Alignment**: The doctor validates that the Antigravity IDE (`~/.gemini/antigravity/mcp_config.json`) is strictly limited to Category 0 (Master Agent) tools. It ensures domain-specific tools (Database, Cloud, QA) are correctly isolated in their Swarm sub-agent configurations (`tools/docker-gemini-cli/configs/`).
 
 3. **Proactive Maintenance (Self-Healing):**
    - Check if any new tools or MCP servers have been added recently.
    - Ensure the `package.json` scripts are still aligned with the tools we have (e.g. `secretlint`, `jest`, `husky`, `pre-flight.js`).
    - If you see any orphaned `.js` or `.sh` files that look like they belong in `scripts/` but are sitting in the root directory, move them to `scripts/`!
 
-4. **MCP Server Health Validation:**
-   The doctor now validates that all MCP server entry-point files referenced in the Antigravity MCP config (`~/.gemini/antigravity/mcp_config.json`) actually exist on disk. If a server's script file is missing, it will be reported as an error. For npx-based external servers (e.g. `memory`, `sequential-thinking`), it confirms they are registered.
+4. **Master Agent Config Validation:**
+   The doctor validates that all Master MCP server entry-point files referenced in the Antigravity MCP config (`~/.gemini/antigravity/mcp_config.json`) actually exist on disk. If a server's script file is missing, it will be reported as an error. Swarm-specific config validation is delegated to the respective sub-agents.
 
 5. **TSConfig Vitest Exclusion (Self-Healing):**
    The doctor checks that `scripts/swarm/__tests__` is listed in the `exclude` array of `tsconfig.json`. Swarm test files import `vitest` (which is not installed in the main project — the swarm subsystem runs standalone in Docker containers). If missing, the doctor **automatically adds** the exclusion and rewrites `tsconfig.json`.

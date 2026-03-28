@@ -23,20 +23,27 @@ This skill allows you (the AI Agent) to act as a "marketplace advisor" for Model
    Use the `read_url_content` tool to fetch the latest official MCP servers registry markdown:
    URL: `https://raw.githubusercontent.com/modelcontextprotocol/servers/main/README.md`
 
-3. **Analyze the Wot-Box Environment:**
-   Consider the core stack (Next.js, PostgreSQL/Cloud SQL, GCP, Gemini AI, Prisma) and any custom Wot-Box toolchain workflows. 
+3. **Analyze the Wot-Box Swarm Environment:**
+   Consider the core stack (Next.js, PostgreSQL/Cloud SQL, GCP, Gemini AI, Prisma) and our newly established Hub-and-Spoke Swarm taxonomy:
+   - 0_master: IDE / Orchestrator Tools
+   - 1_qa: Testing & Code Management
+   - 2_source_control: Version Control
+   - 3_cloud: GCP, Cloud Run, Trace
+   - 4_db: Postgres & Data Operations
+   - 5_bizops: Stripe & Business Operations
 
 4. **Filter and Recommend:**
-   Cross-reference the available servers in the fetched README against the installed ones.
+   Cross-reference the available servers in the fetched README against the installed ones (both globally and in the sub-agents).
    Identify 2-4 servers that are *not* currently installed but would provide a high-leverage boost to the user's workflow or codebase management.
    
    For each recommendation, provide:
    - **Server Name**
+   - **Which Swarm Sub-Agent Category it belongs to:** (e.g., "This belongs in 3_cloud")
    - **Why it fits Wot-Box:** (e.g., "Since Wot-Box uses XYZ, this server will allow us to...")
-   - **Installation Snippet:** Provide the exact JSON snippet to add it to `mcp_config.json` (typically using `npx -y`).
+   - **Installation Snippet:** Provide the exact JSON snippet to add it to the specific category's `tools/docker-gemini-cli/configs/<category>/mcp_config.json`.
 
 5. **Prompt to Install:**
-   Always end by asking the user if they would like you to automatically append any of your recommendations into `mcp_config.json` and run the `toolchain-doctor` to sync them.
+   Always end by asking the user if they would like you to automatically append any of your recommendations into the appropriate sub-agent's configuration and run the `toolchain-doctor` to sync them.
 
 
 > [!NOTE]

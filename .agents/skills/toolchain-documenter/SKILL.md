@@ -8,6 +8,7 @@ description: Analyzes the current toolchain capabilities (skills, workflows, MCP
 This skill instructs the AI Agent on how to regenerate the `docs/toolchain-prompt/prompt.md` document, which outlines the current capabilities of the AI toolchain for cloning or reference purposes.
 
 ## When to use this skill
+
 - When the user asks you to "regenerate the toolchain prompt", "update the toolchain documentation", or "produce a new version of the toolchain prompt".
 - After significant new skills, workflows, or MCP servers have been added to the repository, to keep the documentation up-to-date.
 
@@ -17,7 +18,8 @@ This skill instructs the AI Agent on how to regenerate the `docs/toolchain-promp
    - Use the `list_dir` tool to enumerate all folders inside `.agents/skills/`.
    - Use the `list_dir` tool to enumerate all markdown files inside `.agents/workflows/`.
    - Use the `view_file` tool to read the `SKILL.md` of any newly added or unfamiliar skills to understand their purpose.
-   - Check the agent's system prompt or context for the currently available MCP servers (e.g., `wot-box-tester`, `infrastructure-analyzer-mcp`, `ast-analyzer-mcp`).
+   - Use the `list_dir` tool to enumerate all folders inside `tools/docker-gemini-cli/configs/` to understand the domain-specific tools available to the Swarm Sub-Agents (e.g. QA, DB, Cloud).
+   - Check the global `~/.gemini/antigravity/mcp_config.json` for Master Agent tools (e.g., `ast-analyzer-mcp`, `memory`).
 
 2. **Draft the Updated Document:**
    - Synthesize the gathered information into a structured, comprehensive markdown file.
@@ -34,6 +36,6 @@ This skill instructs the AI Agent on how to regenerate the `docs/toolchain-promp
 4. **Report to User:**
    - Summarize the newly added or removed capabilities that were incorporated into the updated prompt.
 
-
 > [!NOTE]
 > **AI Swarming Hint:** If you are executing this workflow/skill as part of a larger or highly parallelizable task, explicitly evaluate whether you can hand off the work to the agent swarming system. Review `.agents/workflows/master-agent-coordinator.md` to act as a Master Agent and dispatch true-parallel sub-agents.
+

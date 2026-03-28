@@ -1,0 +1,21 @@
+{
+  "mcpServers": {
+    "wot-box-tester": {
+      "command": "C:\\Program Files\\nodejs\\node.exe",
+      "args": [
+        "C:\\Users\\Jason\\repos\\hlbw-ai-hub\\scripts\\mcp-tester.mjs"
+      ]
+    },
+    "genkit-mcp-server": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "genkit-cli@^1.28.0",
+        "mcp",
+        "--explicitProjectRoot",
+        "--no-update-notification",
+        "--non-interactive"
+      ]
+    }
+  }
+}

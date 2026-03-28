@@ -3,6 +3,7 @@
 This project uses the official `@modelcontextprotocol/server-postgres` to provide the AI assistant with direct, secure, read-only access to the production `wot_box_db` database.
 
 ## 1. Safety & Architecture
+
 Because Cloud SQL instances often require specific IPs or SSL certificates, and because the default application user (`wot_box_user`) owns the tables but we want the AI to be strictly read-only, we use a dedicated database user.
 
 - **MCP User**: `wot-box-read-only`
@@ -10,23 +11,30 @@ Because Cloud SQL instances often require specific IPs or SSL certificates, and 
 - **Connection**: To bypass local SSL restrictions during development/triage, the MCP server connects to the database.
 
 ## 2. Setting up the Configuration
+
 To keep database credentials secure while allowing the configuration to be shared across the team, the configuration is split into two parts:
 
 **1. The Credentials (`.env`)**
 Add the connection string to your local `.env` file (which is tracked in `.gitignore`).
 
 For standard direct connections (e.g. local databases, Supabase, Neon):
+
 ```env
 MCP_DATABASE_URL="<your_postgres_connection_string_here>"
 ```
 
 *(Optional)* If you are connecting to a Google Cloud SQL instance and want the MCP server to automatically start the Cloud SQL authentication proxy for you, also add:
+
 ```env
 MCP_CLOUD_SQL_INSTANCE="<your-project>:<region>:<instance>"
 ```
 
-**2. The Client Configuration (`mcp.json`)**
-The AI client reads its tools from your global configuration file (e.g. `C:\\Users\\<Your Name>\\.gemini\\mcp.json`). Point it to the wrapper script inside this project:
+**2. The Client Configuration (Swarm Sub-Agent)**
+Under the new Hub-and-Spoke Swarm architecture, the Master Agent (IDE) **DOES NOT** directly connect to Postgres to avoid the 100-tool IDE limit and enforce domain isolation.
+
+Instead, database queries are strictly delegated to a `4_db` Swarm Sub-Agent.
+
+To configure this for local testing, the `tools/docker-gemini-cli/configs/4_db/mcp_config.json` uses the new `mcp-dynamic-postgres.mjs` wrapper:
 
 ```json
 {
@@ -34,16 +42,19 @@ The AI client reads its tools from your global configuration file (e.g. `C:\\Use
     "postgres-prod": {
       "command": "node",
       "args": [
-        "c:/path/to/your/repo/hlbw-ai-hub/scripts/mcp-wrapper.js"
+        "c:/path/to/your/repo/hlbw-ai-hub/scripts/mcp-dynamic-postgres.mjs",
+        "--connectionString",
+        "postgresql://wot-box-read-only:password@localhost:5432/wot_box_db"
       ]
     }
   }
 }
 ```
 
-*Note: You must restart the AI client / IDE extension after modifying `.env` or your global `mcp.json` for the changes to take effect.*
+*Note: The `mcp-dynamic-postgres.mjs` wrapper automatically manages the Cloud SQL proxy lifecycle if required by the connection string format, tunneling connections securely on demand.*
 
 ## 3. Provisioning the Read-Only User (Admin Only)
+
 If the `wot-box-read-only` user loses access or new tables are created, an administrator must re-grant permissions using the table owner (`wot_box_user`).
 
 ```sql
@@ -59,8 +70,10 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT ON TABLES TO "wot-box-rea
 ```
 
 ## 4. Usage
+
 Once configured and running, you can simply ask the AI questions like:
+
 - *"Check the database to see the 5 most recent feedback submissions."*
-- *"Use your database triage skill to find out why john@example.com cannot see the 'Office Supplies' box."*
+- *"Use your database triage skill to find out why <john@example.com> cannot see the 'Office Supplies' box."*
 
 The AI will automatically use the `query` tool to execute a safe `SELECT` statement and analyze the results.

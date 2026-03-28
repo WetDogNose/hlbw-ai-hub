@@ -23,11 +23,12 @@ As the Master Agent, your role is to ingest complex user requests, break them do
    npx tsx scripts/swarm/arbiter.ts
    ```
 
-4. **Dispatch Sub-Agents**
+4. **Dispatch Sub-Agents (Hub-and-Spoke)**
    - You can spawn tasks into true isolated parallel execution by invoking the Docker Worker. This mounts a fresh Wot-Box Worktree to a Docker container injected with our Master AI's LLM credentials (`GEMINI_API_KEY`).
+   - You MUST select the appropriate `agentCategory` from our taxonomy (e.g. `1_qa`, `2_source_control`, `3_cloud`, `4_db`, `5_bizops`) so the worker inherits the correct tool limits via its isolated `mcp_config.json`.
    // turbo
    ```powershell
-   npx tsx scripts/swarm/docker-worker.ts "<task-id>" "<branch-name>" "<instruction>"
+   npx tsx scripts/swarm/docker-worker.ts "<task-id>" "<branch-name>" "<instruction>" ts "<agentCategory>"
    ```
 
 5. **Monitor and Merge**
