@@ -13,12 +13,10 @@ const healthStatusCache = {
 };
 const HEALTH_CACHE_TTL_MS = 60000; // 60 seconds
 
-async function checkSystemHealth(): Promise<boolean> {
-  const now = Date.now();
-  if (now - healthStatusCache.lastCheckedAt < HEALTH_CACHE_TTL_MS) {
-    return healthStatusCache.isHealthy;
-  }
+let isCheckingHealth = false;
 
+async function performHealthCheck(): Promise<void> {
+  const now = Date.now();
   try {
     let allHealthy = true;
 
@@ -43,12 +41,33 @@ async function checkSystemHealth(): Promise<boolean> {
 
     healthStatusCache.isHealthy = allHealthy;
     healthStatusCache.lastCheckedAt = now;
-    return allHealthy;
   } catch (err) {
     healthStatusCache.isHealthy = false;
     healthStatusCache.lastCheckedAt = now;
-    return false;
+  } finally {
+    isCheckingHealth = false;
   }
+}
+
+async function checkSystemHealth(): Promise<boolean> {
+  const now = Date.now();
+  // Return cached result if fresh
+  if (now - healthStatusCache.lastCheckedAt < HEALTH_CACHE_TTL_MS) {
+    return healthStatusCache.isHealthy;
+  }
+
+  // If already tracking health asynchronously, return the last known value
+  if (isCheckingHealth) {
+    return healthStatusCache.isHealthy;
+  }
+
+  isCheckingHealth = true;
+
+  // Fire and forget (Stale-While-Revalidate)
+  performHealthCheck().catch(console.error);
+
+  // Return true by default on first load (optimistic) or stale cached value
+  return healthStatusCache.isHealthy;
 }
 
 export async function getAdminNotificationCounts(): Promise<AdminNotifications> {

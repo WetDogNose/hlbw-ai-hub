@@ -46,7 +46,10 @@ type AppearanceSetting = {
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 export default function AppearanceAdminPage() {
-  const { data, mutate, isLoading } = useSWR("/api/admin/appearance", fetcher);
+  const { data, error, mutate, isLoading } = useSWR(
+    "/api/admin/appearance",
+    fetcher,
+  );
 
   const [formValues, setFormValues] =
     useState<Partial<AppearanceSetting> | null>(null);
@@ -134,6 +137,21 @@ export default function AppearanceAdminPage() {
       handleSave(historicalSetting);
     }
   };
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center p-12 text-danger-color">
+        <AlertCircle size={32} className="mr-4" />
+        <div>
+          <h3 className="font-bold">Failed to load Appearance Settings</h3>
+          <p>
+            {error.message ||
+              "The server could not process the configuration fetch request."}
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   if (isLoading || !formValues) {
     return (

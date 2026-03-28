@@ -22,11 +22,10 @@ export async function GET(request: NextRequest) {
     ]);
 
     if (!activeSetting && history.length === 0) {
-      // Create initial settings based on current globals.css
+      // Create initial settings
       const initialSetting = await prisma.appearanceSetting.create({
         data: {
           isActive: true,
-          // All default values in schema already reflect globals.css base state
         },
       });
       return NextResponse.json({
@@ -35,15 +34,28 @@ export async function GET(request: NextRequest) {
       });
     }
 
+    // Safety fallback: ensure we always return SOMETHING for active so the SWR client doesn't hang
+    const safeActive = activeSetting || history[0];
+    if (!safeActive) {
+      // Extreme edge case fallback where the DB might be in a bad state
+      const initialSetting = await prisma.appearanceSetting.create({
+        data: { isActive: true },
+      });
+      return NextResponse.json({
+        active: initialSetting,
+        history: [initialSetting],
+      });
+    }
+
     return NextResponse.json({
-      active: activeSetting || history[0] || null,
+      active: safeActive,
       history,
     });
   } catch (error) {
     console.error("Error fetching appearance settings:", error);
     return NextResponse.json(
       { error: "Internal Server Error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -95,7 +107,7 @@ export async function POST(request: NextRequest) {
     console.error("Error saving appearance setting:", error);
     return NextResponse.json(
       { error: "Internal Server Error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
