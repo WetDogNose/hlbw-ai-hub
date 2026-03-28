@@ -14,6 +14,9 @@
 		},
 		{
 			"path": "../adk-js"
+		},
+		{
+			"path": "../hlbw-home-assistant"
 		}
 	],
 	"settings": {

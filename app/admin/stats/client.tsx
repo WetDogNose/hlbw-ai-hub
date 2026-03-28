@@ -35,21 +35,9 @@ export default function StatsClient() {
 
       <div className="form-layout">
         {isStatsLoading && !appStats ? (
-          <div
-            className="text-center text-muted"
-            style={{ padding: "var(--spacing-12)" }}
-          >
-            Loading stats...
-          </div>
+          <div className="text-center text-muted p-12">Loading stats...</div>
         ) : statsError ? (
-          <div
-            style={{
-              backgroundColor: "var(--bg-danger-subtle)",
-              color: "var(--danger-color)",
-              padding: "var(--spacing-4)",
-              borderRadius: "var(--border-radius-md)",
-            }}
-          >
+          <div className="bg-danger-subtle text-danger p-4 rounded-md">
             Error loading stats: {statsError.message}
           </div>
         ) : appStats ? (
@@ -62,11 +50,7 @@ export default function StatsClient() {
                 </div>
                 <div className="stat-box-value">
                   {(appStats.database.totalSizeBytes / 1024 / 1024).toFixed(2)}{" "}
-                  <span
-                    style={{ fontSize: "1rem", color: "var(--text-muted)" }}
-                  >
-                    MB
-                  </span>
+                  <span className="text-base text-muted">MB</span>
                 </div>
                 <div className="stat-box-desc">Total Postgres DB Size</div>
               </div>
@@ -94,26 +78,21 @@ export default function StatsClient() {
             <div className="card">
               <div className="card-header">
                 <div className="card-header-title">
-                  <Server size={18} style={{ color: "var(--purple-color)" }} />{" "}
-                  System & Deployment Info
+                  <Server size={18} className="color-purple" /> System &
+                  Deployment Info
                 </div>
               </div>
-              <div className="card-body" style={{ padding: 0 }}>
-                <div
-                  className="table-container"
-                  style={{ border: "none", borderRadius: 0 }}
-                >
+              <div className="card-body p-0">
+                <div className="table-container border-none rounded-0">
                   <table className="admin-table">
                     <tbody>
                       <tr>
-                        <th style={{ width: "40%" }}>Git Hash (Version)</th>
-                        <td style={{ fontFamily: "monospace" }}>
-                          {appStats.system.gitHash}
-                        </td>
+                        <th className="w-40p">Git Hash (Version)</th>
+                        <td className="font-mono">{appStats.system.gitHash}</td>
                       </tr>
                       <tr>
                         <th>Container Revision</th>
-                        <td style={{ fontFamily: "monospace" }}>
+                        <td className="font-mono">
                           {appStats.system.containerRevision}
                         </td>
                       </tr>
@@ -126,13 +105,13 @@ export default function StatsClient() {
                       <tr>
                         <th>Uptime</th>
                         <td>
-                          <span style={{ fontWeight: 600 }}>
+                          <span className="font-semibold">
                             {Math.floor(
                               appStats.system.uptimeSeconds / 60 / 60,
                             )}
                           </span>
                           h{" "}
-                          <span style={{ fontWeight: 600 }}>
+                          <span className="font-semibold">
                             {Math.floor(
                               (appStats.system.uptimeSeconds / 60) % 60,
                             )}
@@ -142,7 +121,7 @@ export default function StatsClient() {
                       </tr>
                       <tr>
                         <th>Node.js Version</th>
-                        <td style={{ fontFamily: "monospace" }}>
+                        <td className="font-mono">
                           {appStats.system.nodeVersion}
                         </td>
                       </tr>
@@ -156,23 +135,17 @@ export default function StatsClient() {
             <div className="card">
               <div className="card-header">
                 <div className="card-header-title">
-                  <Database
-                    size={18}
-                    style={{ color: "var(--warning-color)" }}
-                  />{" "}
-                  Top Tables by Size
+                  <Database size={18} className="color-warning" /> Top Tables by
+                  Size
                 </div>
               </div>
-              <div className="card-body" style={{ padding: 0 }}>
-                <div
-                  className="table-container"
-                  style={{ border: "none", borderRadius: 0 }}
-                >
+              <div className="card-body p-0">
+                <div className="table-container border-none rounded-0">
                   <table className="admin-table">
                     <thead>
                       <tr>
                         <th>Table Name</th>
-                        <th style={{ textAlign: "right" }}>Size</th>
+                        <th className="text-right">Size</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -180,15 +153,8 @@ export default function StatsClient() {
                         .slice(0, 10)
                         .map((t: any) => (
                           <tr key={t.tableName}>
-                            <td style={{ fontFamily: "monospace" }}>
-                              {t.tableName}
-                            </td>
-                            <td
-                              style={{
-                                textAlign: "right",
-                                color: "var(--text-secondary)",
-                              }}
-                            >
+                            <td className="font-mono">{t.tableName}</td>
+                            <td className="text-right text-secondary">
                               {(t.sizeBytes / 1024).toFixed(2)} KB
                             </td>
                           </tr>

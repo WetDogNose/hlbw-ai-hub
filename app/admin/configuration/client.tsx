@@ -115,14 +115,7 @@ export default function ConfigurationClient({
       return (
         <div
           title={health.message}
-          className="badge badge-ok"
-          style={{
-            color: "var(--success-color)",
-            fontWeight: "bold",
-            display: "flex",
-            alignItems: "center",
-            gap: "0.25rem",
-          }}
+          className="badge badge-ok txt-success txt-bold flex flex-align-center flex-gap-xs"
         >
           <CheckCircle2 size={16} />
           Connected
@@ -134,14 +127,7 @@ export default function ConfigurationClient({
       return (
         <div
           title={health.message}
-          className="badge badge-error"
-          style={{
-            color: "var(--danger-color)",
-            fontWeight: "bold",
-            display: "flex",
-            alignItems: "center",
-            gap: "0.25rem",
-          }}
+          className="badge badge-error txt-danger txt-bold flex flex-align-center flex-gap-xs"
         >
           <XCircle size={16} className="badge-icon-shrink" />
           <span className="badge-text-truncate">
@@ -155,27 +141,17 @@ export default function ConfigurationClient({
   };
 
   return (
-    <div style={{ marginBottom: "var(--spacing-8)" }}>
+    <div className="mb-8">
       <div className="page-header">
         <div>
-          <h2
-            className="header-title"
-            style={{ margin: 0, marginBottom: "var(--spacing-2)" }}
-          >
-            Configuration
-          </h2>
-          <p style={{ color: "var(--text-secondary)", margin: 0 }}>
+          <h2 className="header-title m-0 mb-2">Configuration</h2>
+          <p className="txt-secondary m-0">
             Manage and monitor system integrations and environment variables.
           </p>
         </div>
         <button
           onClick={runAllChecks}
-          className="btn btn-outline"
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "var(--spacing-2)",
-          }}
+          className="btn btn-outline flex flex-align-center flex-gap-2"
         >
           <RefreshCw size={18} />
           Test All Integrated Services
@@ -184,59 +160,16 @@ export default function ConfigurationClient({
 
       <div className="card-grid">
         {/* Email Service */}
-        <div
-          className="card"
-          style={{ display: "flex", flexDirection: "column" }}
-        >
-          <div
-            className="card-body"
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              gap: "var(--spacing-6)",
-              flex: 1,
-            }}
-          >
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "flex-start",
-              }}
-            >
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "var(--spacing-4)",
-                }}
-              >
-                <div
-                  style={{
-                    backgroundColor:
-                      "var(--info-bg-subtle, rgba(59, 130, 246, 0.1))",
-                    padding: "var(--spacing-3)",
-                    borderRadius: "var(--border-radius-md)",
-                  }}
-                >
-                  <Mail size={24} style={{ color: "var(--info-color)" }} />
+        <div className="card flex flex-column">
+          <div className="card-body flex flex-column flex-gap-6 flex-grow-1">
+            <div className="flex flex-justify-between flex-align-start">
+              <div className="flex flex-align-center flex-gap-4">
+                <div className="bg-info-subtle p-3 radius-md">
+                  <Mail size={24} className="txt-info" />
                 </div>
                 <div>
-                  <h3
-                    style={{
-                      margin: 0,
-                      fontSize: "1.125rem",
-                      fontWeight: "600",
-                    }}
-                  >
-                    Email Provider
-                  </h3>
-                  <div
-                    style={{
-                      color: "var(--text-secondary)",
-                      fontSize: "0.875rem",
-                    }}
-                  >
+                  <h3 className="m-0 font-lg txt-bold">Email Provider</h3>
+                  <div className="txt-secondary font-sm">
                     SMTP Notification Service
                   </div>
                 </div>
@@ -244,82 +177,31 @@ export default function ConfigurationClient({
               <StatusBadge service="email" />
             </div>
 
-            <div
-              style={{
-                backgroundColor: "var(--bg-tertiary)",
-                borderRadius: "var(--border-radius-md)",
-                padding: "var(--spacing-4)",
-                fontFamily: "monospace",
-                fontSize: "0.875rem",
-                flex: 1,
-              }}
-            >
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  borderBottom: "1px solid var(--border-color)",
-                  paddingBottom: "var(--spacing-2)",
-                  marginBottom: "var(--spacing-2)",
-                }}
-              >
-                <span style={{ color: "var(--text-muted)" }}>SMTP_HOST</span>
-                <span
-                  style={{
-                    color: "var(--text-primary)",
-                    wordBreak: "break-all",
-                    marginLeft: "var(--spacing-4)",
-                  }}
-                >
+            <div className="bg-tertiary radius-md p-4 font-mono font-sm flex-grow-1">
+              <div className="flex flex-justify-between border-b border-color pb-2 mb-2">
+                <span className="txt-muted">SMTP_HOST</span>
+                <span className="txt-primary word-break-all ml-4">
                   {initialConfig.email.host}
                 </span>
               </div>
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  borderBottom: "1px solid var(--border-color)",
-                  paddingBottom: "var(--spacing-2)",
-                  marginBottom: "var(--spacing-2)",
-                }}
-              >
-                <span style={{ color: "var(--text-muted)" }}>SMTP_USER</span>
-                <span
-                  style={{
-                    color: "var(--text-primary)",
-                    wordBreak: "break-all",
-                    marginLeft: "var(--spacing-4)",
-                  }}
-                >
+              <div className="flex flex-justify-between border-b border-color pb-2 mb-2">
+                <span className="txt-muted">SMTP_USER</span>
+                <span className="txt-primary word-break-all ml-4">
                   {initialConfig.email.user}
                 </span>
               </div>
-              <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <span style={{ color: "var(--text-muted)" }}>ADMIN_EMAIL</span>
-                <span
-                  style={{
-                    color: "var(--text-primary)",
-                    wordBreak: "break-all",
-                    marginLeft: "var(--spacing-4)",
-                  }}
-                >
+              <div className="flex flex-justify-between">
+                <span className="txt-muted">ADMIN_EMAIL</span>
+                <span className="txt-primary word-break-all ml-4">
                   {initialConfig.email.admin}
                 </span>
               </div>
             </div>
           </div>
-          <div
-            className="card-footer"
-            style={{
-              borderTop: "none",
-              backgroundColor: "transparent",
-              paddingTop: 0,
-            }}
-          >
+          <div className="card-footer border-t-none bg-transparent pt-0">
             <button
               onClick={() => checkService("email")}
-              className="btn btn-outline"
-              style={{ width: "100%", justifyContent: "center" }}
+              className="btn btn-outline w-full flex-justify-center"
             >
               Test Connection
             </button>
@@ -327,62 +209,16 @@ export default function ConfigurationClient({
         </div>
 
         {/* Database */}
-        <div
-          className="card"
-          style={{ display: "flex", flexDirection: "column" }}
-        >
-          <div
-            className="card-body"
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              gap: "var(--spacing-6)",
-              flex: 1,
-            }}
-          >
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "flex-start",
-              }}
-            >
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "var(--spacing-4)",
-                }}
-              >
-                <div
-                  style={{
-                    backgroundColor:
-                      "var(--success-bg-subtle, rgba(34, 197, 94, 0.1))",
-                    padding: "var(--spacing-3)",
-                    borderRadius: "var(--border-radius-md)",
-                  }}
-                >
-                  <Database
-                    size={24}
-                    style={{ color: "var(--success-color)" }}
-                  />
+        <div className="card flex flex-column">
+          <div className="card-body flex flex-column flex-gap-6 flex-grow-1">
+            <div className="flex flex-justify-between flex-align-start">
+              <div className="flex flex-align-center flex-gap-4">
+                <div className="bg-success-subtle p-3 radius-md">
+                  <Database size={24} className="txt-success" />
                 </div>
                 <div>
-                  <h3
-                    style={{
-                      margin: 0,
-                      fontSize: "1.125rem",
-                      fontWeight: "600",
-                    }}
-                  >
-                    Database
-                  </h3>
-                  <div
-                    style={{
-                      color: "var(--text-secondary)",
-                      fontSize: "0.875rem",
-                    }}
-                  >
+                  <h3 className="m-0 font-lg txt-bold">Database</h3>
+                  <div className="txt-secondary font-sm">
                     PostgreSQL via Prisma
                   </div>
                 </div>
@@ -390,48 +226,19 @@ export default function ConfigurationClient({
               <StatusBadge service="database" />
             </div>
 
-            <div
-              style={{
-                backgroundColor: "var(--bg-tertiary)",
-                borderRadius: "var(--border-radius-md)",
-                padding: "var(--spacing-4)",
-                fontFamily: "monospace",
-                fontSize: "0.875rem",
-                flex: 1,
-              }}
-            >
-              <div style={{ display: "flex", flexDirection: "column" }}>
-                <span
-                  style={{
-                    color: "var(--text-muted)",
-                    marginBottom: "var(--spacing-2)",
-                  }}
-                >
-                  DATABASE_URL
-                </span>
-                <span
-                  style={{
-                    color: "var(--text-primary)",
-                    wordBreak: "break-all",
-                  }}
-                >
+            <div className="bg-tertiary radius-md p-4 font-mono font-sm flex-grow-1">
+              <div className="flex flex-column">
+                <span className="txt-muted mb-2">DATABASE_URL</span>
+                <span className="txt-primary word-break-all">
                   {initialConfig.database.url}
                 </span>
               </div>
             </div>
           </div>
-          <div
-            className="card-footer"
-            style={{
-              borderTop: "none",
-              backgroundColor: "transparent",
-              paddingTop: 0,
-            }}
-          >
+          <div className="card-footer border-t-none bg-transparent pt-0">
             <button
               onClick={() => checkService("database")}
-              className="btn btn-outline"
-              style={{ width: "100%", justifyContent: "center" }}
+              className="btn btn-outline w-full flex-justify-center"
             >
               Test Connection
             </button>
@@ -439,59 +246,16 @@ export default function ConfigurationClient({
         </div>
 
         {/* Storage */}
-        <div
-          className="card"
-          style={{ display: "flex", flexDirection: "column" }}
-        >
-          <div
-            className="card-body"
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              gap: "var(--spacing-6)",
-              flex: 1,
-            }}
-          >
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "flex-start",
-              }}
-            >
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "var(--spacing-4)",
-                }}
-              >
-                <div
-                  style={{
-                    backgroundColor:
-                      "var(--accent-bg-subtle, rgba(236, 72, 153, 0.1))",
-                    padding: "var(--spacing-3)",
-                    borderRadius: "var(--border-radius-md)",
-                  }}
-                >
-                  <Cloud size={24} style={{ color: "var(--accent-color)" }} />
+        <div className="card flex flex-column">
+          <div className="card-body flex flex-column flex-gap-6 flex-grow-1">
+            <div className="flex flex-justify-between flex-align-start">
+              <div className="flex flex-align-center flex-gap-4">
+                <div className="bg-accent-subtle p-3 radius-md">
+                  <Cloud size={24} className="txt-accent" />
                 </div>
                 <div>
-                  <h3
-                    style={{
-                      margin: 0,
-                      fontSize: "1.125rem",
-                      fontWeight: "600",
-                    }}
-                  >
-                    Cloud Storage
-                  </h3>
-                  <div
-                    style={{
-                      color: "var(--text-secondary)",
-                      fontSize: "0.875rem",
-                    }}
-                  >
+                  <h3 className="m-0 font-lg txt-bold">Cloud Storage</h3>
+                  <div className="txt-secondary font-sm">
                     Google Cloud Storage bucket
                   </div>
                 </div>
@@ -499,52 +263,19 @@ export default function ConfigurationClient({
               <StatusBadge service="storage" />
             </div>
 
-            <div
-              style={{
-                backgroundColor: "var(--bg-tertiary)",
-                borderRadius: "var(--border-radius-md)",
-                padding: "var(--spacing-4)",
-                fontFamily: "monospace",
-                fontSize: "0.875rem",
-                flex: 1,
-              }}
-            >
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  borderBottom: "1px solid var(--border-color)",
-                  paddingBottom: "var(--spacing-2)",
-                  marginBottom: "var(--spacing-2)",
-                }}
-              >
-                <span style={{ color: "var(--text-muted)" }}>
-                  GCS_BUCKET_NAME
-                </span>
-                <span
-                  style={{
-                    color: "var(--text-primary)",
-                    wordBreak: "break-all",
-                    marginLeft: "var(--spacing-4)",
-                  }}
-                >
+            <div className="bg-tertiary radius-md p-4 font-mono font-sm flex-grow-1">
+              <div className="flex flex-justify-between border-b border-color pb-2 mb-2">
+                <span className="txt-muted">GCS_BUCKET_NAME</span>
+                <span className="txt-primary word-break-all ml-4">
                   {initialConfig.storage.bucket}
                 </span>
               </div>
             </div>
           </div>
-          <div
-            className="card-footer"
-            style={{
-              borderTop: "none",
-              backgroundColor: "transparent",
-              paddingTop: 0,
-            }}
-          >
+          <div className="card-footer border-t-none bg-transparent pt-0">
             <button
               onClick={() => checkService("storage")}
-              className="btn btn-outline"
-              style={{ width: "100%", justifyContent: "center" }}
+              className="btn btn-outline w-full flex-justify-center"
             >
               Test Connection
             </button>
@@ -552,114 +283,34 @@ export default function ConfigurationClient({
         </div>
 
         {/* Gemini AI */}
-        <div
-          className="card"
-          style={{ display: "flex", flexDirection: "column" }}
-        >
-          <div
-            className="card-body"
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              gap: "var(--spacing-6)",
-              flex: 1,
-            }}
-          >
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "flex-start",
-              }}
-            >
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "var(--spacing-4)",
-                }}
-              >
-                <div
-                  style={{
-                    backgroundColor: "rgba(168, 85, 247, 0.1)",
-                    padding: "var(--spacing-3)",
-                    borderRadius: "var(--border-radius-md)",
-                  }}
-                >
-                  <Sparkles
-                    size={24}
-                    style={{ color: "var(--purple-color, #a855f7)" }}
-                  />
+        <div className="card flex flex-column">
+          <div className="card-body flex flex-column flex-gap-6 flex-grow-1">
+            <div className="flex flex-justify-between flex-align-start">
+              <div className="flex flex-align-center flex-gap-4">
+                <div className="bg-purple-subtle p-3 radius-md">
+                  <Sparkles size={24} className="txt-purple" />
                 </div>
                 <div>
-                  <h3
-                    style={{
-                      margin: 0,
-                      fontSize: "1.125rem",
-                      fontWeight: "600",
-                    }}
-                  >
-                    Vision AI
-                  </h3>
-                  <div
-                    style={{
-                      color: "var(--text-secondary)",
-                      fontSize: "0.875rem",
-                    }}
-                  >
-                    Gemini 2.5 Flash
-                  </div>
+                  <h3 className="m-0 font-lg txt-bold">Vision AI</h3>
+                  <div className="txt-secondary font-sm">Gemini 2.5 Flash</div>
                 </div>
               </div>
               <StatusBadge service="ai" />
             </div>
 
-            <div
-              style={{
-                backgroundColor: "var(--bg-tertiary)",
-                borderRadius: "var(--border-radius-md)",
-                padding: "var(--spacing-4)",
-                fontFamily: "monospace",
-                fontSize: "0.875rem",
-                flex: 1,
-              }}
-            >
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  borderBottom: "1px solid var(--border-color)",
-                  paddingBottom: "var(--spacing-2)",
-                  marginBottom: "var(--spacing-2)",
-                }}
-              >
-                <span style={{ color: "var(--text-muted)" }}>
-                  GEMINI_API_KEY
-                </span>
-                <span
-                  style={{
-                    color: "var(--text-primary)",
-                    wordBreak: "break-all",
-                    marginLeft: "var(--spacing-4)",
-                  }}
-                >
+            <div className="bg-tertiary radius-md p-4 font-mono font-sm flex-grow-1">
+              <div className="flex flex-justify-between border-b border-color pb-2 mb-2">
+                <span className="txt-muted">GEMINI_API_KEY</span>
+                <span className="txt-primary word-break-all ml-4">
                   {initialConfig.ai.geminiKey}
                 </span>
               </div>
             </div>
           </div>
-          <div
-            className="card-footer"
-            style={{
-              borderTop: "none",
-              backgroundColor: "transparent",
-              paddingTop: 0,
-            }}
-          >
+          <div className="card-footer border-t-none bg-transparent pt-0">
             <button
               onClick={() => checkService("ai")}
-              className="btn btn-outline"
-              style={{ width: "100%", justifyContent: "center" }}
+              className="btn btn-outline w-full flex-justify-center"
             >
               Test Connection
             </button>
@@ -667,62 +318,16 @@ export default function ConfigurationClient({
         </div>
 
         {/* OAuth */}
-        <div
-          className="card"
-          style={{ display: "flex", flexDirection: "column" }}
-        >
-          <div
-            className="card-body"
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              gap: "var(--spacing-6)",
-              flex: 1,
-            }}
-          >
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "flex-start",
-              }}
-            >
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "var(--spacing-4)",
-                }}
-              >
-                <div
-                  style={{
-                    backgroundColor:
-                      "var(--warning-bg-subtle, rgba(245, 158, 11, 0.1))",
-                    padding: "var(--spacing-3)",
-                    borderRadius: "var(--border-radius-md)",
-                  }}
-                >
-                  <ShieldCheck
-                    size={24}
-                    style={{ color: "var(--warning-color)" }}
-                  />
+        <div className="card flex flex-column">
+          <div className="card-body flex flex-column flex-gap-6 flex-grow-1">
+            <div className="flex flex-justify-between flex-align-start">
+              <div className="flex flex-align-center flex-gap-4">
+                <div className="bg-warning-subtle p-3 radius-md">
+                  <ShieldCheck size={24} className="txt-warning" />
                 </div>
                 <div>
-                  <h3
-                    style={{
-                      margin: 0,
-                      fontSize: "1.125rem",
-                      fontWeight: "600",
-                    }}
-                  >
-                    Authentication
-                  </h3>
-                  <div
-                    style={{
-                      color: "var(--text-secondary)",
-                      fontSize: "0.875rem",
-                    }}
-                  >
+                  <h3 className="m-0 font-lg txt-bold">Authentication</h3>
+                  <div className="txt-secondary font-sm">
                     OAuth Providers Configured
                   </div>
                 </div>
@@ -730,152 +335,47 @@ export default function ConfigurationClient({
               <StatusBadge service="oauth" />
             </div>
 
-            <div
-              className="two-col-grid"
-              style={{ gap: "var(--spacing-4)", flex: 1 }}
-            >
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  backgroundColor: "var(--bg-tertiary)",
-                  borderRadius: "var(--border-radius-md)",
-                  padding: "var(--spacing-3)",
-                  fontWeight: "bold",
-                }}
-              >
-                <span
-                  style={{
-                    color: "var(--text-secondary)",
-                    fontSize: "0.875rem",
-                    fontWeight: "normal",
-                  }}
-                >
-                  Google
-                </span>
+            <div className="two-col-grid flex-gap-4 flex-grow-1">
+              <div className="flex flex-align-center flex-justify-between bg-tertiary radius-md p-3 txt-bold">
+                <span className="txt-secondary font-sm txt-normal">Google</span>
                 {initialConfig.oauth.google ? (
-                  <CheckCircle2
-                    size={16}
-                    style={{ color: "var(--success-color)", strokeWidth: 3 }}
-                  />
+                  <CheckCircle2 size={16} className="txt-success stroke-3" />
                 ) : (
-                  <XCircle
-                    size={16}
-                    style={{ color: "var(--danger-color)", strokeWidth: 3 }}
-                  />
+                  <XCircle size={16} className="txt-danger stroke-3" />
                 )}
               </div>
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  backgroundColor: "var(--bg-tertiary)",
-                  borderRadius: "var(--border-radius-md)",
-                  padding: "var(--spacing-3)",
-                  fontWeight: "bold",
-                }}
-              >
-                <span
-                  style={{
-                    color: "var(--text-secondary)",
-                    fontSize: "0.875rem",
-                    fontWeight: "normal",
-                  }}
-                >
-                  Apple
-                </span>
+              <div className="flex flex-align-center flex-justify-between bg-tertiary radius-md p-3 txt-bold">
+                <span className="txt-secondary font-sm txt-normal">Apple</span>
                 {initialConfig.oauth.apple ? (
-                  <CheckCircle2
-                    size={16}
-                    style={{ color: "var(--success-color)", strokeWidth: 3 }}
-                  />
+                  <CheckCircle2 size={16} className="txt-success stroke-3" />
                 ) : (
-                  <XCircle
-                    size={16}
-                    style={{ color: "var(--danger-color)", strokeWidth: 3 }}
-                  />
+                  <XCircle size={16} className="txt-danger stroke-3" />
                 )}
               </div>
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  backgroundColor: "var(--bg-tertiary)",
-                  borderRadius: "var(--border-radius-md)",
-                  padding: "var(--spacing-3)",
-                  fontWeight: "bold",
-                }}
-              >
-                <span
-                  style={{
-                    color: "var(--text-secondary)",
-                    fontSize: "0.875rem",
-                    fontWeight: "normal",
-                  }}
-                >
-                  GitHub
-                </span>
+              <div className="flex flex-align-center flex-justify-between bg-tertiary radius-md p-3 txt-bold">
+                <span className="txt-secondary font-sm txt-normal">GitHub</span>
                 {initialConfig.oauth.github ? (
-                  <CheckCircle2
-                    size={16}
-                    style={{ color: "var(--success-color)", strokeWidth: 3 }}
-                  />
+                  <CheckCircle2 size={16} className="txt-success stroke-3" />
                 ) : (
-                  <XCircle
-                    size={16}
-                    style={{ color: "var(--danger-color)", strokeWidth: 3 }}
-                  />
+                  <XCircle size={16} className="txt-danger stroke-3" />
                 )}
               </div>
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  backgroundColor: "var(--bg-tertiary)",
-                  borderRadius: "var(--border-radius-md)",
-                  padding: "var(--spacing-3)",
-                  fontWeight: "bold",
-                }}
-              >
-                <span
-                  style={{
-                    color: "var(--text-secondary)",
-                    fontSize: "0.875rem",
-                    fontWeight: "normal",
-                  }}
-                >
+              <div className="flex flex-align-center flex-justify-between bg-tertiary radius-md p-3 txt-bold">
+                <span className="txt-secondary font-sm txt-normal">
                   Azure AD
                 </span>
                 {initialConfig.oauth.azure ? (
-                  <CheckCircle2
-                    size={16}
-                    style={{ color: "var(--success-color)", strokeWidth: 3 }}
-                  />
+                  <CheckCircle2 size={16} className="txt-success stroke-3" />
                 ) : (
-                  <XCircle
-                    size={16}
-                    style={{ color: "var(--danger-color)", strokeWidth: 3 }}
-                  />
+                  <XCircle size={16} className="txt-danger stroke-3" />
                 )}
               </div>
             </div>
           </div>
-          <div
-            className="card-footer"
-            style={{
-              borderTop: "none",
-              backgroundColor: "transparent",
-              paddingTop: 0,
-            }}
-          >
+          <div className="card-footer border-t-none bg-transparent pt-0">
             <button
               onClick={() => checkService("oauth")}
-              className="btn btn-outline"
-              style={{ width: "100%", justifyContent: "center" }}
+              className="btn btn-outline w-full flex-justify-center"
             >
               Refresh Status
             </button>

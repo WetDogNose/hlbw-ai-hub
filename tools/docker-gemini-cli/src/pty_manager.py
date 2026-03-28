@@ -1,10 +1,12 @@
 import pexpect
 import asyncio
 import os
+from watchdog import StreamingNGramWatchdog
 
 class PtyManager:
     def __init__(self):
         self.process = None
+        self.watchdog = StreamingNGramWatchdog(repetition_threshold=4)
 
     def start_gemini_cli(self, callback):
         # We spawn a pseudo-terminal so that standard outputs flush instantly 
@@ -21,6 +23,12 @@ class PtyManager:
                 # Read character by character for responsive streaming
                 char = self.process.read_nonblocking(size=1, timeout=0.1)
                 await callback(char)
+                
+                # Watchdog intercept for infinite loops
+                if self.watchdog.add_chunk(char):
+                    print("[PTY] Anomalous loop detected by Watchdog! Circuit breaking.")
+                    self.write("\nYour output is flagged for looping content\n")
+                    self.watchdog.reset()
         except pexpect.EOF:
             print("[PTY] Process Terminated")
         except pexpect.TIMEOUT:
