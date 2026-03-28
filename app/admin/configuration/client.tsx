@@ -156,10 +156,7 @@ export default function ConfigurationClient({
 
   return (
     <div style={{ marginBottom: "var(--spacing-8)" }}>
-      <div
-        className="header flex justify-between items-start"
-        style={{ marginBottom: "var(--spacing-8)", borderBottom: "none" }}
-      >
+      <div className="page-header">
         <div>
           <h2
             className="header-title"
@@ -171,7 +168,15 @@ export default function ConfigurationClient({
             Manage and monitor system integrations and environment variables.
           </p>
         </div>
-        <button onClick={runAllChecks} className="btn btn-outline gap-2">
+        <button
+          onClick={runAllChecks}
+          className="btn btn-outline"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "var(--spacing-2)",
+          }}
+        >
           <RefreshCw size={18} />
           Test All Integrated Services
         </button>
@@ -179,550 +184,702 @@ export default function ConfigurationClient({
 
       <div className="card-grid">
         {/* Email Service */}
-        <div className="card" style={{ padding: "var(--spacing-6)" }}>
+        <div
+          className="card"
+          style={{ display: "flex", flexDirection: "column" }}
+        >
           <div
-            className="flex justify-between items-start"
-            style={{ marginBottom: "var(--spacing-6)" }}
-          >
-            <div className="flex items-center gap-4">
-              <div
-                style={{
-                  backgroundColor: "var(--bg-info-subtle)",
-                  padding: "var(--spacing-3)",
-                  borderRadius: "var(--border-radius-md)",
-                }}
-              >
-                <Mail size={24} style={{ color: "var(--info-color)" }} />
-              </div>
-              <div>
-                <h3
-                  style={{
-                    margin: 0,
-                    fontSize: "var(--font-size-lg)",
-                    fontWeight: "var(--font-weight-semibold)",
-                  }}
-                >
-                  Email Provider
-                </h3>
-                <div
-                  style={{
-                    color: "var(--text-secondary)",
-                    fontSize: "var(--font-size-sm)",
-                  }}
-                >
-                  SMTP Notification Service
-                </div>
-              </div>
-            </div>
-            <StatusBadge service="email" />
-          </div>
-
-          <div
+            className="card-body"
             style={{
-              marginBottom: "var(--spacing-6)",
-              backgroundColor: "var(--bg-code-block)",
-              borderRadius: "var(--border-radius-md)",
-              padding: "var(--spacing-4)",
-              fontFamily: "monospace",
-              fontSize: "var(--font-size-sm)",
+              display: "flex",
+              flexDirection: "column",
+              gap: "var(--spacing-6)",
               flex: 1,
             }}
           >
             <div
-              className="flex justify-between"
               style={{
-                borderBottom: "var(--border-width-1) solid var(--border-color)",
-                paddingBottom: "var(--spacing-2)",
-                marginBottom: "var(--spacing-2)",
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "flex-start",
               }}
             >
-              <span style={{ color: "var(--text-muted)" }}>SMTP_HOST</span>
-              <span
-                style={{
-                  color: "var(--text-primary)",
-                  wordBreak: "break-all",
-                  marginLeft: "var(--spacing-4)",
-                }}
-              >
-                {initialConfig.email.host}
-              </span>
-            </div>
-            <div
-              className="flex justify-between"
-              style={{
-                borderBottom: "var(--border-width-1) solid var(--border-color)",
-                paddingBottom: "var(--spacing-2)",
-                marginBottom: "var(--spacing-2)",
-              }}
-            >
-              <span style={{ color: "var(--text-muted)" }}>SMTP_USER</span>
-              <span
-                style={{
-                  color: "var(--text-primary)",
-                  wordBreak: "break-all",
-                  marginLeft: "var(--spacing-4)",
-                }}
-              >
-                {initialConfig.email.user}
-              </span>
-            </div>
-            <div className="flex justify-between">
-              <span style={{ color: "var(--text-muted)" }}>ADMIN_EMAIL</span>
-              <span
-                style={{
-                  color: "var(--text-primary)",
-                  wordBreak: "break-all",
-                  marginLeft: "var(--spacing-4)",
-                }}
-              >
-                {initialConfig.email.admin}
-              </span>
-            </div>
-          </div>
-
-          <button
-            onClick={() => checkService("email")}
-            className="btn btn-outline"
-            style={{ width: "100%", justifyContent: "center" }}
-          >
-            Test Connection
-          </button>
-        </div>
-
-        {/* Database */}
-        <div className="card" style={{ padding: "var(--spacing-6)" }}>
-          <div
-            className="flex justify-between items-start"
-            style={{ marginBottom: "var(--spacing-6)" }}
-          >
-            <div className="flex items-center gap-4">
               <div
                 style={{
-                  backgroundColor: "var(--bg-success-subtle)",
-                  padding: "var(--spacing-3)",
-                  borderRadius: "var(--border-radius-md)",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "var(--spacing-4)",
                 }}
               >
-                <Database size={24} style={{ color: "var(--success-color)" }} />
-              </div>
-              <div>
-                <h3
-                  style={{
-                    margin: 0,
-                    fontSize: "var(--font-size-lg)",
-                    fontWeight: "var(--font-weight-semibold)",
-                  }}
-                >
-                  Database
-                </h3>
                 <div
                   style={{
-                    color: "var(--text-secondary)",
-                    fontSize: "var(--font-size-sm)",
+                    backgroundColor:
+                      "var(--info-bg-subtle, rgba(59, 130, 246, 0.1))",
+                    padding: "var(--spacing-3)",
+                    borderRadius: "var(--border-radius-md)",
                   }}
                 >
-                  PostgreSQL via Prisma
+                  <Mail size={24} style={{ color: "var(--info-color)" }} />
+                </div>
+                <div>
+                  <h3
+                    style={{
+                      margin: 0,
+                      fontSize: "1.125rem",
+                      fontWeight: "600",
+                    }}
+                  >
+                    Email Provider
+                  </h3>
+                  <div
+                    style={{
+                      color: "var(--text-secondary)",
+                      fontSize: "0.875rem",
+                    }}
+                  >
+                    SMTP Notification Service
+                  </div>
                 </div>
               </div>
+              <StatusBadge service="email" />
             </div>
-            <StatusBadge service="database" />
-          </div>
 
-          <div
-            style={{
-              marginBottom: "var(--spacing-6)",
-              backgroundColor: "var(--bg-code-block)",
-              borderRadius: "var(--border-radius-md)",
-              padding: "var(--spacing-4)",
-              fontFamily: "monospace",
-              fontSize: "var(--font-size-sm)",
-              flex: 1,
-            }}
-          >
-            <div style={{ display: "flex", flexDirection: "column" }}>
-              <span
+            <div
+              style={{
+                backgroundColor: "var(--bg-tertiary)",
+                borderRadius: "var(--border-radius-md)",
+                padding: "var(--spacing-4)",
+                fontFamily: "monospace",
+                fontSize: "0.875rem",
+                flex: 1,
+              }}
+            >
+              <div
                 style={{
-                  color: "var(--text-muted)",
+                  display: "flex",
+                  justifyContent: "space-between",
+                  borderBottom: "1px solid var(--border-color)",
+                  paddingBottom: "var(--spacing-2)",
                   marginBottom: "var(--spacing-2)",
                 }}
               >
-                DATABASE_URL
-              </span>
-              <span
-                style={{ color: "var(--text-primary)", wordBreak: "break-all" }}
+                <span style={{ color: "var(--text-muted)" }}>SMTP_HOST</span>
+                <span
+                  style={{
+                    color: "var(--text-primary)",
+                    wordBreak: "break-all",
+                    marginLeft: "var(--spacing-4)",
+                  }}
+                >
+                  {initialConfig.email.host}
+                </span>
+              </div>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  borderBottom: "1px solid var(--border-color)",
+                  paddingBottom: "var(--spacing-2)",
+                  marginBottom: "var(--spacing-2)",
+                }}
               >
-                {initialConfig.database.url}
-              </span>
+                <span style={{ color: "var(--text-muted)" }}>SMTP_USER</span>
+                <span
+                  style={{
+                    color: "var(--text-primary)",
+                    wordBreak: "break-all",
+                    marginLeft: "var(--spacing-4)",
+                  }}
+                >
+                  {initialConfig.email.user}
+                </span>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <span style={{ color: "var(--text-muted)" }}>ADMIN_EMAIL</span>
+                <span
+                  style={{
+                    color: "var(--text-primary)",
+                    wordBreak: "break-all",
+                    marginLeft: "var(--spacing-4)",
+                  }}
+                >
+                  {initialConfig.email.admin}
+                </span>
+              </div>
             </div>
           </div>
-
-          <button
-            onClick={() => checkService("database")}
-            className="btn btn-outline"
+          <div
+            className="card-footer"
             style={{
-              width: "100%",
-              justifyContent: "center",
-              marginTop: "auto",
+              borderTop: "none",
+              backgroundColor: "transparent",
+              paddingTop: 0,
             }}
           >
-            Test Connection
-          </button>
+            <button
+              onClick={() => checkService("email")}
+              className="btn btn-outline"
+              style={{ width: "100%", justifyContent: "center" }}
+            >
+              Test Connection
+            </button>
+          </div>
+        </div>
+
+        {/* Database */}
+        <div
+          className="card"
+          style={{ display: "flex", flexDirection: "column" }}
+        >
+          <div
+            className="card-body"
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: "var(--spacing-6)",
+              flex: 1,
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "flex-start",
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "var(--spacing-4)",
+                }}
+              >
+                <div
+                  style={{
+                    backgroundColor:
+                      "var(--success-bg-subtle, rgba(34, 197, 94, 0.1))",
+                    padding: "var(--spacing-3)",
+                    borderRadius: "var(--border-radius-md)",
+                  }}
+                >
+                  <Database
+                    size={24}
+                    style={{ color: "var(--success-color)" }}
+                  />
+                </div>
+                <div>
+                  <h3
+                    style={{
+                      margin: 0,
+                      fontSize: "1.125rem",
+                      fontWeight: "600",
+                    }}
+                  >
+                    Database
+                  </h3>
+                  <div
+                    style={{
+                      color: "var(--text-secondary)",
+                      fontSize: "0.875rem",
+                    }}
+                  >
+                    PostgreSQL via Prisma
+                  </div>
+                </div>
+              </div>
+              <StatusBadge service="database" />
+            </div>
+
+            <div
+              style={{
+                backgroundColor: "var(--bg-tertiary)",
+                borderRadius: "var(--border-radius-md)",
+                padding: "var(--spacing-4)",
+                fontFamily: "monospace",
+                fontSize: "0.875rem",
+                flex: 1,
+              }}
+            >
+              <div style={{ display: "flex", flexDirection: "column" }}>
+                <span
+                  style={{
+                    color: "var(--text-muted)",
+                    marginBottom: "var(--spacing-2)",
+                  }}
+                >
+                  DATABASE_URL
+                </span>
+                <span
+                  style={{
+                    color: "var(--text-primary)",
+                    wordBreak: "break-all",
+                  }}
+                >
+                  {initialConfig.database.url}
+                </span>
+              </div>
+            </div>
+          </div>
+          <div
+            className="card-footer"
+            style={{
+              borderTop: "none",
+              backgroundColor: "transparent",
+              paddingTop: 0,
+            }}
+          >
+            <button
+              onClick={() => checkService("database")}
+              className="btn btn-outline"
+              style={{ width: "100%", justifyContent: "center" }}
+            >
+              Test Connection
+            </button>
+          </div>
         </div>
 
         {/* Storage */}
-        <div className="card" style={{ padding: "var(--spacing-6)" }}>
+        <div
+          className="card"
+          style={{ display: "flex", flexDirection: "column" }}
+        >
           <div
-            className="flex justify-between items-start"
-            style={{ marginBottom: "var(--spacing-6)" }}
-          >
-            <div className="flex items-center gap-4">
-              <div
-                style={{
-                  backgroundColor: "var(--bg-accent-subtle)",
-                  padding: "var(--spacing-3)",
-                  borderRadius: "var(--border-radius-md)",
-                }}
-              >
-                <Cloud size={24} style={{ color: "var(--accent-color)" }} />
-              </div>
-              <div>
-                <h3
-                  style={{
-                    margin: 0,
-                    fontSize: "var(--font-size-lg)",
-                    fontWeight: "var(--font-weight-semibold)",
-                  }}
-                >
-                  Cloud Storage
-                </h3>
-                <div
-                  style={{
-                    color: "var(--text-secondary)",
-                    fontSize: "var(--font-size-sm)",
-                  }}
-                >
-                  Google Cloud Storage bucket
-                </div>
-              </div>
-            </div>
-            <StatusBadge service="storage" />
-          </div>
-
-          <div
+            className="card-body"
             style={{
-              marginBottom: "var(--spacing-6)",
-              backgroundColor: "var(--bg-code-block)",
-              borderRadius: "var(--border-radius-md)",
-              padding: "var(--spacing-4)",
-              fontFamily: "monospace",
-              fontSize: "var(--font-size-sm)",
+              display: "flex",
+              flexDirection: "column",
+              gap: "var(--spacing-6)",
               flex: 1,
             }}
           >
             <div
-              className="flex justify-between"
               style={{
-                borderBottom: "var(--border-width-1) solid var(--border-color)",
-                paddingBottom: "var(--spacing-2)",
-                marginBottom: "var(--spacing-2)",
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "flex-start",
               }}
             >
-              <span style={{ color: "var(--text-muted)" }}>
-                GCS_BUCKET_NAME
-              </span>
-              <span
+              <div
                 style={{
-                  color: "var(--text-primary)",
-                  wordBreak: "break-all",
-                  marginLeft: "var(--spacing-4)",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "var(--spacing-4)",
                 }}
               >
-                {initialConfig.storage.bucket}
-              </span>
+                <div
+                  style={{
+                    backgroundColor:
+                      "var(--accent-bg-subtle, rgba(236, 72, 153, 0.1))",
+                    padding: "var(--spacing-3)",
+                    borderRadius: "var(--border-radius-md)",
+                  }}
+                >
+                  <Cloud size={24} style={{ color: "var(--accent-color)" }} />
+                </div>
+                <div>
+                  <h3
+                    style={{
+                      margin: 0,
+                      fontSize: "1.125rem",
+                      fontWeight: "600",
+                    }}
+                  >
+                    Cloud Storage
+                  </h3>
+                  <div
+                    style={{
+                      color: "var(--text-secondary)",
+                      fontSize: "0.875rem",
+                    }}
+                  >
+                    Google Cloud Storage bucket
+                  </div>
+                </div>
+              </div>
+              <StatusBadge service="storage" />
+            </div>
+
+            <div
+              style={{
+                backgroundColor: "var(--bg-tertiary)",
+                borderRadius: "var(--border-radius-md)",
+                padding: "var(--spacing-4)",
+                fontFamily: "monospace",
+                fontSize: "0.875rem",
+                flex: 1,
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  borderBottom: "1px solid var(--border-color)",
+                  paddingBottom: "var(--spacing-2)",
+                  marginBottom: "var(--spacing-2)",
+                }}
+              >
+                <span style={{ color: "var(--text-muted)" }}>
+                  GCS_BUCKET_NAME
+                </span>
+                <span
+                  style={{
+                    color: "var(--text-primary)",
+                    wordBreak: "break-all",
+                    marginLeft: "var(--spacing-4)",
+                  }}
+                >
+                  {initialConfig.storage.bucket}
+                </span>
+              </div>
             </div>
           </div>
-
-          <button
-            onClick={() => checkService("storage")}
-            className="btn btn-outline"
+          <div
+            className="card-footer"
             style={{
-              width: "100%",
-              justifyContent: "center",
-              marginTop: "auto",
+              borderTop: "none",
+              backgroundColor: "transparent",
+              paddingTop: 0,
             }}
           >
-            Test Connection
-          </button>
+            <button
+              onClick={() => checkService("storage")}
+              className="btn btn-outline"
+              style={{ width: "100%", justifyContent: "center" }}
+            >
+              Test Connection
+            </button>
+          </div>
         </div>
 
         {/* Gemini AI */}
-        <div className="card" style={{ padding: "var(--spacing-6)" }}>
+        <div
+          className="card"
+          style={{ display: "flex", flexDirection: "column" }}
+        >
           <div
-            className="flex justify-between items-start"
-            style={{ marginBottom: "var(--spacing-6)" }}
-          >
-            <div className="flex items-center gap-4">
-              <div
-                style={{
-                  backgroundColor: "var(--bg-purple-subtle)",
-                  padding: "var(--spacing-3)",
-                  borderRadius: "var(--border-radius-md)",
-                }}
-              >
-                <Sparkles size={24} style={{ color: "var(--purple-color)" }} />
-              </div>
-              <div>
-                <h3
-                  style={{
-                    margin: 0,
-                    fontSize: "var(--font-size-lg)",
-                    fontWeight: "var(--font-weight-semibold)",
-                  }}
-                >
-                  Vision AI
-                </h3>
-                <div
-                  style={{
-                    color: "var(--text-secondary)",
-                    fontSize: "var(--font-size-sm)",
-                  }}
-                >
-                  Gemini 2.5 Flash
-                </div>
-              </div>
-            </div>
-            <StatusBadge service="ai" />
-          </div>
-
-          <div
+            className="card-body"
             style={{
-              marginBottom: "var(--spacing-6)",
-              backgroundColor: "var(--bg-code-block)",
-              borderRadius: "var(--border-radius-md)",
-              padding: "var(--spacing-4)",
-              fontFamily: "monospace",
-              fontSize: "var(--font-size-sm)",
+              display: "flex",
+              flexDirection: "column",
+              gap: "var(--spacing-6)",
               flex: 1,
             }}
           >
             <div
-              className="flex justify-between"
               style={{
-                borderBottom: "var(--border-width-1) solid var(--border-color)",
-                paddingBottom: "var(--spacing-2)",
-                marginBottom: "var(--spacing-2)",
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "flex-start",
               }}
             >
-              <span style={{ color: "var(--text-muted)" }}>GEMINI_API_KEY</span>
-              <span
+              <div
                 style={{
-                  color: "var(--text-primary)",
-                  wordBreak: "break-all",
-                  marginLeft: "var(--spacing-4)",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "var(--spacing-4)",
                 }}
               >
-                {initialConfig.ai.geminiKey}
-              </span>
+                <div
+                  style={{
+                    backgroundColor: "rgba(168, 85, 247, 0.1)",
+                    padding: "var(--spacing-3)",
+                    borderRadius: "var(--border-radius-md)",
+                  }}
+                >
+                  <Sparkles
+                    size={24}
+                    style={{ color: "var(--purple-color, #a855f7)" }}
+                  />
+                </div>
+                <div>
+                  <h3
+                    style={{
+                      margin: 0,
+                      fontSize: "1.125rem",
+                      fontWeight: "600",
+                    }}
+                  >
+                    Vision AI
+                  </h3>
+                  <div
+                    style={{
+                      color: "var(--text-secondary)",
+                      fontSize: "0.875rem",
+                    }}
+                  >
+                    Gemini 2.5 Flash
+                  </div>
+                </div>
+              </div>
+              <StatusBadge service="ai" />
+            </div>
+
+            <div
+              style={{
+                backgroundColor: "var(--bg-tertiary)",
+                borderRadius: "var(--border-radius-md)",
+                padding: "var(--spacing-4)",
+                fontFamily: "monospace",
+                fontSize: "0.875rem",
+                flex: 1,
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  borderBottom: "1px solid var(--border-color)",
+                  paddingBottom: "var(--spacing-2)",
+                  marginBottom: "var(--spacing-2)",
+                }}
+              >
+                <span style={{ color: "var(--text-muted)" }}>
+                  GEMINI_API_KEY
+                </span>
+                <span
+                  style={{
+                    color: "var(--text-primary)",
+                    wordBreak: "break-all",
+                    marginLeft: "var(--spacing-4)",
+                  }}
+                >
+                  {initialConfig.ai.geminiKey}
+                </span>
+              </div>
             </div>
           </div>
-
-          <button
-            onClick={() => checkService("ai")}
-            className="btn btn-outline"
+          <div
+            className="card-footer"
             style={{
-              width: "100%",
-              justifyContent: "center",
-              marginTop: "auto",
+              borderTop: "none",
+              backgroundColor: "transparent",
+              paddingTop: 0,
             }}
           >
-            Test Connection
-          </button>
+            <button
+              onClick={() => checkService("ai")}
+              className="btn btn-outline"
+              style={{ width: "100%", justifyContent: "center" }}
+            >
+              Test Connection
+            </button>
+          </div>
         </div>
 
         {/* OAuth */}
-        <div className="card" style={{ padding: "var(--spacing-6)" }}>
+        <div
+          className="card"
+          style={{ display: "flex", flexDirection: "column" }}
+        >
           <div
-            className="flex justify-between items-start"
-            style={{ marginBottom: "var(--spacing-6)" }}
-          >
-            <div className="flex items-center gap-4">
-              <div
-                style={{
-                  backgroundColor: "var(--bg-warning-subtle)",
-                  padding: "var(--spacing-3)",
-                  borderRadius: "var(--border-radius-md)",
-                }}
-              >
-                <ShieldCheck
-                  size={24}
-                  style={{ color: "var(--warning-color)" }}
-                />
-              </div>
-              <div>
-                <h3
-                  style={{
-                    margin: 0,
-                    fontSize: "var(--font-size-lg)",
-                    fontWeight: "var(--font-weight-semibold)",
-                  }}
-                >
-                  Authentication
-                </h3>
-                <div
-                  style={{
-                    color: "var(--text-secondary)",
-                    fontSize: "var(--font-size-sm)",
-                  }}
-                >
-                  OAuth Providers Configured
-                </div>
-              </div>
-            </div>
-            <StatusBadge service="oauth" />
-          </div>
-
-          <div
+            className="card-body"
             style={{
-              display: "grid",
-              gridTemplateColumns: "var(--grid-cols-2)",
-              gap: "var(--spacing-4)",
-              marginBottom: "var(--spacing-6)",
+              display: "flex",
+              flexDirection: "column",
+              gap: "var(--spacing-6)",
               flex: 1,
             }}
           >
             <div
-              className="flex items-center justify-between"
               style={{
-                backgroundColor: "var(--bg-code-block)",
-                borderRadius: "var(--border-radius-md)",
-                padding: "var(--spacing-3)",
-                fontWeight: "bold",
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "flex-start",
               }}
             >
-              <span
+              <div
                 style={{
-                  color: "var(--text-secondary)",
-                  fontSize: "var(--font-size-sm)",
-                  fontWeight: "normal",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "var(--spacing-4)",
                 }}
               >
-                Google
-              </span>
-              {initialConfig.oauth.google ? (
-                <CheckCircle2
-                  size={16}
-                  style={{ color: "var(--success-color)", strokeWidth: 3 }}
-                />
-              ) : (
-                <XCircle
-                  size={16}
-                  style={{ color: "var(--danger-color)", strokeWidth: 3 }}
-                />
-              )}
+                <div
+                  style={{
+                    backgroundColor:
+                      "var(--warning-bg-subtle, rgba(245, 158, 11, 0.1))",
+                    padding: "var(--spacing-3)",
+                    borderRadius: "var(--border-radius-md)",
+                  }}
+                >
+                  <ShieldCheck
+                    size={24}
+                    style={{ color: "var(--warning-color)" }}
+                  />
+                </div>
+                <div>
+                  <h3
+                    style={{
+                      margin: 0,
+                      fontSize: "1.125rem",
+                      fontWeight: "600",
+                    }}
+                  >
+                    Authentication
+                  </h3>
+                  <div
+                    style={{
+                      color: "var(--text-secondary)",
+                      fontSize: "0.875rem",
+                    }}
+                  >
+                    OAuth Providers Configured
+                  </div>
+                </div>
+              </div>
+              <StatusBadge service="oauth" />
             </div>
+
             <div
-              className="flex items-center justify-between"
-              style={{
-                backgroundColor: "var(--bg-code-block)",
-                borderRadius: "var(--border-radius-md)",
-                padding: "var(--spacing-3)",
-                fontWeight: "bold",
-              }}
+              className="two-col-grid"
+              style={{ gap: "var(--spacing-4)", flex: 1 }}
             >
-              <span
+              <div
                 style={{
-                  color: "var(--text-secondary)",
-                  fontSize: "var(--font-size-sm)",
-                  fontWeight: "normal",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  backgroundColor: "var(--bg-tertiary)",
+                  borderRadius: "var(--border-radius-md)",
+                  padding: "var(--spacing-3)",
+                  fontWeight: "bold",
                 }}
               >
-                Apple
-              </span>
-              {initialConfig.oauth.apple ? (
-                <CheckCircle2
-                  size={16}
-                  style={{ color: "var(--success-color)", strokeWidth: 3 }}
-                />
-              ) : (
-                <XCircle
-                  size={16}
-                  style={{ color: "var(--danger-color)", strokeWidth: 3 }}
-                />
-              )}
-            </div>
-            <div
-              className="flex items-center justify-between"
-              style={{
-                backgroundColor: "var(--bg-code-block)",
-                borderRadius: "var(--border-radius-md)",
-                padding: "var(--spacing-3)",
-                fontWeight: "bold",
-              }}
-            >
-              <span
+                <span
+                  style={{
+                    color: "var(--text-secondary)",
+                    fontSize: "0.875rem",
+                    fontWeight: "normal",
+                  }}
+                >
+                  Google
+                </span>
+                {initialConfig.oauth.google ? (
+                  <CheckCircle2
+                    size={16}
+                    style={{ color: "var(--success-color)", strokeWidth: 3 }}
+                  />
+                ) : (
+                  <XCircle
+                    size={16}
+                    style={{ color: "var(--danger-color)", strokeWidth: 3 }}
+                  />
+                )}
+              </div>
+              <div
                 style={{
-                  color: "var(--text-secondary)",
-                  fontSize: "var(--font-size-sm)",
-                  fontWeight: "normal",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  backgroundColor: "var(--bg-tertiary)",
+                  borderRadius: "var(--border-radius-md)",
+                  padding: "var(--spacing-3)",
+                  fontWeight: "bold",
                 }}
               >
-                GitHub
-              </span>
-              {initialConfig.oauth.github ? (
-                <CheckCircle2
-                  size={16}
-                  style={{ color: "var(--success-color)", strokeWidth: 3 }}
-                />
-              ) : (
-                <XCircle
-                  size={16}
-                  style={{ color: "var(--danger-color)", strokeWidth: 3 }}
-                />
-              )}
-            </div>
-            <div
-              className="flex items-center justify-between"
-              style={{
-                backgroundColor: "var(--bg-code-block)",
-                borderRadius: "var(--border-radius-md)",
-                padding: "var(--spacing-3)",
-                fontWeight: "bold",
-              }}
-            >
-              <span
+                <span
+                  style={{
+                    color: "var(--text-secondary)",
+                    fontSize: "0.875rem",
+                    fontWeight: "normal",
+                  }}
+                >
+                  Apple
+                </span>
+                {initialConfig.oauth.apple ? (
+                  <CheckCircle2
+                    size={16}
+                    style={{ color: "var(--success-color)", strokeWidth: 3 }}
+                  />
+                ) : (
+                  <XCircle
+                    size={16}
+                    style={{ color: "var(--danger-color)", strokeWidth: 3 }}
+                  />
+                )}
+              </div>
+              <div
                 style={{
-                  color: "var(--text-secondary)",
-                  fontSize: "var(--font-size-sm)",
-                  fontWeight: "normal",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  backgroundColor: "var(--bg-tertiary)",
+                  borderRadius: "var(--border-radius-md)",
+                  padding: "var(--spacing-3)",
+                  fontWeight: "bold",
                 }}
               >
-                Azure AD
-              </span>
-              {initialConfig.oauth.azure ? (
-                <CheckCircle2
-                  size={16}
-                  style={{ color: "var(--success-color)", strokeWidth: 3 }}
-                />
-              ) : (
-                <XCircle
-                  size={16}
-                  style={{ color: "var(--danger-color)", strokeWidth: 3 }}
-                />
-              )}
+                <span
+                  style={{
+                    color: "var(--text-secondary)",
+                    fontSize: "0.875rem",
+                    fontWeight: "normal",
+                  }}
+                >
+                  GitHub
+                </span>
+                {initialConfig.oauth.github ? (
+                  <CheckCircle2
+                    size={16}
+                    style={{ color: "var(--success-color)", strokeWidth: 3 }}
+                  />
+                ) : (
+                  <XCircle
+                    size={16}
+                    style={{ color: "var(--danger-color)", strokeWidth: 3 }}
+                  />
+                )}
+              </div>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  backgroundColor: "var(--bg-tertiary)",
+                  borderRadius: "var(--border-radius-md)",
+                  padding: "var(--spacing-3)",
+                  fontWeight: "bold",
+                }}
+              >
+                <span
+                  style={{
+                    color: "var(--text-secondary)",
+                    fontSize: "0.875rem",
+                    fontWeight: "normal",
+                  }}
+                >
+                  Azure AD
+                </span>
+                {initialConfig.oauth.azure ? (
+                  <CheckCircle2
+                    size={16}
+                    style={{ color: "var(--success-color)", strokeWidth: 3 }}
+                  />
+                ) : (
+                  <XCircle
+                    size={16}
+                    style={{ color: "var(--danger-color)", strokeWidth: 3 }}
+                  />
+                )}
+              </div>
             </div>
           </div>
-
-          <button
-            onClick={() => checkService("oauth")}
-            className="btn btn-outline"
+          <div
+            className="card-footer"
             style={{
-              width: "100%",
-              justifyContent: "center",
-              marginTop: "auto",
+              borderTop: "none",
+              backgroundColor: "transparent",
+              paddingTop: 0,
             }}
           >
-            Refresh Status
-          </button>
+            <button
+              onClick={() => checkService("oauth")}
+              className="btn btn-outline"
+              style={{ width: "100%", justifyContent: "center" }}
+            >
+              Refresh Status
+            </button>
+          </div>
         </div>
       </div>
     </div>

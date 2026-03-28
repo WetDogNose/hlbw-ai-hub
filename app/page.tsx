@@ -3,55 +3,91 @@ import Link from "next/link";
 
 export default function Home() {
   return (
-    <main className="container container-padded relative min-h-screen pb-20">
+    <main className="container">
       <section className="hero-section">
         <div className="ambient-glow"></div>
-        <h1 className="header-title text-5xl mb-4 font-bold tracking-tight">
+        <h1
+          className="page-title text-gradient"
+          style={{
+            justifyContent: "center",
+            fontSize: "3.5rem",
+            marginBottom: "var(--spacing-4)",
+          }}
+        >
           HLBW AI Hub
         </h1>
-        <p className="hero-subtitle text-xl font-medium tracking-wide">
+        <p className="page-description" style={{ fontSize: "1.25rem" }}>
           Master Control Plane for Distributed AI Orchestration
         </p>
       </section>
 
-      <div className="card-grid">
-        <div className="card stat-card">
-          <div className="stat-icon-wrapper text-blue-500">
-            <Cpu size={24} />
+      <div className="admin-stats-grid">
+        <div className="stat-box">
+          <div className="stat-box-title">
+            <Cpu size={18} style={{ color: "var(--info-color)" }} />
+            Active Nodes
           </div>
-          <div className="stat-value">14</div>
-          <div className="stat-label">Active Nodes</div>
+          <div
+            className="stat-box-value"
+            style={{ marginTop: "var(--spacing-2)" }}
+          >
+            14
+          </div>
+          <div className="stat-box-desc">Online and operational</div>
         </div>
 
-        <div className="card stat-card">
-          <div className="stat-icon-wrapper text-purple-500">
-            <Server size={24} />
+        <div className="stat-box">
+          <div className="stat-box-title">
+            <Server size={18} style={{ color: "var(--purple-color)" }} />
+            Connected MCPs
           </div>
-          <div className="stat-value">8</div>
-          <div className="stat-label">Connected MCPs</div>
+          <div
+            className="stat-box-value"
+            style={{ marginTop: "var(--spacing-2)" }}
+          >
+            8
+          </div>
+          <div className="stat-box-desc">Live server pools</div>
         </div>
 
-        <div className="card stat-card">
-          <div className="stat-icon-wrapper text-emerald-500">
-            <Layers size={24} />
+        <div className="stat-box">
+          <div className="stat-box-title">
+            <Layers size={18} style={{ color: "var(--success-color)" }} />
+            Swarms Dispatched
           </div>
-          <div className="stat-value">1,204</div>
-          <div className="stat-label">Swarms Dispatched</div>
+          <div
+            className="stat-box-value"
+            style={{ marginTop: "var(--spacing-2)" }}
+          >
+            1,204
+          </div>
+          <div className="stat-box-desc">All time total</div>
         </div>
 
-        <div className="card stat-card">
-          <div className="stat-icon-wrapper text-amber-500">
-            <Activity size={24} />
+        <div className="stat-box">
+          <div className="stat-box-title">
+            <Activity size={18} style={{ color: "var(--warning-color)" }} />
+            System Health
           </div>
-          <div className="stat-value flex items-center gap-2">
-            <span className="pulse-indicator"></span> 99.9%
+          <div
+            className="stat-box-value flex items-center gap-2"
+            style={{ marginTop: "var(--spacing-2)" }}
+          >
+            99.9%
           </div>
-          <div className="stat-label">System Health</div>
+          <div className="stat-box-desc border-color">All systems nominal</div>
         </div>
       </div>
 
-      <div className="header-actions mt-8">
-        <Link href="/admin/stats" className="btn btn-primary">
+      <div className="flex justify-center mt-8">
+        <Link
+          href="/admin/stats"
+          className="btn btn-primary"
+          style={{
+            padding: "var(--spacing-4) var(--spacing-8)",
+            fontSize: "1.1rem",
+          }}
+        >
           Open Admin Control Plane
         </Link>
       </div>
