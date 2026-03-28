@@ -1,10 +1,10 @@
 # MCP Server Health Validation
 
 ## Overview
-The toolchain-doctor now validates that all MCP server entry-point files referenced in the Antigravity MCP config actually exist on disk. Additionally, the `wot-box-tester` MCP server's working directory resolution has been fixed to reliably derive the project root from `import.meta.url` rather than depending on `process.cwd()`.
+The toolchain-doctor now validates that all MCP server entry-point files referenced in the Antigravity MCP config actually exist on disk. Additionally, the `hlbw-tester` MCP server's working directory resolution has been fixed to reliably derive the project root from `import.meta.url` rather than depending on `process.cwd()`.
 
 ## Problem
-When the Antigravity IDE launches MCP servers, `process.cwd()` resolves to the IDE's install directory (`C:\Users\Jason\AppData\Local\Programs\Antigravity\`), not the project repository. The `wot-box-tester` relied on `process.cwd()` to find `package.json` for running npm scripts, causing all test commands to fail.
+When the Antigravity IDE launches MCP servers, `process.cwd()` resolves to the IDE's install directory (`C:\Users\Jason\AppData\Local\Programs\Antigravity\`), not the project repository. The `hlbw-tester` relied on `process.cwd()` to find `package.json` for running npm scripts, causing all test commands to fail.
 
 ## Solution
 

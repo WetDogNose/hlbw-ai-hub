@@ -8,9 +8,9 @@
 2.  **Worker Infrastructure**: 
     - `Dockerfile.worker` updated with all OTEL/MCP dependencies.
     - `docker-manager-mcp` supports `extraBinds` and custom networks.
-    - Workers now join `wot-box-network` to reach Neo4j.
+    - Workers now join `hlbw-network` to reach Neo4j.
 3.  **Audit Trail**: All graph mutations in `shared-memory.ts` now append to `.agents/swarm/audit.jsonl`.
-4.  **Worktree Detection**: The monitor successfully identifies and polls audit logs in isolated `wot-box-worktrees`.
+4.  **Worktree Detection**: The monitor successfully identifies and polls audit logs in isolated `hlbw-worktrees`.
 
 ## The Remaining Mystery 🕵️
 The monitor reports **"Monitoring 13 logs"**, but only displays events from the `[MAIN]` log. It is currently "silent" when autonomous sub-agents write to their local worktree audit logs, even though:

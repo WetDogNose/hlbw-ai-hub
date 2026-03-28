@@ -351,7 +351,7 @@ console.log("\n-------------------------------");
 // 10. Git Worktree Health Validation
 console.log("\n--- Git Worktree Health Check ---");
 try {
-  const worktreesRoot = path.join(__dirname, "..", "..", "wot-box-worktrees");
+  const worktreesRoot = path.join(__dirname, "..", "..", "hlbw-worktrees");
   const repoRoot = path.join(__dirname, "..");
 
   // Step 1: Tell Git to prune its internal tracking of deleted worktrees
@@ -367,7 +367,7 @@ try {
     .filter((line) => line.startsWith("worktree "))
     .map((line) => line.replace("worktree ", "").trim());
 
-  // Step 3: Ensure the wot-box-worktrees folder exists to check for orphaned directories
+  // Step 3: Ensure the hlbw-worktrees folder exists to check for orphaned directories
   if (fs.existsSync(worktreesRoot)) {
     const discoveredDirs = fs
       .readdirSync(worktreesRoot, { withFileTypes: true })
@@ -405,7 +405,7 @@ try {
     }
   } else {
     logInfo(
-      "No wot-box-worktrees directory found outside the repo — skipping folder check.",
+      "No hlbw-worktrees directory found outside the repo — skipping folder check.",
     );
   }
   logSuccess("Git worktree internal tracking pruned.");

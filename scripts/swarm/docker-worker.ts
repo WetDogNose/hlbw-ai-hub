@@ -84,8 +84,8 @@ export async function spawnDockerWorker(
 
       const imageName =
         agentType === "python"
-          ? "wot-box-python-worker:latest"
-          : "wot-box-worker:latest";
+          ? "hlbw-python-worker:latest"
+          : "hlbw-swarm-worker:latest";
       const command =
         agentType === "python"
           ? [

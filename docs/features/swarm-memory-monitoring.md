@@ -57,4 +57,4 @@ npm run monitor:memory
 - **Log Format:** JSONL (JSON Lines) for efficient tailing.
 - **Location:** `.agents/swarm/audit.jsonl`
 - **Transport:** The monitor uses `fs.watch` for sub-millisecond latency when new entries are appended.
-- **Persistence:** All memory events are persisted in the `wot-box-neo4j-data` Docker volume, while the audit log provides the temporal history.
+- **Persistence:** All memory events are persisted in the `hlbw-neo4j-data` Docker volume, while the audit log provides the temporal history.

@@ -5,7 +5,7 @@ import { getTracer } from "./tracing";
 import { SWARM_POLICY } from "./policy";
 import { appendAudit } from "./audit";
 
-const WORKTREES_ROOT = path.resolve(process.cwd(), "..", "wot-box-worktrees");
+const WORKTREES_ROOT = path.resolve(process.cwd(), "..", "hlbw-worktrees");
 
 // --- Gap 1: Full Isolation Lifecycle ---
 
@@ -36,7 +36,9 @@ export function createWorktree(branchName: string): string {
       // Capacity check (Gap 5)
       const active = listWorktrees().filter((w) => w.status === "active");
       if (active.length >= SWARM_POLICY.maxActiveIsolation) {
-        throw new Error(`Isolation capacity exceeded: ${active.length}/${SWARM_POLICY.maxActiveIsolation} active worktrees.`);
+        throw new Error(
+          `Isolation capacity exceeded: ${active.length}/${SWARM_POLICY.maxActiveIsolation} active worktrees.`,
+        );
       }
 
       if (!fs.existsSync(WORKTREES_ROOT)) {
@@ -45,14 +47,30 @@ export function createWorktree(branchName: string): string {
 
       const worktreePath = path.join(WORKTREES_ROOT, branchName);
       if (fs.existsSync(worktreePath)) {
-        try { execSync(`git worktree remove "${worktreePath}" --force`, { stdio: "ignore" }); } catch (e) {}
+        try {
+          execSync(`git worktree remove "${worktreePath}" --force`, {
+            stdio: "ignore",
+          });
+        } catch (e) {}
         fs.rmSync(worktreePath, { recursive: true, force: true });
       }
-      try { execSync(`git branch -D "${branchName}"`, { stdio: "ignore" }); } catch (e) {}
-      execSync(`git worktree add "${worktreePath}" -b "${branchName}"`, { stdio: "inherit" });
-      execSync(`git config branch.${branchName}.active true`, { stdio: "inherit" });
+      try {
+        execSync(`git branch -D "${branchName}"`, { stdio: "ignore" });
+      } catch (e) {}
+      execSync(`git worktree add "${worktreePath}" -b "${branchName}"`, {
+        stdio: "inherit",
+      });
+      execSync(`git config branch.${branchName}.active true`, {
+        stdio: "inherit",
+      });
 
-      appendAudit({ actor: "isolation", action: "isolation.created", entityType: "isolation", entityId: branchName, newState: "active" }).catch(() => {});
+      appendAudit({
+        actor: "isolation",
+        action: "isolation.created",
+        entityType: "isolation",
+        entityId: branchName,
+        newState: "active",
+      }).catch(() => {});
 
       span.end();
       return worktreePath;
@@ -64,7 +82,10 @@ export function createWorktree(branchName: string): string {
   });
 }
 
-export function removeWorktree(branchName: string, force: boolean = false): void {
+export function removeWorktree(
+  branchName: string,
+  force: boolean = false,
+): void {
   const tracer = getTracer();
   tracer.startActiveSpan("Git:removeWorktree", (span) => {
     span.setAttribute("branch.name", branchName);
@@ -73,11 +94,15 @@ export function removeWorktree(branchName: string, force: boolean = false): void
     const worktreePath = path.join(WORKTREES_ROOT, branchName);
 
     if (fs.existsSync(worktreePath)) {
-      execSync(`git worktree remove "${worktreePath}" --force`, { stdio: "inherit" });
+      execSync(`git worktree remove "${worktreePath}" --force`, {
+        stdio: "inherit",
+      });
     }
 
     try {
-      execSync(`git config --unset branch.${branchName}.active`, { stdio: "ignore" });
+      execSync(`git config --unset branch.${branchName}.active`, {
+        stdio: "ignore",
+      });
     } catch (e) {
       // Ignore if not set
     }
@@ -90,7 +115,13 @@ export function removeWorktree(branchName: string, force: boolean = false): void
       }
     }
 
-    appendAudit({ actor: "isolation", action: "isolation.removed", entityType: "isolation", entityId: branchName, newState: force ? "force-removed" : "removed" }).catch(() => {});
+    appendAudit({
+      actor: "isolation",
+      action: "isolation.removed",
+      entityType: "isolation",
+      entityId: branchName,
+      newState: force ? "force-removed" : "removed",
+    }).catch(() => {});
     span.end();
   });
 }
@@ -99,20 +130,31 @@ export function listWorktrees(): WorktreeInfo[] {
   const tracer = getTracer();
   return tracer.startActiveSpan("Git:listWorktrees", (span) => {
     try {
-      const output = execSync("git worktree list --porcelain", { encoding: "utf-8" });
+      const output = execSync("git worktree list --porcelain", {
+        encoding: "utf-8",
+      });
       const worktrees: WorktreeInfo[] = [];
       const blocks = output.split("\n\n").filter(Boolean);
 
       for (const block of blocks) {
         const lines = block.trim().split("\n");
-        const wtPath = lines.find((l) => l.startsWith("worktree "))?.replace("worktree ", "") || "";
-        const head = lines.find((l) => l.startsWith("HEAD "))?.replace("HEAD ", "") || "";
+        const wtPath =
+          lines
+            .find((l) => l.startsWith("worktree "))
+            ?.replace("worktree ", "") || "";
+        const head =
+          lines.find((l) => l.startsWith("HEAD "))?.replace("HEAD ", "") || "";
         const branchLine = lines.find((l) => l.startsWith("branch "));
-        const branch = branchLine ? branchLine.replace("branch refs/heads/", "") : "";
+        const branch = branchLine
+          ? branchLine.replace("branch refs/heads/", "")
+          : "";
         const prunable = lines.some((l) => l.includes("prunable"));
 
         // Only include worktrees under our managed root
-        if (wtPath.startsWith(WORKTREES_ROOT) || wtPath.includes("wot-box-worktrees")) {
+        if (
+          wtPath.startsWith(WORKTREES_ROOT) ||
+          wtPath.includes("hlbw-worktrees")
+        ) {
           worktrees.push({
             branch,
             path: wtPath,
@@ -144,7 +186,10 @@ export function getWorktreeStatus(branchName: string): WorktreeStatus {
       let ahead = 0;
       let behind = 0;
       try {
-        const revList = execSync(`git rev-list --left-right --count main...${branchName}`, { encoding: "utf-8", cwd: worktreePath }).trim();
+        const revList = execSync(
+          `git rev-list --left-right --count main...${branchName}`,
+          { encoding: "utf-8", cwd: worktreePath },
+        ).trim();
         const parts = revList.split(/\s+/);
         behind = parseInt(parts[0], 10) || 0;
         ahead = parseInt(parts[1], 10) || 0;
@@ -155,24 +200,45 @@ export function getWorktreeStatus(branchName: string): WorktreeStatus {
       // Count changed files
       let filesChanged = 0;
       try {
-        const diff = execSync(`git diff --name-only main...${branchName}`, { encoding: "utf-8", cwd: worktreePath }).trim();
+        const diff = execSync(`git diff --name-only main...${branchName}`, {
+          encoding: "utf-8",
+          cwd: worktreePath,
+        }).trim();
         filesChanged = diff ? diff.split("\n").length : 0;
       } catch (e) {}
 
       // Check for conflicts
       let hasConflicts = false;
       try {
-        const status = execSync("git status --porcelain", { encoding: "utf-8", cwd: worktreePath });
-        hasConflicts = status.includes("UU ") || status.includes("AA ") || status.includes("DD ");
+        const status = execSync("git status --porcelain", {
+          encoding: "utf-8",
+          cwd: worktreePath,
+        });
+        hasConflicts =
+          status.includes("UU ") ||
+          status.includes("AA ") ||
+          status.includes("DD ");
       } catch (e) {}
 
-      const result: WorktreeStatus = { branch: branchName, ahead, behind, filesChanged, hasConflicts };
+      const result: WorktreeStatus = {
+        branch: branchName,
+        ahead,
+        behind,
+        filesChanged,
+        hasConflicts,
+      };
       span.end();
       return result;
     } catch (err: any) {
       span.recordException(err);
       span.end();
-      return { branch: branchName, ahead: 0, behind: 0, filesChanged: 0, hasConflicts: false };
+      return {
+        branch: branchName,
+        ahead: 0,
+        behind: 0,
+        filesChanged: 0,
+        hasConflicts: false,
+      };
     }
   });
 }
@@ -185,10 +251,20 @@ export function syncWorktree(branchName: string): void {
 
     try {
       execSync("git fetch origin", { cwd: worktreePath, stdio: "inherit" });
-      execSync("git rebase origin/main", { cwd: worktreePath, stdio: "inherit" });
-      appendAudit({ actor: "isolation", action: "isolation.synced", entityType: "isolation", entityId: branchName }).catch(() => {});
+      execSync("git rebase origin/main", {
+        cwd: worktreePath,
+        stdio: "inherit",
+      });
+      appendAudit({
+        actor: "isolation",
+        action: "isolation.synced",
+        entityType: "isolation",
+        entityId: branchName,
+      }).catch(() => {});
     } catch (err: any) {
-      console.error(`Sync failed for ${branchName}: ${err.message}. May have conflicts.`);
+      console.error(
+        `Sync failed for ${branchName}: ${err.message}. May have conflicts.`,
+      );
       span.recordException(err);
     }
     span.end();
@@ -212,14 +288,17 @@ export type MergeStrategy = "theirs" | "ours" | "union" | "manual";
 
 /**
  * Merge a worktree branch into its mainline with interactive conflict resolution.
- * 
+ *
  * Strategies:
  * - "theirs": Accept all incoming changes from the branch being merged (default for swarm — workers produce the authoritative output)
- * - "ours": Keep the current branch's version for all conflicting files  
+ * - "ours": Keep the current branch's version for all conflicting files
  * - "union": Attempt to merge both sides line-by-line (best for additive changes like docs/configs)
  * - "manual": Detect conflicts but don't auto-resolve — leaves them for human resolution
  */
-export function mergeWorktree(branchName: string, strategy: MergeStrategy = "theirs"): MergeResult {
+export function mergeWorktree(
+  branchName: string,
+  strategy: MergeStrategy = "theirs",
+): MergeResult {
   const tracer = getTracer();
   return tracer.startActiveSpan("Git:mergeWorktree", (span) => {
     span.setAttribute("branch.name", branchName);
@@ -237,9 +316,12 @@ export function mergeWorktree(branchName: string, strategy: MergeStrategy = "the
       try {
         const worktreePath = path.join(WORKTREES_ROOT, branchName);
         console.log(`Checking branch with Sentry Directive Enforcer...`);
-        const diff = execSync(`git diff --name-only main...${branchName}`, { cwd: worktreePath, encoding: "utf-8" }).trim();
+        const diff = execSync(`git diff --name-only main...${branchName}`, {
+          cwd: worktreePath,
+          encoding: "utf-8",
+        }).trim();
         if (diff) {
-          const files = diff.split('\n');
+          const files = diff.split("\n");
           for (const file of files) {
             if (file.match(/\.(ts|js|py|md)$/)) {
               const fullPath = path.join(worktreePath, file);
@@ -248,11 +330,13 @@ export function mergeWorktree(branchName: string, strategy: MergeStrategy = "the
                 const payloadObj = {
                   sender_id: "master-agent",
                   target_id: "directive-enforcer",
-                  payload: { action: "validate_file", filepath: fullPath }
+                  payload: { action: "validate_file", filepath: fullPath },
                 };
-                const b64 = Buffer.from(JSON.stringify(payloadObj)).toString("base64");
+                const b64 = Buffer.from(JSON.stringify(payloadObj)).toString(
+                  "base64",
+                );
                 const script = `fetch('http://localhost:8080/a2a/message', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: Buffer.from('${b64}', 'base64').toString('utf-8') }).then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1));`;
-                execSync(`node -e "${script}"`, { stdio: 'ignore' });
+                execSync(`node -e "${script}"`, { stdio: "ignore" });
               }
             }
           }
@@ -262,16 +346,32 @@ export function mergeWorktree(branchName: string, strategy: MergeStrategy = "the
       }
 
       // Attempt the merge
-      execSync(`git merge ${branchName} --no-ff -m "Merge swarm branch ${branchName}"`, { stdio: "pipe" });
+      execSync(
+        `git merge ${branchName} --no-ff -m "Merge swarm branch ${branchName}"`,
+        { stdio: "pipe" },
+      );
       result.success = true;
-      appendAudit({ actor: "isolation", action: "isolation.merged", entityType: "isolation", entityId: branchName, newState: "merged" }).catch(() => {});
+      appendAudit({
+        actor: "isolation",
+        action: "isolation.merged",
+        entityType: "isolation",
+        entityId: branchName,
+        newState: "merged",
+      }).catch(() => {});
       span.end();
       return result;
     } catch (mergeErr: any) {
       // Merge failed — check for conflicts
       try {
-        const status = execSync("git status --porcelain", { encoding: "utf-8" });
-        const conflictLines = status.split("\n").filter((l) => l.startsWith("UU ") || l.startsWith("AA ") || l.startsWith("DD "));
+        const status = execSync("git status --porcelain", {
+          encoding: "utf-8",
+        });
+        const conflictLines = status
+          .split("\n")
+          .filter(
+            (l) =>
+              l.startsWith("UU ") || l.startsWith("AA ") || l.startsWith("DD "),
+          );
 
         if (conflictLines.length === 0) {
           // Not a conflict — some other merge error
@@ -284,12 +384,17 @@ export function mergeWorktree(branchName: string, strategy: MergeStrategy = "the
         result.conflicts = true;
         const conflictedFiles = conflictLines.map((l) => l.slice(3).trim());
 
-        console.log(`Merge conflict detected in ${conflictedFiles.length} file(s). Strategy: ${strategy}`);
+        console.log(
+          `Merge conflict detected in ${conflictedFiles.length} file(s). Strategy: ${strategy}`,
+        );
         console.log(`Conflicted files: ${conflictedFiles.join(", ")}`);
 
         if (strategy === "manual") {
           // Leave conflicts in place for human resolution
-          result.conflictFiles = conflictedFiles.map((f) => ({ file: f, status: "unresolved" as const }));
+          result.conflictFiles = conflictedFiles.map((f) => ({
+            file: f,
+            status: "unresolved" as const,
+          }));
           appendAudit({
             actor: "isolation",
             action: "isolation.merge_conflict",
@@ -310,17 +415,23 @@ export function mergeWorktree(branchName: string, strategy: MergeStrategy = "the
             console.log(`  ✅ Resolved: ${file} (${strategy})`);
           } catch (resolveErr: any) {
             result.conflictFiles.push({ file, status: "unresolved" });
-            console.error(`  ❌ Failed to resolve: ${file} — ${resolveErr.message}`);
+            console.error(
+              `  ❌ Failed to resolve: ${file} — ${resolveErr.message}`,
+            );
           }
         }
 
         // Stage all resolved files and commit
-        const allResolved = result.conflictFiles.every((f) => f.status === "resolved");
+        const allResolved = result.conflictFiles.every(
+          (f) => f.status === "resolved",
+        );
         if (allResolved) {
           execSync("git add -A", { stdio: "pipe" });
           execSync(`git commit --no-edit`, { stdio: "pipe" });
           result.success = true;
-          console.log(`Merge completed with ${strategy} strategy. All ${conflictedFiles.length} conflict(s) resolved.`);
+          console.log(
+            `Merge completed with ${strategy} strategy. All ${conflictedFiles.length} conflict(s) resolved.`,
+          );
 
           appendAudit({
             actor: "isolation",
@@ -328,11 +439,19 @@ export function mergeWorktree(branchName: string, strategy: MergeStrategy = "the
             entityType: "isolation",
             entityId: branchName,
             newState: "merged",
-            metadata: { files: conflictedFiles, strategy, resolvedCount: conflictedFiles.length },
+            metadata: {
+              files: conflictedFiles,
+              strategy,
+              resolvedCount: conflictedFiles.length,
+            },
           }).catch(() => {});
         } else {
-          const unresolvedCount = result.conflictFiles.filter((f) => f.status === "unresolved").length;
-          console.error(`${unresolvedCount} file(s) could not be auto-resolved. Manual intervention required.`);
+          const unresolvedCount = result.conflictFiles.filter(
+            (f) => f.status === "unresolved",
+          ).length;
+          console.error(
+            `${unresolvedCount} file(s) could not be auto-resolved. Manual intervention required.`,
+          );
 
           appendAudit({
             actor: "isolation",
@@ -342,14 +461,18 @@ export function mergeWorktree(branchName: string, strategy: MergeStrategy = "the
             newState: "conflict-partial",
             metadata: {
               strategy,
-              resolvedCount: result.conflictFiles.filter((f) => f.status === "resolved").length,
+              resolvedCount: result.conflictFiles.filter(
+                (f) => f.status === "resolved",
+              ).length,
               unresolvedCount,
             },
           }).catch(() => {});
         }
       } catch (statusErr: any) {
         // Could not even check status — abort and report
-        try { execSync("git merge --abort", { stdio: "ignore" }); } catch (e) {}
+        try {
+          execSync("git merge --abort", { stdio: "ignore" });
+        } catch (e) {}
         span.recordException(statusErr);
       }
 
@@ -362,7 +485,11 @@ export function mergeWorktree(branchName: string, strategy: MergeStrategy = "the
 /**
  * Resolve a single conflicted file using the given strategy.
  */
-function resolveConflict(file: string, branchName: string, strategy: MergeStrategy): void {
+function resolveConflict(
+  file: string,
+  branchName: string,
+  strategy: MergeStrategy,
+): void {
   switch (strategy) {
     case "theirs":
       // Accept the incoming branch's version
@@ -404,10 +531,13 @@ if (require.main === module) {
   } else if (cmd === "sync" && process.argv[3]) {
     syncWorktree(process.argv[3]);
   } else if (cmd === "merge" && process.argv[3]) {
-    const strategy = (process.argv[4] || "theirs") as import("./manage-worktree").MergeStrategy;
+    const strategy = (process.argv[4] ||
+      "theirs") as import("./manage-worktree").MergeStrategy;
     const result = mergeWorktree(process.argv[3], strategy);
     console.log(JSON.stringify(result, null, 2));
   } else {
-    console.log("Usage: tsx manage-worktree.ts [list | status <branch> | sync <branch> | merge <branch> [theirs|ours|union|manual]]");
+    console.log(
+      "Usage: tsx manage-worktree.ts [list | status <branch> | sync <branch> | merge <branch> [theirs|ours|union|manual]]",
+    );
   }
 }

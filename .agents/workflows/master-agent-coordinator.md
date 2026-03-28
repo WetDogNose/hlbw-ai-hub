@@ -25,6 +25,8 @@ As the Master Agent, your role is to ingest complex user requests, break them do
 
 4. **Dispatch Sub-Agents (Hub-and-Spoke)**
    - You can spawn tasks into true isolated parallel execution by invoking the Docker Worker. This mounts a fresh Wot-Box Worktree to a Docker container injected with our Master AI's LLM credentials (`GEMINI_API_KEY`).
+   - **[SWARM CONCURRENCY LIMITS]:** Your host system is capable of extremely high parallelism (48GB RAM, idle CPU). You should aggressively dispatch up to **10-15 sub-agents concurrently** using `Promise.all()` loops or background shells instead of sequential execution if tasks are not blocking each other.
+   - **[GPU ACCELERATION]:** For routine, highly parallelizable tasks (e.g. code formatting, simple AST parsing, refactoring based on strict rules), do NOT use the cloud Gemini agents. Instead, use the `ollama_generate` tool exposed via the `ollama-mcp` server to run `qwen2.5-coder:7b` locally on the RTX 4060 Ti GPU.
    - You MUST select the appropriate `agentCategory` from our taxonomy (e.g. `1_qa`, `2_source_control`, `3_cloud`, `4_db`, `5_bizops`) so the worker inherits the correct tool limits via its isolated `mcp_config.json`.
    // turbo
    ```powershell

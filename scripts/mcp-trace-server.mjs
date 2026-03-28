@@ -98,7 +98,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         if (name === "get_memory_stats") {
             try {
                 const query = (cypher) => {
-                    return execSync(`docker exec wot-box-neo4j cypher-shell -u neo4j -p wotbox-swarm --format plain "${cypher}"`).toString().trim().split('\n').slice(1).join('\n');
+                    return execSync(`docker exec hlbw-neo4j cypher-shell -u neo4j -p wotbox-swarm --format plain "${cypher}"`).toString().trim().split('\n').slice(1).join('\n');
                 };
 
                 const nodes = query("MATCH (n) RETURN count(n)");
@@ -190,13 +190,13 @@ async function main() {
 
     // 1. Jaeger (OTEL trace viewer)
     try {
-        const running = execSync("docker ps -q -f name=wot-box-jaeger").toString().trim();
+        const running = execSync("docker ps -q -f name=hlbw-jaeger").toString().trim();
         if (!running) {
-            const stopped = execSync("docker ps -a -q -f name=wot-box-jaeger").toString().trim();
+            const stopped = execSync("docker ps -a -q -f name=hlbw-jaeger").toString().trim();
             if (stopped) {
                 execSync(`docker start ${stopped}`);
             } else {
-                execSync("docker run -d --name wot-box-jaeger -p 16686:16686 -p 4318:4318 jaegertracing/all-in-one:latest");
+                execSync("docker run -d --name hlbw-jaeger -p 16686:16686 -p 4318:4318 jaegertracing/all-in-one:latest");
             }
         }
     } catch (err) {
@@ -205,18 +205,18 @@ async function main() {
 
     // 2. Neo4j (shared memory graph database)
     try {
-        const running = execSync("docker ps -q -f name=wot-box-neo4j").toString().trim();
+        const running = execSync("docker ps -q -f name=hlbw-neo4j").toString().trim();
         if (!running) {
-            const stopped = execSync("docker ps -a -q -f name=wot-box-neo4j").toString().trim();
+            const stopped = execSync("docker ps -a -q -f name=hlbw-neo4j").toString().trim();
             if (stopped) {
                 execSync(`docker start ${stopped}`);
             } else {
                 execSync([
-                    "docker run -d --name wot-box-neo4j",
+                    "docker run -d --name hlbw-neo4j",
                     "-p 7474:7474 -p 7687:7687",
                     "-e NEO4J_AUTH=neo4j/wotbox-swarm",
                     "-e NEO4J_PLUGINS=[\\\"apoc\\\"]",
-                    "-v wot-box-neo4j-data:/data",
+                    "-v hlbw-neo4j-data:/data",
                     "neo4j:5"
                 ].join(" "));
             }
@@ -234,8 +234,8 @@ async function main() {
     const cleanup = () => {
         try {
             console.error("Shutting down local infrastructure containers...");
-            execSync("docker stop wot-box-jaeger", { stdio: 'ignore' });
-            execSync("docker stop wot-box-neo4j", { stdio: 'ignore' });
+            execSync("docker stop hlbw-jaeger", { stdio: 'ignore' });
+            execSync("docker stop hlbw-neo4j", { stdio: 'ignore' });
         } catch(e) {}
         process.exit(0);
     };

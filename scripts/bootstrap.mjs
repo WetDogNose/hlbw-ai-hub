@@ -22,6 +22,50 @@ function runCommand(command, errorMessage) {
     }
 }
 
+async function checkOllama() {
+    console.log('\n\x1b[33m--- Checking Ollama (Local LLM) ---\x1b[0m');
+    try {
+        execSync('ollama --version', { stdio: 'ignore' });
+        console.log('\x1b[32mOllama is installed.\x1b[0m');
+    } catch (error) {
+        console.log('\x1b[31mOllama is not installed.\x1b[0m');
+        const answer = await question('Would you like to install Ollama for local GPU acceleration? (y/N) ');
+        if (answer.toLowerCase() === 'y') {
+            if (process.platform === 'win32') {
+                runCommand('winget install --id Ollama.Ollama --source winget --accept-package-agreements --accept-source-agreements', 'Failed to install Ollama');
+                console.log('\x1b[33mNOTE: Ensure the Ollama service starts or restart your terminal if it fails to find the command.\x1b[0m');
+            } else if (process.platform === 'darwin') {
+                runCommand('brew install --cask ollama', 'Failed to install Ollama via Homebrew');
+            } else {
+                runCommand('curl -fsSL https://ollama.com/install.sh | sh', 'Failed to install Ollama');
+            }
+            // Add a small delay/wait for installer to finish before model pulling
+            await new Promise(resolve => setTimeout(resolve, 5000));
+        } else {
+            console.log('\x1b[33mSkipping Ollama installation.\x1b[0m');
+            return;
+        }
+    }
+
+    try {
+        // Attempt to check if service is running
+        execSync('ollama list', { stdio: 'ignore' });
+        
+        const pullAnswer = await question('\nWould you like to download the recommended models (qwen2.5-coder:7b, nomic-embed-text, llava:7b)? This uses ~10GB of disk space. (Y/n) ');
+        if (pullAnswer.toLowerCase() !== 'n') {
+            console.log('\n\x1b[36mPulling models (this may take a while depending on internet speed)...\x1b[0m');
+            runCommand('ollama pull nomic-embed-text', 'Failed to pull nomic-embed-text');
+            runCommand('ollama pull qwen2.5-coder:7b', 'Failed to pull qwen2.5-coder:7b');
+            runCommand('ollama pull llava:7b', 'Failed to pull llava:7b');
+            console.log('\x1b[32mAll recommended local models pulled successfully.\x1b[0m');
+        } else {
+            console.log('\x1b[33mSkipping model downloads.\x1b[0m');
+        }
+    } catch (err) {
+        console.log('\x1b[31mOllama service is not responding. Please start Ollama before downloading models.\x1b[0m');
+    }
+}
+
 async function checkGitConfig() {
     console.log('\n\x1b[33m--- Checking Git Configuration ---\x1b[0m');
     try {
@@ -241,6 +285,7 @@ async function bootstrap() {
 
     await checkGsudo();
     await checkPwsh();
+    await checkOllama();
     await checkGeminiCli();
     await checkGitConfig();
     await checkPythonEnv();

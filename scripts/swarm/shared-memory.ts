@@ -19,18 +19,24 @@ async function getMemoryClient(): Promise<Client> {
   if (sharedClient) return sharedClient;
 
   const isContainer = fs.existsSync("/.dockerenv");
-  const neo4jHost = isContainer ? "wot-box-neo4j" : "host.docker.internal";
+  const neo4jHost = isContainer ? "hlbw-neo4j" : "host.docker.internal";
   const dockerArgs = [
-    "run", "-i", "--rm",
-    "-e", `NEO4J_URL=bolt://${neo4jHost}:7687`,
-    "-e", "NEO4J_USERNAME=neo4j",
-    "-e", "NEO4J_PASSWORD=wotbox-swarm",
-    "-e", "NEO4J_DATABASE=neo4j",
+    "run",
+    "-i",
+    "--rm",
+    "-e",
+    `NEO4J_URL=bolt://${neo4jHost}:7687`,
+    "-e",
+    "NEO4J_USERNAME=neo4j",
+    "-e",
+    "NEO4J_PASSWORD=wotbox-swarm",
+    "-e",
+    "NEO4J_DATABASE=neo4j",
     "mcp/neo4j-memory",
   ];
 
   if (isContainer) {
-    dockerArgs.splice(3, 0, "--network", "wot-box-network");
+    dockerArgs.splice(3, 0, "--network", "hlbw-network");
   }
 
   const transport = new StdioClientTransport({
@@ -57,8 +63,13 @@ export async function closeMemoryClient(): Promise<void> {
  */
 export async function storeEntity(
   name: string,
-  type: "swarm_task" | "swarm_worker" | "swarm_discovery" | "swarm_decision" | "swarm_context",
-  observations: string[]
+  type:
+    | "swarm_task"
+    | "swarm_worker"
+    | "swarm_discovery"
+    | "swarm_decision"
+    | "swarm_context",
+  observations: string[],
 ): Promise<void> {
   const tracer = getTracer();
   return tracer.startActiveSpan("SharedMemory:storeEntity", async (span) => {
@@ -72,10 +83,19 @@ export async function storeEntity(
           entities: [{ name, type, observations }],
         },
       });
-      await appendAudit({ actor: ACTOR, action: "memory.entity_stored", entityType: type, entityId: name, metadata: { observationCount: observations.length } });
+      await appendAudit({
+        actor: ACTOR,
+        action: "memory.entity_stored",
+        entityType: type,
+        entityId: name,
+        metadata: { observationCount: observations.length },
+      });
     } catch (err: any) {
       span.recordException(err);
-      console.error(`SharedMemory: Failed to store entity "${name}":`, err.message);
+      console.error(
+        `SharedMemory: Failed to store entity "${name}":`,
+        err.message,
+      );
     } finally {
       span.end();
     }
@@ -85,7 +105,10 @@ export async function storeEntity(
 /**
  * Add observations/facts to an existing entity.
  */
-export async function addObservations(entityName: string, observations: string[]): Promise<void> {
+export async function addObservations(
+  entityName: string,
+  observations: string[],
+): Promise<void> {
   try {
     const client = await getMemoryClient();
     await client.callTool({
@@ -94,22 +117,32 @@ export async function addObservations(entityName: string, observations: string[]
         observations: [{ entityName, observations }],
       },
     });
-    await appendAudit({ 
-      actor: ACTOR, 
-      action: "memory.observations_added", 
-      entityType: "observation", 
-      entityId: entityName, 
-      metadata: { count: observations.length, observations: observations.slice(0, 3) } 
+    await appendAudit({
+      actor: ACTOR,
+      action: "memory.observations_added",
+      entityType: "observation",
+      entityId: entityName,
+      metadata: {
+        count: observations.length,
+        observations: observations.slice(0, 3),
+      },
     });
   } catch (err: any) {
-    console.error(`SharedMemory: Failed to add observations to "${entityName}":`, err.message);
+    console.error(
+      `SharedMemory: Failed to add observations to "${entityName}":`,
+      err.message,
+    );
   }
 }
 
 /**
  * Create a relationship between two entities.
  */
-export async function createRelation(source: string, target: string, relationType: string): Promise<void> {
+export async function createRelation(
+  source: string,
+  target: string,
+  relationType: string,
+): Promise<void> {
   try {
     const client = await getMemoryClient();
     await client.callTool({
@@ -118,15 +151,18 @@ export async function createRelation(source: string, target: string, relationTyp
         relations: [{ source, target, relationType }],
       },
     });
-    await appendAudit({ 
-      actor: ACTOR, 
-      action: "memory.relation_created", 
-      entityType: "relation", 
-      entityId: `${source}->${target}`, 
-      metadata: { source, target, relationType } 
+    await appendAudit({
+      actor: ACTOR,
+      action: "memory.relation_created",
+      entityType: "relation",
+      entityId: `${source}->${target}`,
+      metadata: { source, target, relationType },
     });
   } catch (err: any) {
-    console.error(`SharedMemory: Failed to create relation ${source} -> ${target}:`, err.message);
+    console.error(
+      `SharedMemory: Failed to create relation ${source} -> ${target}:`,
+      err.message,
+    );
   }
 }
 
@@ -178,7 +214,10 @@ export async function findByName(names: string[]): Promise<any> {
 export async function readGraph(): Promise<any> {
   try {
     const client = await getMemoryClient();
-    const response = await client.callTool({ name: "read_graph", arguments: {} });
+    const response = await client.callTool({
+      name: "read_graph",
+      arguments: {},
+    });
     const result = (response as any).content?.[0]?.text;
     return result ? JSON.parse(result) : { entities: [], relations: [] };
   } catch (err: any) {
@@ -197,9 +236,17 @@ export async function removeEntity(name: string): Promise<void> {
       name: "delete_entities",
       arguments: { entityNames: [name] },
     });
-    await appendAudit({ actor: ACTOR, action: "memory.entity_removed", entityType: "entity", entityId: name });
+    await appendAudit({
+      actor: ACTOR,
+      action: "memory.entity_removed",
+      entityType: "entity",
+      entityId: name,
+    });
   } catch (err: any) {
-    console.error(`SharedMemory: Failed to remove entity "${name}":`, err.message);
+    console.error(
+      `SharedMemory: Failed to remove entity "${name}":`,
+      err.message,
+    );
   }
 }
 
@@ -208,7 +255,12 @@ export async function removeEntity(name: string): Promise<void> {
 /**
  * When a task is delegated, store its context in shared memory so other agents can reference it.
  */
-export async function shareTaskContext(taskId: string, title: string, description: string, branchName: string): Promise<void> {
+export async function shareTaskContext(
+  taskId: string,
+  title: string,
+  description: string,
+  branchName: string,
+): Promise<void> {
   await storeEntity(`task:${taskId}`, "swarm_task", [
     `Title: ${title}`,
     `Description: ${description}`,
@@ -222,27 +274,49 @@ export async function shareTaskContext(taskId: string, title: string, descriptio
  * When a worker discovers something important (e.g. a design decision, a blocker),
  * store it so other agents can see it.
  */
-export async function shareDiscovery(workerId: string, taskId: string, discovery: string): Promise<void> {
+export async function shareDiscovery(
+  workerId: string,
+  taskId: string,
+  discovery: string,
+): Promise<void> {
   const name = `discovery:${workerId}:${Date.now()}`;
-  await storeEntity(name, "swarm_discovery", [discovery, `Worker: ${workerId}`, `Task: ${taskId}`]);
+  await storeEntity(name, "swarm_discovery", [
+    discovery,
+    `Worker: ${workerId}`,
+    `Task: ${taskId}`,
+  ]);
   await createRelation(name, `task:${taskId}`, "DISCOVERED_DURING");
 }
 
 /**
  * Store a decision that affects other tasks or the overall project.
  */
-export async function shareDecision(taskId: string, decision: string, rationale: string): Promise<void> {
+export async function shareDecision(
+  taskId: string,
+  decision: string,
+  rationale: string,
+): Promise<void> {
   const name = `decision:${taskId}:${Date.now()}`;
-  await storeEntity(name, "swarm_decision", [decision, `Rationale: ${rationale}`]);
+  await storeEntity(name, "swarm_decision", [
+    decision,
+    `Rationale: ${rationale}`,
+  ]);
   await createRelation(name, `task:${taskId}`, "DECIDED_FOR");
 }
 
 /**
  * Mark a task as complete and add final observations.
  */
-export async function markTaskComplete(taskId: string, finalObservation: string): Promise<void> {
+export async function markTaskComplete(
+  taskId: string,
+  finalObservation: string,
+): Promise<void> {
   const name = `task:${taskId}`;
-  await addObservations(name, [`Status: completed`, `Final Result: ${finalObservation}`, `CompletedAt: ${new Date().toISOString()}`]);
+  await addObservations(name, [
+    `Status: completed`,
+    `Final Result: ${finalObservation}`,
+    `CompletedAt: ${new Date().toISOString()}`,
+  ]);
 }
 
 /**
@@ -254,7 +328,11 @@ export async function getSharedContext(taskTitle: string): Promise<string[]> {
   if (graph.entities) {
     for (const entity of graph.entities) {
       if (entity.observations) {
-        observations.push(...entity.observations.map((o: string) => `[${entity.type}:${entity.name}] ${o}`));
+        observations.push(
+          ...entity.observations.map(
+            (o: string) => `[${entity.type}:${entity.name}] ${o}`,
+          ),
+        );
       }
     }
   }
@@ -286,15 +364,17 @@ if (require.main === module) {
       .finally(closeMemoryClient);
   } else if (cmd === "search") {
     searchMemory(args[0])
-      .then(r => console.log(JSON.stringify(r, null, 2)))
+      .then((r) => console.log(JSON.stringify(r, null, 2)))
       .catch(console.error)
       .finally(closeMemoryClient);
   } else if (cmd === "read") {
     readGraph()
-      .then(r => console.log(JSON.stringify(r, null, 2)))
+      .then((r) => console.log(JSON.stringify(r, null, 2)))
       .catch(console.error)
       .finally(closeMemoryClient);
   } else {
-    console.log("Usage: tsx shared-memory.ts [store|observe|relate|search|read] ...");
+    console.log(
+      "Usage: tsx shared-memory.ts [store|observe|relate|search|read] ...",
+    );
   }
 }

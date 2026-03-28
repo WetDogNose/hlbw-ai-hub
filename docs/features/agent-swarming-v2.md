@@ -41,7 +41,7 @@ HLBW AI Hub features a robust, local Agent Swarming architecture designed to fan
     Full semantic OTEL instrumentation across all scripts. Jaeger auto-starts/stops with the AI agent session via `mcp-trace-server.mjs`.
 
 11. **Shared Memory via Neo4j (`scripts/swarm/shared-memory.ts`)**
-    Graph-based knowledge sharing across all swarm agents via the `neo4j-memory` MCP server (Docker). Entities, relations, and observations are stored in a persistent Neo4j database (`wot-box-neo4j-data` volume). Key APIs:
+    Graph-based knowledge sharing across all swarm agents via the `neo4j-memory` MCP server (Docker). Entities, relations, and observations are stored in a persistent Neo4j database (`hlbw-neo4j-data` volume). Key APIs:
     - `shareTaskContext()` — stores task info when delegated
     - `shareDiscovery()` / `shareDecision()` — agents share findings and decisions
     - `getSharedContext()` — queries relevant memories before starting work

@@ -1,6 +1,6 @@
 {
   "mcpServers": {
-    "wot-box-tester": {
+    "hlbw-tester": {
       "command": "C:\\Program Files\\nodejs\\node.exe",
       "args": [
         "C:\\Users\\Jason\\repos\\hlbw-ai-hub\\scripts\\mcp-tester.mjs"
@@ -15,6 +15,12 @@
         "--explicitProjectRoot",
         "--no-update-notification",
         "--non-interactive"
+      ]
+    },
+    "ollama-mcp": {
+      "command": "C:\\\\Program Files\\\\nodejs\\\\node.exe",
+      "args": [
+        "C:\\\\Users\\\\Jason\\\\repos\\\\hlbw-ai-hub\\\\tools\\\\docker-gemini-cli\\\\mcps\\\\ollama\\\\index.js"
       ]
     }
   }

@@ -5,7 +5,7 @@ import { Logging } from "@google-cloud/logging";
 export async function GET(request: Request) {
   try {
     const userRole = await getIapUser();
-    if (userRole !== "ADMIN") {
+    if (userRole?.role !== "ADMIN") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 

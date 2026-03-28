@@ -1,6 +1,6 @@
 #!/bin/bash
 # // turbo-all
 set -e
-echo "Building wot-box-python-worker:latest..."
-docker build -t wot-box-python-worker:latest -f scripts/swarm/Dockerfile.python-worker .
+echo "Building hlbw-python-worker:latest..."
+docker build -t hlbw-python-worker:latest -f scripts/swarm/Dockerfile.python-worker .
 echo "Done!"

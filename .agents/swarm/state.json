@@ -1,47 +1,215 @@
 {
-  "tasks": [
-    {
-      "title": "Final Demo: Sub-agent origin tracking",
-      "description": "Final Demo: Sub-agent origin tracking",
-      "priority": 5,
-      "dependencies": [],
-      "metadata": {
-        "agentType": "general"
-      },
-      "id": "task-1773922794045-391",
-      "status": "in_progress",
-      "blockedBy": [],
-      "createdAt": "2026-03-19T12:19:54.045Z",
-      "assignedAgent": "general",
-      "startedAt": "2026-03-19T12:20:56.162Z"
-    }
-  ],
+  "tasks": [],
   "workers": [
     {
-      "taskId": "task-1773922794045-391",
-      "provider": "gemini",
-      "modelId": "gemini-2.5-flash",
-      "status": "starting",
-      "metadata": {
-        "branchName": "swarm-task-1773922794045-391",
-        "agentType": "general"
-      },
-      "id": "worker-1773922809854-72",
-      "createdAt": "2026-03-19T12:20:09.854Z"
-    },
-    {
-      "taskId": "task-1773922794045-391",
+      "taskId": "demo-concurrency-task-1774703265047-0",
       "provider": "gemini",
       "modelId": "gemini-2.5-flash",
       "status": "running",
       "metadata": {
-        "instructionPayload": "1. Read public/version.txt. 2. Store discovery: npx tsx scripts/swarm/shared-memory.ts store discovery:origin swarm_discovery 'Origin tracking verified.'. 3. Relate it: npx tsx scripts/swarm/shared-memory.ts relate discovery:origin task:task-1773922794045-391 LINKED. DONE.",
-        "branchName": "swarm-task-1773922794045-391"
+        "instructionPayload": "Analyze the environment and ensure you can ping the local Ollama LLM provider. Agent 0",
+        "branchName": "demo-bench-1774703265047-0"
       },
-      "id": "worker-1773922856152-438",
-      "createdAt": "2026-03-19T12:20:56.152Z",
-      "startedAt": "2026-03-19T12:20:56.903Z",
-      "runtimeId": "ab444ebb896356f5cf985f12a69ee75ad8b16affc2e6a270500988f11537b925"
+      "id": "worker-1774703290066-760",
+      "createdAt": "2026-03-28T13:08:10.066Z",
+      "startedAt": "2026-03-28T13:08:12.339Z",
+      "runtimeId": "a0380d702e953bf5858332c3b3e3f466239a0088940cc482af08642a46e286e1"
+    },
+    {
+      "taskId": "demo-concurrency-task-1774703265047-12",
+      "provider": "gemini",
+      "modelId": "gemini-2.5-flash",
+      "status": "running",
+      "metadata": {
+        "instructionPayload": "Analyze the environment and ensure you can ping the local Ollama LLM provider. Agent 12",
+        "branchName": "demo-bench-1774703265047-12"
+      },
+      "id": "worker-1774703290197-88",
+      "createdAt": "2026-03-28T13:08:10.197Z",
+      "startedAt": "2026-03-28T13:08:11.329Z",
+      "runtimeId": "85151110a0b700e7eae7d7555e26525e6083ad4ffce768cacd7126bc3c0401af"
+    },
+    {
+      "taskId": "demo-concurrency-task-1774703265047-9",
+      "provider": "gemini",
+      "modelId": "gemini-2.5-flash",
+      "status": "running",
+      "metadata": {
+        "instructionPayload": "Analyze the environment and ensure you can ping the local Ollama LLM provider. Agent 9",
+        "branchName": "demo-bench-1774703265047-9"
+      },
+      "id": "worker-1774703290279-126",
+      "createdAt": "2026-03-28T13:08:10.279Z",
+      "startedAt": "2026-03-28T13:08:11.523Z",
+      "runtimeId": "968741fb0ade315ebad4abccac143569914659f88287a9aaec0a62605e0a51fe"
+    },
+    {
+      "taskId": "demo-concurrency-task-1774703265047-2",
+      "provider": "gemini",
+      "modelId": "gemini-2.5-flash",
+      "status": "running",
+      "metadata": {
+        "instructionPayload": "Analyze the environment and ensure you can ping the local Ollama LLM provider. Agent 2",
+        "branchName": "demo-bench-1774703265047-2"
+      },
+      "id": "worker-1774703290336-680",
+      "createdAt": "2026-03-28T13:08:10.336Z",
+      "startedAt": "2026-03-28T13:08:11.722Z",
+      "runtimeId": "7b9c6d322330f32fe1bdd037119c5ce055e59c509029ba2c97f9488068ba4ea1"
+    },
+    {
+      "taskId": "demo-concurrency-task-1774703265047-5",
+      "provider": "gemini",
+      "modelId": "gemini-2.5-flash",
+      "status": "running",
+      "metadata": {
+        "instructionPayload": "Analyze the environment and ensure you can ping the local Ollama LLM provider. Agent 5",
+        "branchName": "demo-bench-1774703265047-5"
+      },
+      "id": "worker-1774703290388-934",
+      "createdAt": "2026-03-28T13:08:10.388Z",
+      "startedAt": "2026-03-28T13:08:11.808Z",
+      "runtimeId": "c8321879ca83df0dd297d3f461b072e78a707e3001f4466cbd0be2444c0615c0"
+    },
+    {
+      "taskId": "demo-concurrency-task-1774703265047-10",
+      "provider": "gemini",
+      "modelId": "gemini-2.5-flash",
+      "status": "running",
+      "metadata": {
+        "instructionPayload": "Analyze the environment and ensure you can ping the local Ollama LLM provider. Agent 10",
+        "branchName": "demo-bench-1774703265047-10"
+      },
+      "id": "worker-1774703290432-288",
+      "createdAt": "2026-03-28T13:08:10.432Z",
+      "startedAt": "2026-03-28T13:08:11.931Z",
+      "runtimeId": "721f5e3e1f0e4915458b5e12eb5ec8addd09db64bdfe25fd19106a6102633813"
+    },
+    {
+      "taskId": "demo-concurrency-task-1774703265047-14",
+      "provider": "gemini",
+      "modelId": "gemini-2.5-flash",
+      "status": "running",
+      "metadata": {
+        "instructionPayload": "Analyze the environment and ensure you can ping the local Ollama LLM provider. Agent 14",
+        "branchName": "demo-bench-1774703265047-14"
+      },
+      "id": "worker-1774703290475-961",
+      "createdAt": "2026-03-28T13:08:10.475Z",
+      "startedAt": "2026-03-28T13:08:12.051Z",
+      "runtimeId": "905a6a691258edd181df96c1b070db68179c39c21538f2960463c73611ae745a"
+    },
+    {
+      "taskId": "demo-concurrency-task-1774703265047-13",
+      "provider": "gemini",
+      "modelId": "gemini-2.5-flash",
+      "status": "running",
+      "metadata": {
+        "instructionPayload": "Analyze the environment and ensure you can ping the local Ollama LLM provider. Agent 13",
+        "branchName": "demo-bench-1774703265047-13"
+      },
+      "id": "worker-1774703290514-939",
+      "createdAt": "2026-03-28T13:08:10.514Z",
+      "startedAt": "2026-03-28T13:08:12.731Z",
+      "runtimeId": "52c72f0982b816cfad914e7892769d2301c6a038712b1fb6050617b4228a1eff"
+    },
+    {
+      "taskId": "demo-concurrency-task-1774703265047-3",
+      "provider": "gemini",
+      "modelId": "gemini-2.5-flash",
+      "status": "running",
+      "metadata": {
+        "instructionPayload": "Analyze the environment and ensure you can ping the local Ollama LLM provider. Agent 3",
+        "branchName": "demo-bench-1774703265047-3"
+      },
+      "id": "worker-1774703290529-797",
+      "createdAt": "2026-03-28T13:08:10.529Z",
+      "startedAt": "2026-03-28T13:08:12.432Z",
+      "runtimeId": "ae642bf810246dd6edd94f2287d08b99f4b6be1ba0d51af438377128fc304566"
+    },
+    {
+      "taskId": "demo-concurrency-task-1774703265047-7",
+      "provider": "gemini",
+      "modelId": "gemini-2.5-flash",
+      "status": "running",
+      "metadata": {
+        "instructionPayload": "Analyze the environment and ensure you can ping the local Ollama LLM provider. Agent 7",
+        "branchName": "demo-bench-1774703265047-7"
+      },
+      "id": "worker-1774703290590-345",
+      "createdAt": "2026-03-28T13:08:10.590Z",
+      "startedAt": "2026-03-28T13:08:12.613Z",
+      "runtimeId": "7e2da4a27d58e8740ac24152ba5f229eedf4ab03acc6025d732a4344584a38d8"
+    },
+    {
+      "taskId": "demo-concurrency-task-1774703265047-6",
+      "provider": "gemini",
+      "modelId": "gemini-2.5-flash",
+      "status": "running",
+      "metadata": {
+        "instructionPayload": "Analyze the environment and ensure you can ping the local Ollama LLM provider. Agent 6",
+        "branchName": "demo-bench-1774703265047-6"
+      },
+      "id": "worker-1774703290636-809",
+      "createdAt": "2026-03-28T13:08:10.636Z",
+      "startedAt": "2026-03-28T13:08:12.683Z",
+      "runtimeId": "c9d0a2237597363499cd7151c6a8f2f2d47e25d76cc80d656647723b3ca957c8"
+    },
+    {
+      "taskId": "demo-concurrency-task-1774703265047-4",
+      "provider": "gemini",
+      "modelId": "gemini-2.5-flash",
+      "status": "running",
+      "metadata": {
+        "instructionPayload": "Analyze the environment and ensure you can ping the local Ollama LLM provider. Agent 4",
+        "branchName": "demo-bench-1774703265047-4"
+      },
+      "id": "worker-1774703290649-563",
+      "createdAt": "2026-03-28T13:08:10.649Z",
+      "startedAt": "2026-03-28T13:08:12.528Z",
+      "runtimeId": "a0fc49d6cd280219233d517c2b2188debb29da658774816db962e39758a051cc"
+    },
+    {
+      "taskId": "demo-concurrency-task-1774703265047-8",
+      "provider": "gemini",
+      "modelId": "gemini-2.5-flash",
+      "status": "running",
+      "metadata": {
+        "instructionPayload": "Analyze the environment and ensure you can ping the local Ollama LLM provider. Agent 8",
+        "branchName": "demo-bench-1774703265047-8"
+      },
+      "id": "worker-1774703290870-997",
+      "createdAt": "2026-03-28T13:08:10.870Z",
+      "startedAt": "2026-03-28T13:08:12.902Z",
+      "runtimeId": "db51a8b869a7d52a9a4524cd21686b166cc2601e280831a654ed4b560c837674"
+    },
+    {
+      "taskId": "demo-concurrency-task-1774703265047-1",
+      "provider": "gemini",
+      "modelId": "gemini-2.5-flash",
+      "status": "running",
+      "metadata": {
+        "instructionPayload": "Analyze the environment and ensure you can ping the local Ollama LLM provider. Agent 1",
+        "branchName": "demo-bench-1774703265047-1"
+      },
+      "id": "worker-1774703290963-98",
+      "createdAt": "2026-03-28T13:08:10.963Z",
+      "startedAt": "2026-03-28T13:08:12.792Z",
+      "runtimeId": "9c09e201a88eee4ef23689d80d00e165193510e4c43e03a830d033fdfde1fdc1"
+    },
+    {
+      "taskId": "demo-concurrency-task-1774703265047-11",
+      "provider": "gemini",
+      "modelId": "gemini-2.5-flash",
+      "status": "running",
+      "metadata": {
+        "instructionPayload": "Analyze the environment and ensure you can ping the local Ollama LLM provider. Agent 11",
+        "branchName": "demo-bench-1774703265047-11"
+      },
+      "id": "worker-1774703291209-236",
+      "createdAt": "2026-03-28T13:08:11.209Z",
+      "startedAt": "2026-03-28T13:08:12.938Z",
+      "runtimeId": "7523dff12c8ca4520243741e79f84786b5ab733ee438121859347438c11ff295"
     }
   ]
 }

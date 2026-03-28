@@ -8,7 +8,7 @@ import { globSync } from "glob";
 // Use forward slashes for glob compatibility
 const ROOT = process.cwd().replace(/\\/g, "/");
 const MAIN_AUDIT_PATH = `${ROOT}/.agents/swarm/audit.jsonl`;
-const WORKTREE_ROOT = path.join(ROOT, "..", "wot-box-worktrees").replace(/\\/g, "/");
+const WORKTREE_ROOT = path.join(ROOT, "..", "hlbw-worktrees").replace(/\\/g, "/");
 const WORKTREE_AUDIT_GLOB = `${WORKTREE_ROOT}/*/.agents/swarm/audit.jsonl`;
 
 const COLORS = {
@@ -38,7 +38,7 @@ const processLine = (line, filePath) => {
     const normalizedPath = filePath.replace(/\\/g, "/");
     if (normalizedPath !== MAIN_AUDIT_PATH) {
       const parts = normalizedPath.split("/");
-      const worktreeIndex = parts.indexOf("wot-box-worktrees");
+      const worktreeIndex = parts.indexOf("hlbw-worktrees");
       if (worktreeIndex !== -1 && parts[worktreeIndex + 1]) {
         originTag = `[${parts[worktreeIndex + 1]}]`;
       } else {
