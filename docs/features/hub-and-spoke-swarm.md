@@ -34,7 +34,8 @@ The architecture is strictly divided into the following isolated namespaces, sto
 * **`4_db`**: Database operations and proxy connections (Postgres raw queries, Prisma administration).
 * **`5_bizops`**: Business, billing, and operational metrics (e.g., Stripe API).
 * **`6_project_specific`**: Transient capabilities dedicated strictly to dynamic or newly active project modules.
-* **`7_reserved` / `8_reserved`**: Unallocated.
+* **`7_automation`**: Home Assistant controls and smart home automation workflows.
+* **`8_reserved`**: Unallocated.
 
 ## Spawning Sub-Agents
 
