@@ -1,0 +1,21 @@
+{
+  "name": "docker-gemini-cli-mcp",
+  "version": "1.0.0",
+  "description": "Host level MCP wrapper bridging AI agents to the containerized Gemini CLI",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^0.6.0",
+    "strip-ansi": "^7.2.0",
+    "ws": "^8.20.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/ws": "^8.18.1",
+    "typescript": "^5.0.0"
+  }
+}

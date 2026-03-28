@@ -1,0 +1,18 @@
+services:
+  gemini-cli:
+    image: gemini-cli-image
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: gemini-cli-container
+    ports:
+      - "2222:22"     # Local SSH port mapped to internal SSH daemon
+      - "8765:8765"   # Local FastAPI WebSocket port
+    env_file:
+      - ../../.env    # Zero-configuration automation: pulls GEMINI_API_KEY from hlbw-ai-hub natively
+    environment:
+      - USER=gemini_user
+      - HOME=/home/gemini_user
+    restart: unless-stopped
+    volumes:
+      - ./staged_mcps:/home/gemini_user/.gemini # Mounts staged built MCP definitions

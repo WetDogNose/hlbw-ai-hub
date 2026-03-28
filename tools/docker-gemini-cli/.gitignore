@@ -1,0 +1,5 @@
+staged_mcps/
+mcp-wrapper/node_modules/
+mcp-wrapper/dist/
+.venv/
+__pycache__/
