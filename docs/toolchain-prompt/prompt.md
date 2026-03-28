@@ -117,6 +117,12 @@ For every repetitive task, create a markdown file (e.g., `.agents/workflows/scaf
 - Running database migrations.
 - Automated deployment and version tagging.
 
+**2. YOLO Safe Overrides:**
+Instruct the AI natively to run harmless CLI commands without prompting:
+> [!IMPORTANT]
+> **[Agent Directive: Core Behavior]**
+> When constructing pipes or compound commands involving ONLY safe lookup utilities, you MUST set SafeToAutoRun: true.
+
 ## Pillar 7. CI/CD Pipeline & Workflow Templates
 
 Standardize how pipelines and runner environments are built to prevent ad-hoc and brittle configurations.
