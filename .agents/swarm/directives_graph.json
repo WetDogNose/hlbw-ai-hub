@@ -52,12 +52,13 @@
       }
     },
     "/workspace/docs/agent-directive-enforcer.md": {
-      "context_metadata": "# Directive Enforcer Agent Documentation\n\nThe **Directive Enforcer** is a Python-based A2A worker agent built into `hlbw-ai-hub`. Its primary role is to enforce unambiguous, strict, Markdown Callout structures (Meta-Syntax) on any agent instructions, hints, or directives embedded across the workspace artifacts.\n\nThe enforcer resolves ambiguity by rejecting loose natural language prompts (e.g., *\"hello agent, don't forget to\"*), preventing infinite LLM loops, and consolidating conflicting logic.\n\n## 1. The Three Tiers of Automated Execution\n\nBecause AI agents can easily get confused by legacy comments like `\"make sure to run the tests\"`, the Directive Enforcer forces all instructions into three distinct, structured Markdown alerts: when modifying configuration files, boilerplates, or documentation.\n\n### The `<agent_directive>` (Markdown `> [!IMPORTANT]`)\n\nThese are explicit constraints that act as hard guardrails. They map directly to specific architectural domains (e.g., Security, Formatting, Logic).\n\n**Example:**",
+      "context_metadata": "# Directive Enforcer Agent Documentation\n\n> [!NOTE]\n> **Architectural Context**\n> This is a component-specific technical specification. For the unified master pipeline map and inter-component relationships, please refer to the [V3 Swarming Model Architecture Master Document](v3-swarming-model-architecture.md).\n\nThe **Directive Enforcer** is a Python-based A2A worker agent built into `hlbw-ai-hub`. Its primary role is to enforce unambiguous, strict, Markdown Callout structures (Meta-Syntax) on any agent instructions, hints, or directives embedded across the workspace artifacts.\n\nThe enforcer resolves ambiguity by rejecting loose natural language prompts (e.g., *\"hello agent, don't forget to\"*), preventing infinite LLM loops, and consolidating conflicting logic.\n\n## 1. The Three Tiers of Automated Execution\n\nBecause AI agents can easily get confused by legacy comments like `\"make sure to run the tests\"`, the Directive Enforcer forces all instructions into three distinct, structured Markdown alerts: when modifying configuration files, boilerplates, or documentation.\n\n### The `<agent_directive>` (Markdown `> [!IMPORTANT]`)",
       "annotations": {
         "directives": [
           "> [!IMPORTANT]\n> **[Agent Directive: Security]**\n> Agents MUST NEVER commit raw Stripe API keys to any branch.\n"
         ],
         "instructions": [
+          "> [!NOTE]\n> **Architectural Context**\n> This is a component-specific technical specification. For the unified master pipeline map and inter-component relationships, please refer to the [V3 Swarming Model Architecture Master Document](v3-swarming-model-architecture.md).\n",
           "> [!NOTE]\n> **[Agent Instruction: Bootstrapping Service]**\n> 1. Read the environment file configuration.\n> 2. Spin up the docker-compose stack.\n> 3. Verify the container health endpoint returns 200.\n"
         ],
         "hints": [
@@ -67,12 +68,13 @@
       }
     },
     "/workspace/docs/agent-directives-graph.md": {
-      "context_metadata": "# Agent Directives Graph\n\nThis graph visualizes the relationships between codebase files, the agent directives, instructions, and hints they contain, and the core architectural concepts these rules address. It serves as a comprehensive overview to combat context rot and ensure logical consistency across the multi-agent workspace.\n\n```mermaid\ngraph TD\n  subgraph Codebase Files\n    F_0[\"/workspace/.agents/skills/directive-enforcer/SKILL.md\"]\n    F_1[\"/workspace/.agents/workers/directive-enforcer/main.py\"]\n    F_2[\"/workspace/docs/agent-directive-enforcer.md\"]\n    F_3[\"/workspace/docs/agent-directives-graph.md\"]\n    F_4[\"/workspace/docs/features/directive-enforcer-sentry.md\"]\n    F_5[\"/workspace/docs/toolchain-prompt/prompt.md\"]\n    F_6[\"/workspace/exports/replication/directive-enforcer-replication-blueprint.md\"]\n    F_7[\"/workspace/exports/replication/directive-enforcer-replication-starter-templates.md\"]",
+      "context_metadata": "# Agent Directives Graph\n\n> [!NOTE]\n> **Architectural Context**\n> This is a component-specific technical specification. For the unified master pipeline map and inter-component relationships, please refer to the [V3 Swarming Model Architecture Master Document](v3-swarming-model-architecture.md).\n\nThis graph visualizes the relationships between codebase files, the agent directives, instructions, and hints they contain, and the core architectural concepts these rules address. It serves as a comprehensive overview to combat context rot and ensure logical consistency across the multi-agent workspace.\n\n```mermaid\ngraph TD\n  subgraph Codebase Files\n    F_0[\"/workspace/.agents/skills/directive-enforcer/SKILL.md\"]\n    F_1[\"/workspace/.agents/workers/directive-enforcer/main.py\"]\n    F_2[\"/workspace/docs/agent-directive-enforcer.md\"]\n    F_3[\"/workspace/docs/agent-directives-graph.md\"]",
       "annotations": {
         "directives": [
           "<agent_directive.*?</agent_directive>"
         ],
         "instructions": [
+          "> [!NOTE]\n> **Architectural Context**\n> This is a component-specific technical specification. For the unified master pipeline map and inter-component relationships, please refer to the [V3 Swarming Model Architecture Master Document](v3-swarming-model-architecture.md).\n",
           "<agent_instruction.*?</agent_instruction>"
         ],
         "hints": [
@@ -82,11 +84,11 @@
       }
     },
     "/workspace/docs/features/directive-enforcer-sentry.md": {
-      "context_metadata": "# Directive Enforcer: Sentry Protocol\n\nThe Directive Enforcer operates as a permanently running A2A Sentry Microservice. Its primary objective is combating context rot by ensuring all agent hints, instructions, and directives are universally uniform and logically sound across the entire `hlbw-ai-hub` workspace.\n\n## Context Caching\n\nThe Sentry persists the entire workspace's logic graph into a `directives_graph.json` and loads it into a **Gemini Context Cache**. This grants the LLM instantaneous, cheap \"omniscience\" over every rule in every file\u2014allowing it to detect loops or cross-repo conflicts instantly.\n\n## Consulting the Sentry (For IDEs and CLI)\n\n\n> [!NOTE]\n> **[Agent Instruction: Sentry Consultation Procedure]**\n> 1. When generating new instructions or directives, prepare a draft instruction.\n> 2. Dispatch an HTTP POST request to the Sentry's A2A message endpoint (`http://localhost:8080/a2a/message`) with the `get_advice` action, target filepath, and draft instruction.",
+      "context_metadata": "# Directive Enforcer: Sentry Protocol\n\nThe Directive Enforcer operates as a permanently running A2A Sentry Microservice. Its primary objective is combating context rot by ensuring all agent hints, instructions, and directives are universally uniform and logically sound across the entire `hlbw-ai-hub` workspace.\n\n## Context Caching\n\nThe Sentry persists the entire workspace's logic graph into a `directives_graph.json` and loads it into a **Gemini Context Cache**. This grants the LLM instantaneous, cheap \"omniscience\" over every rule in every file\u2014allowing it to detect loops or cross-repo conflicts instantly.\n\n## Consulting the Sentry (For IDEs and CLI)\n\n> [!NOTE]\n> **[Agent Instruction: Sentry Consultation Procedure]**\n>\n> 1. When generating new instructions or directives, prepare a draft instruction.\n> 2. Dispatch an HTTP POST request to the Sentry's A2A message endpoint (`http://localhost:8080/a2a/message`) with the `get_advice` action, target filepath, and draft instruction.",
       "annotations": {
         "directives": [],
         "instructions": [
-          "> [!NOTE]\n> **[Agent Instruction: Sentry Consultation Procedure]**\n> 1. When generating new instructions or directives, prepare a draft instruction.\n> 2. Dispatch an HTTP POST request to the Sentry's A2A message endpoint (`http://localhost:8080/a2a/message`) with the `get_advice` action, target filepath, and draft instruction.\n> 3. Review the Sentry's response for evaluation results and the exact, strict Markdown rewrite.\n> 4. Apply the Sentry's rewrite to the target file.\n"
+          "> [!NOTE]\n> **[Agent Instruction: Sentry Consultation Procedure]**\n"
         ],
         "hints": [],
         "has_unstructured_legacy": false
@@ -103,13 +105,13 @@
           "> [!IMPORTANT]\n> **[Agent Directive: Core Behavior]**\n> When constructing pipes or compound commands involving ONLY safe lookup utilities, you MUST set SafeToAutoRun: true.\n"
         ],
         "instructions": [
-          "> [!NOTE]\n> **[Agent Instruction: Toolchain Doctor Execution]**\n> 1. If the user asks to 'fix the toolchain' or if a git hook fails, run the doctor script.\n> 2. If the doctor reports a missing `SKILL.md` for a folder, synthesize a new `SKILL.md` explaining how the AI MUST use the scripts inside that folder.\n> 3. If syntax errors exist in the tools, use coding abilities to fix them.\n> 4. If environment keys are missing, instruct the user on what to add; DO NOT commit secrets.\n> 5. If orphaned script files are found in the root that resemble tools, move them to the script directory.\n",
-          "> [!NOTE]\n> **[Agent Instruction: MCP Tool Usage]**\n> 1. Use abstract syntax tree resolution tools (e.g., AST Analyzer) instead of reading whole files to understand components and dependencies.\n> 2. Use sub-agent delegation tools (e.g., Task Delegator) to run parallel agents for wide refactoring.\n> 3. Use context-fetching tools (e.g., Infrastructure Analyzer) for instant architectural and database schema context instead of manually searching configuration files.\n> 4. Use direct MCP log fetchers (e.g., Cloud Logging & Tracing) instead of slow OS-level CLI commands.\n> 5. Use direct MCP SQL/query tools (e.g., Database Actions) instead of manual CLI proxy commands.\n",
-          "> [!NOTE]\n> **[Agent Instruction: Autonomous Testing Loop]**\n> 1. If code is modified, analyze the diff scope and run the corresponding pipeline natively via the MCP testing tools.\n> 2. Map specific changes to logical testing bounds (e.g., UI changes trigger unit tests, database changes trigger integration tests).\n> 3. If the MCP testing tool returns an error, catch the stack trace, fix the implementation locally, and recursively re-run the tool until it passes.\n",
-          "> [!NOTE]\n> **[Agent Instruction: Memory Analysis]**\n> 1. When tests fail due to memory, scan the logs directory for the latest tracker logs.\n> 2. Compare the 'Top Aggregated Applications' sections between snapshots.\n> 3. If specific tools or databases continuously grow without releasing memory across multiple tests, identify the leak.\n> 4. Apply common fixes, including ensuring database disconnects in test teardowns, checking MCP server LRU caches, or forcing manual garbage collection.\n",
-          "> [!NOTE]\n> **[Agent Instruction: Workflow File Creation]**\n> 1. Include standard company boilerplates.\n> 2. Include exact terminal commands to run.\n> 3. Inject the string `// turbo-all` at the top of the file to authorize the AI to execute the bash commands automatically without waiting for user permission.\n",
-          "> [!NOTE]\n> **[Agent Instruction: CI/CD Pipeline Creation]**\n> 1. If the user asks to create or deploy a CI/CD pipeline, look in `docs/templates/pipelines.md` for guidance.\n> 2. NEVER invent a GitHub Actions workflow from scratch; ALWAYS copy the base templates located inside `templates/pipelines/github-actions/`.\n> 3. If queried about GitHub Actions runners or self-hosted infrastructure, refer the user immediately to `docs/templates/pipelines/gha-runners.md` for explanations on standard vs. self-hosted runners.\n",
-          "> [!NOTE]\n> **[Agent Instruction: Directive Validation]**\n> 1. When drafting new directives, instructions, or hints, agents MUST consult the Directive Enforcer Sentry.\n"
+          "> [!NOTE]\n> **[Agent Instruction: Toolchain Doctor Execution]**\n",
+          "> [!NOTE]\n> **[Agent Instruction: MCP Tool Usage]**\n",
+          "> [!NOTE]\n> **[Agent Instruction: Autonomous Testing Loop]**\n",
+          "> [!NOTE]\n> **[Agent Instruction: Memory Analysis]**\n",
+          "> [!NOTE]\n> **[Agent Instruction: Workflow File Creation]**\n",
+          "> [!NOTE]\n> **[Agent Instruction: CI/CD Pipeline Creation]**\n",
+          "> [!NOTE]\n> **[Agent Instruction: Directive Validation]**\n"
         ],
         "hints": [],
         "has_unstructured_legacy": true

@@ -94,6 +94,10 @@ Because IDE contexts limit total active tools (~100), functionality is highly se
 - `sequential-thinking`: Reflective logical decomposition.
 - `task-delegator-mcp`: Async sub-agent dispatchment.
 
+#### Shared Infrastructure Auto-Booting
+
+The Master Agent's startup sequence natively enforces the lifecycle of infrastructural dependency servers via `toolchain-doctor`. Essential tools (`gcp-trace-mcp`, `memory`) are flagged as mandatory servers, ensuring that the Neo4j graphical database and Jaeger observability dashboards boot implicitly with the IDE before tasks are delegated.
+
 #### The Spokes (Category-Specific Sub-Agents)
 
 *Located in `tools/docker-gemini-cli/configs/`.*
@@ -149,6 +153,18 @@ A primary risk of persistent workers is cross-task context leakage. V3 introduce
 
 - **Ephemeral Tasks (Default)**: The standard delegation assigns a unique `task_id`. Once the worker returns a success response, the worker's internal orchestrator actively invokes a `.clear_context()` subroutine (purging memory, clearing working directories).
 - **Persistent Sessions (Multi-Turn)**: The Master Agent can transmit an A2A payload with `session_persistence: true`. The worker preserves the context window, file handles, and session ID. All generated `task_id` and `session_id` identifiers **must exclusively utilize alphanumeric UUID formatting** (e.g., UUIDv4) to prevent numerical hallucination or identity overlap within the Swarm AI models.
+
+### Cross-Swarm Resource Mapping
+
+To support massive multi-repository ecosystems, the warm pool employs a "Mount-All" volume strategy. Sibling repositories (e.g., `genkit`, `wot-box`, `hlbw-home-assistant`) are mapped directly to the container's root alongside the primary workspace. This breaks the isolation barrier constructively, permitting sub-agents to traverse interconnected workspaces using standard `../` relative paths, effectively bridging isolated containers with native host-level filesystem parity.
+
+### End-to-End Observability (OTEL & Jaeger)
+
+V3 workers feature granular OpenTelemetry (`@opentelemetry/api`) instrumentation to trace the sub-agent cognitive loop. The execution pipeline binds dynamically to the host's Jaeger instance via the Docker bridge (`host.docker.internal:4318`). This instrumentation transforms tasks into a visual latency waterfall inside Jaeger, segmenting:
+
+- **`sentry-validation-request`**: Time spent waiting on the Hub's centralized rule validation.
+- **`llm-generation-turn-[i]`**: Measures pure Gemini API inference delays and latency.
+- **`tool-execution-[toolName]`**: Isolates the elapsed duration of filesystem reads, writes, and isolated shell executions.
 
 ---
 
@@ -223,4 +239,6 @@ Run `npm run monitor:memory` in a dedicated terminal to observe memory transitio
 - [Directive Enforcer Agent Documentation](agent-directive-enforcer.md)
 - [Agent Directives Graph](agent-directives-graph.md)
 
-The workspace strictly enforces rules using the Directive Enforcer Sentry to prevent ambiguity and infinite LLM evaluation loops. All Hub and Spoke agents must respect the embedded directives graph when undertaking modifications.
+### Sentry Telemetry Routing
+
+To bypass container isolation layers safely, V3 workers forcefully route their Sentry validation payloads out of the container through the Docker bridge interface (`host.docker.internal:8080`). This guarantees the master Hub remains the single, definitive source of truth across all disparate swarms, preventing localized rule drift.

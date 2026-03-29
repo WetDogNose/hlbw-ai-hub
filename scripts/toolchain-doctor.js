@@ -88,6 +88,10 @@ const mandatoryServers = {
       ),
     ],
   },
+  "gcp-trace-mcp": {
+    command: process.execPath,
+    args: [path.resolve(__dirname, "..", "scripts", "mcp-trace-server.mjs")],
+  },
 };
 
 // Known broken or legacy packages -> Correct packages

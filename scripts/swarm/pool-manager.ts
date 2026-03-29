@@ -52,13 +52,23 @@ export async function initializePool(config: PoolConfig = { workerCount: 4 }) {
       const envKeys: Record<string, string> = {
         WARM_POOL_ID: `pool-node-${i}`,
         A2A_MODE: "true",
+        OTEL_EXPORTER_OTLP_ENDPOINT:
+          "http://host.docker.internal:4318/v1/traces",
+        SENTRY_ENFORCER_URL: "http://host.docker.internal:8080/a2a/message",
       };
       if (process.env.GEMINI_API_KEY)
         envKeys.GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
+      const parentDir = path.resolve(absoluteRoot, "..");
       const extraBinds: string[] = [
         // Mount all 6 configs for fast categorization shifting
         `${path.resolve(absoluteRoot, "tools/docker-gemini-cli/configs")}:/etc/mcp_configs:ro`,
+        // Cross-Repo Workspace Persisted Storage (VSC Workspace Mappings)
+        `${path.join(parentDir, "wot-box")}:/wot-box`,
+        `${path.join(parentDir, "genkit")}:/genkit`,
+        `${path.join(parentDir, "adk-python")}:/adk-python`,
+        `${path.join(parentDir, "adk-js")}:/adk-js`,
+        `${path.join(parentDir, "hlbw-home-assistant")}:/hlbw-home-assistant`,
       ];
 
       try {

@@ -21,7 +21,7 @@ The Sentry can autonomously reconstruct a comprehensive Mermaid diagram of all a
 If you have made a major change to the workspace rules or the user specifically requests the architectural graph to be updated, execute the following script. The Sentry container will read the Gemini Context Cache and write the markdown directly to `/workspace/docs/agent-directives-graph.md`.
 
 ```javascript
-fetch('http://localhost:8080/a2a/message', {
+fetch('http://host.docker.internal:8080/a2a/message', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -60,7 +60,7 @@ You MUST dynamically inject your `TARGET_FILEPATH` and `YOUR_DRAFT_INSTRUCTION` 
 const draft = `YOUR_DRAFT_INSTRUCTION`;
 const targetPath = `TARGET_FILEPATH`;
 
-fetch('http://localhost:8080/a2a/message', {
+fetch('http://host.docker.internal:8080/a2a/message', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
