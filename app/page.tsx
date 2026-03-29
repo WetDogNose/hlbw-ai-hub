@@ -91,13 +91,20 @@ export default async function Home() {
           </div>
         </div>
         <div
-          className="stat-box flex flex-col justify-center items-center"
+          className="stat-box flex flex-col justify-center items-center gap-2"
           style={{
             padding: "var(--spacing-4)",
             backgroundColor: "var(--bg-tertiary)",
             borderColor: "transparent",
           }}
         >
+          <Link
+            href="/docs"
+            className="btn btn-primary w-full"
+            style={{ padding: "var(--spacing-2)" }}
+          >
+            Documentation Hub
+          </Link>
           <Link
             href="/admin/stats"
             className="btn btn-outline w-full"
