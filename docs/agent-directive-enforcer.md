@@ -1,5 +1,9 @@
 # Directive Enforcer Agent Documentation
 
+> [!NOTE]
+> **Architectural Context**
+> This is a component-specific technical specification. For the unified master pipeline map and inter-component relationships, please refer to the [V3 Swarming Model Architecture Master Document](v3-swarming-model-architecture.md).
+
 The **Directive Enforcer** is a Python-based A2A worker agent built into `hlbw-ai-hub`. Its primary role is to enforce unambiguous, strict, Markdown Callout structures (Meta-Syntax) on any agent instructions, hints, or directives embedded across the workspace artifacts.
 
 The enforcer resolves ambiguity by rejecting loose natural language prompts (e.g., *"hello agent, don't forget to"*), preventing infinite LLM loops, and consolidating conflicting logic.
@@ -70,9 +74,9 @@ For an in-depth explanation of the Sentry's automated validation rules, semantic
 
 The Directive Enforcer runs seamlessly alongside the rest of the node-based Master Control Plane but uses an isolated Python ecosystem for high-compute LLM processing.
 
-*   **Worker Source Code**: `.agents/workers/directive-enforcer/main.py`
-*   **Docker Container**: `.agents/workers/directive-enforcer/Dockerfile`
-*   **Dependencies**: Uses `requirements.txt` (FastAPI, opentelemetry, google-genai).
-*   **Invocation**: Deployed via isolated Docker run mapping the workspace volume to `/workspace`. Listens continuously on Port `8080`.
-*   **Worker Skill**: The semantic breakdown of the internal Sentry is in `.agents/skills/directive-enforcer/SKILL.md`.
-*   **Advisory Caller Skill**: The required instructions for IDE agents / sub-agents to invoke the Sentry are maintained in **[`.agents/skills/directive-enforcer-sentry/SKILL.md`](/workspace/.agents/skills/directive-enforcer-sentry/SKILL.md)**.
+* **Worker Source Code**: `.agents/workers/directive-enforcer/main.py`
+* **Docker Container**: `.agents/workers/directive-enforcer/Dockerfile`
+* **Dependencies**: Uses `requirements.txt` (FastAPI, opentelemetry, google-genai).
+* **Invocation**: Deployed via isolated Docker run mapping the workspace volume to `/workspace`. Listens continuously on Port `8080`.
+* **Worker Skill**: The semantic breakdown of the internal Sentry is in `.agents/skills/directive-enforcer/SKILL.md`.
+* **Advisory Caller Skill**: The required instructions for IDE agents / sub-agents to invoke the Sentry are maintained in **[`.agents/skills/directive-enforcer-sentry/SKILL.md`](/workspace/.agents/skills/directive-enforcer-sentry/SKILL.md)**.

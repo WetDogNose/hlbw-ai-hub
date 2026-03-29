@@ -136,6 +136,7 @@ export const SWARM_POLICY = {
 ```
 
 All capacity checks reference `SWARM_POLICY` directly at point-of-use:
+
 - `addWorker()` checks `maxActiveWorkers` before creating.
 - `createWorktree()` checks `maxActiveIsolation` before creating.
 - `addTask()` checks `maxTaskChars` before accepting.
@@ -827,11 +828,11 @@ CRITICAL DIRECTIVE: For any task requiring significant code changes, multi-file 
 
 These are the specific questions the agent should answer to determine if a task is suitable for swarming.
 
--   **Is the task multi-file or multi-component?**
--   **Can sub-tasks run independently?**
--   **Would parallel execution save time?**
--   **Is the task large enough to justify isolation overhead?**
--   **Are there natural boundaries between sub-tasks?**
+- **Is the task multi-file or multi-component?**
+- **Can sub-tasks run independently?**
+- **Would parallel execution save time?**
+- **Is the task large enough to justify isolation overhead?**
+- **Are there natural boundaries between sub-tasks?**
 
 This hint propagation is what ensures the capability is actually used by agents — without it, agents default to sequential execution and never discover the swarming capability exists.
 

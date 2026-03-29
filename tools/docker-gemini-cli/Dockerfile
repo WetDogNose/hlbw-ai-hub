@@ -11,7 +11,8 @@ RUN apk update && \
 
 # Prepare the custom shell wrapper for the interactive SSH sessions
 COPY gemini-shell.sh /usr/local/bin/gemini-shell
-RUN chmod +x /usr/local/bin/gemini-shell
+RUN sed -i 's/\r$//' /usr/local/bin/gemini-shell && \
+    chmod +x /usr/local/bin/gemini-shell
 
 # Create a non-root user that defaults right into the custom Gemini shell
 RUN adduser -D -s /usr/local/bin/gemini-shell gemini_user && \

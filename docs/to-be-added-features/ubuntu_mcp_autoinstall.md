@@ -5,7 +5,7 @@ This guide provides the instructions and configuration needed to create a comple
 ## The Implementation Plan
 
 1. **Format the USB Drive:** Flash the Ubuntu Server 24.04 LTS ISO onto a USB flash drive (using a tool like Rufus or BalenaEtcher).
-2. **Add the Autoinstall Config:** Add a second partition or folder (depending on Rufus settings) named `nocloud` containing a `user-data` and `meta-data` file. 
+2. **Add the Autoinstall Config:** Add a second partition or folder (depending on Rufus settings) named `nocloud` containing a `user-data` and `meta-data` file.
 3. **Boot and Wait:** Insert the USB into the bare metal node and boot from it. The configuration file tells the installer to run silently.
 4. **Zero Maintenance Setup:** The config explicitly enables `unattended-upgrades`, tells Ubuntu to automatically update itself daily, and gives it permission to automatically reboot at 3:00 AM *only if* a critical kernel patch requires it. It also uses Snap for Docker, which natively updates itself automatically in the background.
 
@@ -14,8 +14,8 @@ This guide provides the instructions and configuration needed to create a comple
 ## 1. Preparing the USB Drive
 
 1. Download the [Ubuntu Server 24.04 LTS ISO](https://ubuntu.com/download/server).
-2. Use [Rufus](https://rufus.ie/) (on Windows) to write the ISO to your USB drive. 
-3. Open the newly created USB drive in Windows Explorer. 
+2. Use [Rufus](https://rufus.ie/) (on Windows) to write the ISO to your USB drive.
+3. Open the newly created USB drive in Windows Explorer.
 4. In the root of the USB drive, create a folder named `nocloud`.
 5. Inside that folder, create two plain text files: `user-data` and `meta-data`.
 
@@ -24,10 +24,12 @@ This guide provides the instructions and configuration needed to create a comple
 ## 2. The Configuration Files
 
 ### `meta-data`
+
 Leave this file completely empty. It is required to exist, but it doesn't need any content for a basic autoinstall.
 
 ### `user-data`
-Copy the following YAML into the `user-data` file exactly as shown. 
+
+Copy the following YAML into the `user-data` file exactly as shown.
 
 > [!WARNING]
 > This configuration tells the installer to **automatically format the first hard drive it finds** without asking questions. Only boot this on a machine you intend to wipe.
@@ -84,6 +86,7 @@ autoinstall:
 ```
 
 ## 3. How to Make it Boot Silently (GRUB Modification)
+
 To make the USB drive automatically select the autoinstall option without you needing to press "Enter" on a keyboard:
 
 1. On your flashed USB drive, go to the `boot/grub/` folder and open `grub.cfg`.

@@ -14,12 +14,15 @@ During interactive sessions, the underlying AI models (like Gemini) would occasi
 To permanently eradicate this issue across the AI Hub's architecture, we implemented a multi-layered defense-in-depth ("belt-and-braces") strategy. This tackles the problem at the core API layer, and provides an active circuit breaker at the containerized terminal layer.
 
 ### 1. Global API Inference Hardening (`lib/ai/inference.ts`)
+
 We updated the Genkit inference wrapper (`ai.generate`) to enforce strict API constraints uniformly across all hub interactions:
+
 - **`maxOutputTokens`: 8192** - Acts as a hard fail-safe so that even if all other protections fail, the generation will hit a ceiling and the API call will terminate, preserving quota.
 - **Token Penalties (`presencePenalty: 0.2`, `frequencyPenalty: 0.2`)** - Mathematically discourages the AI from repeatedly choosing the exact same words or tokens in a long sequence.
 - **Hard `stopSequences`** - The configuration now explicitly passes known LLM exit sequences (`<|end_of_turn|>`, `<|end_tool|>`, `Done. End. Bye.`, etc.) directly to the model Provider. When the model tries to output these, generation immediately cuts off.
 
 ### 2. The Streaming N-Gram Watchdog (`tools/docker-gemini-cli/src/`)
+
 Because swarm workers communicate with interactive CLI containers (via pseudo-terminals / PTYs), API-level configurations alone aren't always enough to stop loops happening *inside* external CLI tools. We built a real-time monitor into the container middleware.
 
 - **Pattern Interception (`watchdog.py`):** As the CLI streams characters out, the `StreamingNGramWatchdog` buffers and continuously tokenizes the last 4096 characters on word boundaries.

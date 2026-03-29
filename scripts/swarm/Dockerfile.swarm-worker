@@ -8,7 +8,7 @@ RUN apt-get update && apt-get install -y git curl jq && rm -rf /var/lib/apt/list
 # Copy package descriptors to root so they install into /node_modules
 # Node module resolution will climb up from /workspace to /node_modules
 COPY package.json package-lock.json* /
-RUN npm ci || npm install
+RUN npm install --legacy-peer-deps
 
 # We do not copy the whole repo because the runtime will volume-mount the workspace
 

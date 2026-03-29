@@ -1,14 +1,17 @@
 # Test Image Downloader
 
 ## Overview
+
 A reusable AI skill that generates high-quality test images of storage containers for AI pipeline testing. Creates both "good" (clear, identifiable) and "bad" (challenging edge case) images designed to be large enough (500–850 KB) to trigger the client-side compression algorithm.
 
 ## Tool Location
+
 - **Prompt Catalog:** `.agents/skills/test-image-downloader/scripts/generate-test-images.mjs`
 - **Skill:** `.agents/skills/test-image-downloader/SKILL.md`
 - **Output:** `public/test-images/`
 
 ## Usage
+
 ```bash
 # View the prompt catalog
 node .agents/skills/test-image-downloader/scripts/generate-test-images.mjs
@@ -53,6 +56,7 @@ Inside: [specific item 1], [item 2], ..., [item N].
 ```
 
 Key elements that ensure images are large enough to trigger compression:
+
 - `Ultra-realistic` + `4K resolution` → high detail density
 - Specific named items → forces complex texture generation
 - Lighting & camera descriptions → realistic optical effects
@@ -83,60 +87,70 @@ These test the **happy path** — the pipeline should extract items accurately.
 These test the **failure boundaries** — how the pipeline degrades gracefully.
 
 ### 1. Motion Blur (`bad_blurry_motion_box`)
+
 - **Challenge:** Camera shake during capture
 - **What breaks:** Object detection can't lock onto edges; OCR fails on streaked text
 - **Expected pipeline behavior:** Gemini should either return low `confidenceScore` items or reject the image
 - **Real-world trigger:** User's hand shakes while photographing a box on the floor
 
 ### 2. Near-Total Darkness (`bad_extremely_dark_box`)
+
 - **Challenge:** Extreme underexposure with ISO noise
 - **What breaks:** Feature extraction gets mostly noise; colors are unreadable
 - **Expected pipeline behavior:** Pipeline should gracefully return few/no items rather than hallucinating
 - **Real-world trigger:** User photographs a box in an unlit garage or basement
 
 ### 3. Wrapped Items (`bad_wrapped_items_box`)
+
 - **Challenge:** Every item concealed in newspaper and bubble wrap
 - **What breaks:** Objects are present but fundamentally unidentifiable — tests whether Gemini honestly reports "wrapped item" vs guessing
 - **Expected pipeline behavior:** Should detect "wrapped/packaged items" but not fabricate specific item names
 - **Real-world trigger:** Pre-move packing where everything is wrapped for protection
 
 ### 4. Extreme Clutter (`bad_overflowing_chaos_box`)
+
 - **Challenge:** Items overflowing, overlapping, spilling out of box
 - **What breaks:** Item boundaries overlap; deduplication logic stressed by partial visibility
 - **Expected pipeline behavior:** May detect many items but with lower confidence; dedup should handle partial duplicates
 - **Real-world trigger:** A hastily packed "junk drawer" box
 
 ### 5. Flash Glare (`bad_glare_reflection_box`)
+
 - **Challenge:** Camera flash creates blown-out white hotspot across center
 - **What breaks:** Half the image is a white void; reflective items (metal, glass) create secondary flares
 - **Expected pipeline behavior:** Should only identify items visible at the edges, not hallucinate items in the glare zone
 - **Real-world trigger:** Phone flash bouncing off a plastic bin or shiny items
 
 ### 6. Extreme Angle (`bad_extreme_angle_box`)
+
 - **Challenge:** Photo taken from floor level looking up into box
 - **What breaks:** Severe perspective distortion; most contents hidden by box walls
 - **Expected pipeline behavior:** Should detect very few items with low confidence due to limited visibility
 - **Real-world trigger:** Accidental photo angle or photographing a tall box from the side
 
 ### 7. Low Contrast / Same Color (`bad_similar_items_box`)
+
 - **Challenge:** All items are the same beige/brown color as the cardboard box
 - **What breaks:** Object segmentation can't separate items from container; color-based features useless
 - **Expected pipeline behavior:** May struggle to count individual items; should still detect "parcels" or "packages"
 - **Real-world trigger:** Box full of brown-paper-wrapped items or unbleached shipping materials
 
 ### 8. Partially Closed (`bad_partially_closed_box`)
+
 - **Challenge:** Box flaps cover 90%+ of contents, only a sliver visible
 - **What breaks:** Very limited visual information; pipeline must decide if there's enough to identify anything
 - **Expected pipeline behavior:** Should either report "box is closed/obstructed" or identify only the tiny visible portion
 - **Real-world trigger:** Half-sealed box that user photographs before fully opening
 
 ### 9. Scale Mismatch (`bad_tiny_items_huge_box`)
+
 - **Challenge:** Three tiny items (key, battery, paperclip) in a massive wardrobe box
 - **What breaks:** Items occupy <1% of image pixels; detection thresholds may miss them entirely
 - **Expected pipeline behavior:** Should ideally find the items but may legitimately miss them; tests minimum object size
 - **Real-world trigger:** Large box reused for storing a few small items
 
 ### 10. Mixed Lighting (`bad_mixed_lighting_box`)
+
 - **Challenge:** Warm tungsten and cool LED lights create split color temperature
 - **What breaks:** Same item appears two different colors depending on which light hits it; color-based identification unreliable
 - **Expected pipeline behavior:** Should still identify items by shape/form but color attributes may be inaccurate

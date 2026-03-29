@@ -59,85 +59,78 @@ export async function spawnDockerWorker(
 
       const worker = await addWorker({
         taskId,
-        provider: SWARM_POLICY.defaultProvider,
+        provider: SWARM_POLICY.defaultProvider, // No longer strictly needed for pool
         modelId: SWARM_POLICY.defaultModel,
-        status: WorkerStatus.Starting,
+        status: WorkerStatus.Running,
         metadata: { instructionPayload, branchName },
       });
 
       await updateTaskStatus(taskId, TaskStatus.InProgress, "docker-worker");
 
       span.setAttribute("worker.id", worker.id);
-      console.log(`Spawning docker worker ${worker.id} for task ${taskId}...`);
+      console.log(`Delegating task ${taskId} to warm pool via A2A Proxy...`);
 
       client = await getMcpClient();
 
-      const carrier: Record<string, string> = {};
-      propagation.inject(context.active(), carrier);
+      // Create standard A2A JSON payload
+      const a2aPayload = {
+        version: "1.0",
+        task_id: taskId,
+        session_id: taskId, // Ephemeral mapping
+        message: instructionPayload,
+        context: {
+          worktree: `/workspace/${worktreePath}`,
+          persistence_mode: "ephemeral",
+        },
+      };
 
-      const envKeys: Record<string, string> = {};
-      if (process.env.GEMINI_API_KEY)
-        envKeys.GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-      if (carrier.traceparent) envKeys.TRACEPARENT = carrier.traceparent;
-      if (carrier.tracestate) envKeys.TRACESTATE = carrier.tracestate;
-      envKeys.WORKER_ID = worker.id;
-
-      const imageName =
-        agentType === "python"
-          ? "hlbw-python-worker:latest"
-          : "hlbw-swarm-worker:latest";
-      const command =
-        agentType === "python"
-          ? [
-              "python",
-              "-u",
-              "scripts/swarm/python-runner.py",
-              instructionPayload,
-            ]
-          : ["npx", "tsx", "scripts/swarm/agent-runner.ts", instructionPayload];
-
-      const extraBinds: string[] = [];
-      if (agentCategory !== "default") {
-        const configPath = path.resolve(
-          process.cwd(),
-          "tools",
-          "docker-gemini-cli",
-          "configs",
-          agentCategory,
-          "mcp_config.json",
-        );
-        extraBinds.push(
-          `${configPath}:/root/.gemini/antigravity/mcp_config.json:ro`,
-        );
-        // Also bind to /home/node/... just in case the container runs as the node user instead.
-        extraBinds.push(
-          `${configPath}:/home/node/.gemini/antigravity/mcp_config.json:ro`,
-        );
-      }
+      // We use a small proxy execution inside the hlbw-network to deliver the HTTP payload
+      // to the persistent hlbw-worker-warm-1 instance, circumventing host topology restrictions.
+      const proxyScript = `
+        const http = require('http');
+        const data = Buffer.from('${Buffer.from(JSON.stringify(a2aPayload)).toString("base64")}', 'base64').toString();
+        
+        // Target worker determined by simple modulo or lookup in real implementation
+        const targetHost = 'hlbw-worker-warm-1'; 
+        
+        const req = http.request(\`http://\${targetHost}:8000/a2a\`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(data) }
+        }, (res) => {
+            let body = '';
+            res.on('data', d => body += d);
+            res.on('end', () => console.log(body));
+        });
+        req.on('error', (e) => {
+            console.error(JSON.stringify({ error: e.message }));
+        });
+        req.write(data);
+        req.end();
+      `;
 
       const response = await client.callTool({
         name: "run_container",
         arguments: {
-          imageName,
+          imageName: "hlbw-swarm-worker:latest", // Use existing image just for node
           mountVolume: absoluteWorktreePath,
-          envKeys: envKeys,
-          extraBinds: extraBinds,
-          command,
+          envKeys: {},
+          extraBinds: [],
+          command: ["node", "-e", proxyScript],
         },
       });
 
       const containerId = (response as any).content[0].text;
-      span.setAttribute("container.id", containerId);
+      span.setAttribute("proxy.container.id", containerId);
       console.log(
-        `Successfully spawned container ${containerId} via Docker MCP.`,
+        `[Proxy] Deployed A2A network proxy container ${containerId}.`,
       );
 
-      // Update worker with container id and running status
+      // Update worker with proxy runtime
       await updateWorkerStatus(worker.id, WorkerStatus.Running, {
-        runtimeId: containerId,
+        runtimeId: containerId, // We track the proxy container for legacy observability
       });
 
-      console.log(`Worker ${worker.id} running in container ${containerId}.`);
+      console.log(`Worker ${worker.id} proxy active via ${containerId}.`);
       return { workerId: worker.id, containerId };
     } catch (err: any) {
       span.recordException(err);

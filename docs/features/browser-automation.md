@@ -27,13 +27,17 @@ A simple `chromium.launch({ headless: true })` fails on protected sites because 
 To guarantee maximum access, our implementations use a two-tiered fallback approach.
 
 ### Tier 1: Real Chrome via CDP (Primary — High Bot Bypass)
-Connects Playwright to a **real, pre-configured Chrome installation** using the Chrome DevTools Protocol. 
+
+Connects Playwright to a **real, pre-configured Chrome installation** using the Chrome DevTools Protocol.
+
 - Uses a **dedicated user profile** with accumulated cookies, history, and logged-in sessions.
 - Carries a **real TLS fingerprint**.
 - Has legitimate browser extension APIs and native hardware rendering.
 
 ### Tier 2: Playwright Bundled Chromium (Fallback — Reduced Bypass)
+
 When real Chrome isn't available, we fall back to Playwright's bundled Chromium with maximum anti-detection flags:
+
 - `--disable-blink-features=AutomationControlled` removes the automation flag.
 - `--disable-http2` mitigates browser HTTP/2 fingerprinting.
 - Viewports and User-Agents are modified to look like real desktop traffic.
@@ -68,6 +72,7 @@ In both TypeScript and Python, this is implemented as a **Singleton Browser Prov
 ```
 
 **Design Benefits:**
+
 - Shared instances avoid memory bloat and CDP port conflicts.
 - Lazy initialization handles connections on first-use.
 - Graceful degradation ensures the automation keeps working, even if the primary local Chrome is closed.
@@ -89,6 +94,7 @@ Along with navigating the browser, the `UrlChecker` utility actively works to so
 The TS implementation is located in `lib/browser/`.
 
 ### Checking a URL (Liveness & Paywall Bypass)
+
 ```typescript
 import { defaultBrowserProvider } from '../lib/browser/BrowserProvider';
 import { UrlChecker } from '../lib/browser/UrlChecker';
@@ -108,6 +114,7 @@ async function checkUrl() {
 ```
 
 ### Taking a Screenshot
+
 ```typescript
 import { defaultBrowserProvider } from '../lib/browser/BrowserProvider';
 import { captureScreenshot } from '../lib/browser/Screenshot';
@@ -130,6 +137,7 @@ async function takeScreenshot() {
 The Python implementation is located in `scripts/python/browser/`.
 
 ### Checking a URL
+
 ```python
 import asyncio
 from scripts.python.browser.browser_provider import default_browser_provider
@@ -152,33 +160,39 @@ if __name__ == "__main__":
 
 ## 7. Profile Management & Session Persistence
 
-The single most effective anti-detection measure is using a **real Chrome profile** with accumulated state. 
+The single most effective anti-detection measure is using a **real Chrome profile** with accumulated state.
 
 ### Setting Up a Tier 1 Automation Profile
+
 Do not use your personal daily-driver Chrome profile for this. Use an isolated directory.
 
 **1. Launch your dedicated profile (close other Chrome windows first if needed):**
+
 ```bash
 chrome.exe --remote-debugging-port=9222 --user-data-dir="C:\AutomationProfiles\MyProfile" --profile-directory=Default --no-first-run --no-default-browser-check
 ```
 
 **2. Warm the Profile Manually:**
+
 - Sign into Google/Institutional Accounts if required.
 - Browse a few representative pages (visit academic publishers, scroll abstracts).
 - Perform a few searches on Google Scholar.
 - This creates realistic cookies, history, and IndexedDB state that bots lack.
 
-**3. Leave it running:** You can minimize the chrome window. When the AI agents or toolchains attempt to open a browser, they will bind to port 9222 and use this session. 
+**3. Leave it running:** You can minimize the chrome window. When the AI agents or toolchains attempt to open a browser, they will bind to port 9222 and use this session.
 
 ---
 
 ## 8. Common Pitfalls
 
 ### ❌ Don't: Delete the Automation Profile Directory
+
 The accumulated cookies and history *are* the anti-detection mechanism. Deleting the folder resets your bot-detection bypass score to zero.
 
 ### ❌ Don't: Scrape the DOM Immediately After `page.goto`
+
 Cloudflare will serve a 403 challenge page, and checking `.innerText` too fast will just yield "Verify you are human". Let the `UrlChecker` wait for the JS redirect.
 
 ### ❌ Don't: Use Multiple Simultaneous Browsers Pointing at Port 9222
+
 Chrome only accepts one CDP controller at a time. Sharing the `BrowserProvider` singleton across your script is critical to prevent connection resets and conflicts.

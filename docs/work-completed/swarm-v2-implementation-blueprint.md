@@ -827,10 +827,10 @@ Every skill file (e.g., `SKILL.md`), workflow file (e.g., `.md` in `workflows/`)
 
 The hint block will include key evaluation criteria to aid the agent's decision-making process. Agents should assess:
 
--   **Multi-file or Multi-component Nature:** Is the task inherently complex, spanning across multiple files, directories, or distinct software components?
--   **Independence of Sub-tasks:** Can the overall task be logically broken down into smaller, independent sub-tasks that do not require shared mutable state or tight synchronous communication?
--   **Benefit from Parallel Execution:** Would executing these sub-tasks concurrently significantly reduce the overall completion time or improve throughput?
--   **Justification of Isolation Overhead:** Is the task large enough or sufficiently complex to warrant the overhead associated with creating isolated Git worktrees and Docker containers for parallel processing? Trivial single-file edits are generally not suitable.
+- **Multi-file or Multi-component Nature:** Is the task inherently complex, spanning across multiple files, directories, or distinct software components?
+- **Independence of Sub-tasks:** Can the overall task be logically broken down into smaller, independent sub-tasks that do not require shared mutable state or tight synchronous communication?
+- **Benefit from Parallel Execution:** Would executing these sub-tasks concurrently significantly reduce the overall completion time or improve throughput?
+- **Justification of Isolation Overhead:** Is the task large enough or sufficiently complex to warrant the overhead associated with creating isolated Git worktrees and Docker containers for parallel processing? Trivial single-file edits are generally not suitable.
 
 ### Referencing the Master-Agent-Coordinator
 

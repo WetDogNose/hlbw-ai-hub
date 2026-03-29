@@ -1,6 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import lockfile from "proper-lockfile";
+import crypto from "node:crypto";
 import { SwarmState, Task, TaskStatus, Worker, WorkerStatus } from "./types";
 import { SWARM_POLICY } from "./policy";
 import { appendAudit } from "./audit";
@@ -122,7 +123,7 @@ export async function addTask(
   return await withStateLock(async (state) => {
     const newTask: Task = {
       ...task,
-      id: `task-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      id: `task-${crypto.randomUUID()}`,
       status: TaskStatus.Pending,
       blockedBy: [],
       createdAt: new Date().toISOString(),
@@ -256,7 +257,7 @@ export async function addWorker(
 
     const newWorker: Worker = {
       ...worker,
-      id: `worker-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      id: `worker-${crypto.randomUUID()}`,
       status: worker.status || WorkerStatus.Pending,
       createdAt: new Date().toISOString(),
       metadata: worker.metadata || {},

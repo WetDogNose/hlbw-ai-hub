@@ -25,6 +25,7 @@ The Toolchain Doctor is a script and an associated AI Skill that runs continuous
 
 **1. Create the Diagnostic Script (e.g., `scripts/toolchain-doctor.js` or `.py`):**
 Implement a script that does the following on execution:
+
 - Executes a cleanup script to clear out stale logs and temporary files.
 - Validates the existence of your environment variables file (e.g., `.env`) by comparing against its template (`.env.example`).
 - Scans `.agents/skills/` recursively. If a folder exists but is missing a `SKILL.md` file, it throws an error.
@@ -35,6 +36,7 @@ Implement a script that does the following on execution:
 Write instructions for the AI Agent:
 > [!NOTE]
 > **[Agent Instruction: Toolchain Doctor Execution]**
+>
 > 1. If the user asks to 'fix the toolchain' or if a git hook fails, run the doctor script.
 > 2. If the doctor reports a missing `SKILL.md` for a folder, synthesize a new `SKILL.md` explaining how the AI MUST use the scripts inside that folder.
 > 3. If syntax errors exist in the tools, use coding abilities to fix them.
@@ -53,6 +55,7 @@ Write strict instructions for the AI Agent:
 
 > [!NOTE]
 > **[Agent Instruction: MCP Tool Usage]**
+>
 > 1. Use abstract syntax tree resolution tools (e.g., AST Analyzer) instead of reading whole files to understand components and dependencies.
 > 2. Use sub-agent delegation tools (e.g., Task Delegator) to run parallel agents for wide refactoring.
 > 3. Use context-fetching tools (e.g., Infrastructure Analyzer) for instant architectural and database schema context instead of manually searching configuration files.
@@ -70,6 +73,7 @@ Build a local Model Context Protocol server that wraps your repository's testing
 Instruct the AI on the autonomous testing loop:
 > [!NOTE]
 > **[Agent Instruction: Autonomous Testing Loop]**
+>
 > 1. If code is modified, analyze the diff scope and run the corresponding pipeline natively via the MCP testing tools.
 > 2. Map specific changes to logical testing bounds (e.g., UI changes trigger unit tests, database changes trigger integration tests).
 > 3. If the MCP testing tool returns an error, catch the stack trace, fix the implementation locally, and recursively re-run the tool until it passes.
@@ -85,6 +89,7 @@ Modify your test run scripts to pipe execution through a memory tracker that out
 Instruct the AI:
 > [!NOTE]
 > **[Agent Instruction: Memory Analysis]**
+>
 > 1. When tests fail due to memory, scan the logs directory for the latest tracker logs.
 > 2. Compare the 'Top Aggregated Applications' sections between snapshots.
 > 3. If specific tools or databases continuously grow without releasing memory across multiple tests, identify the leak.
@@ -94,10 +99,10 @@ Instruct the AI:
 
 Automate the mundane setup and configuration tasks via explicit skills:
 
-*   **Bootstrap Environment (`.agents/skills/bootstrap-environment/SKILL.md`):** Instructs the AI to autonomously install dependencies and handle external service authentication upon initial clone.
-*   **Coverage Reporter (`.agents/skills/coverage-reporter/SKILL.md`):** Instructs the AI to run comprehensive test coverage commands and write reports into the logs directory for the user.
-*   **Production Database Triage (`.agents/skills/production-db-triage/SKILL.md`):** Links to a read-only MCP tool allowing the agent to safely read live user states without writing destructive commands.
-*   **Repo Cleaner (`.agents/skills/repo-cleaner/SKILL.md`):** A skill pointing to a cleanup script to purge old logs, test coverage outputs, and temporary files.
+- **Bootstrap Environment (`.agents/skills/bootstrap-environment/SKILL.md`):** Instructs the AI to autonomously install dependencies and handle external service authentication upon initial clone.
+- **Coverage Reporter (`.agents/skills/coverage-reporter/SKILL.md`):** Instructs the AI to run comprehensive test coverage commands and write reports into the logs directory for the user.
+- **Production Database Triage (`.agents/skills/production-db-triage/SKILL.md`):** Links to a read-only MCP tool allowing the agent to safely read live user states without writing destructive commands.
+- **Repo Cleaner (`.agents/skills/repo-cleaner/SKILL.md`):** A skill pointing to a cleanup script to purge old logs, test coverage outputs, and temporary files.
 
 ## Pillar 6. Turbo-Enabled Workflows (`.agents/workflows/`)
 
@@ -107,11 +112,13 @@ Establish a directory of standardized `.md` files that the AI can execute withou
 For every repetitive task, create a markdown file (e.g., `.agents/workflows/scaffold-component.md`).
 > [!NOTE]
 > **[Agent Instruction: Workflow File Creation]**
+>
 > 1. Include standard company boilerplates.
 > 2. Include exact terminal commands to run.
 > 3. Inject the string `// turbo-all` at the top of the file to authorize the AI to execute the bash commands automatically without waiting for user permission.
 
 **Examples to include:**
+
 - Scaffolding new components or modules.
 - Scaffolding new API endpoints.
 - Running database migrations.
@@ -130,6 +137,7 @@ Standardize how pipelines and runner environments are built to prevent ad-hoc an
 **1. Update Agent Directives:**
 > [!NOTE]
 > **[Agent Instruction: CI/CD Pipeline Creation]**
+>
 > 1. If the user asks to create or deploy a CI/CD pipeline, look in `docs/templates/pipelines.md` for guidance.
 > 2. NEVER invent a GitHub Actions workflow from scratch; ALWAYS copy the base templates located inside `templates/pipelines/github-actions/`.
 > 3. If queried about GitHub Actions runners or self-hosted infrastructure, refer the user immediately to `docs/templates/pipelines/gha-runners.md` for explanations on standard vs. self-hosted runners.
@@ -142,5 +150,6 @@ To eliminate "context rot" and perfectly align multi-agent workflows, all rules,
 Instruct the AI on the architectural validation loop:
 > [!NOTE]
 > **[Agent Instruction: Directive Validation]**
+>
 > 1. When drafting new directives, instructions, or hints, agents MUST consult the Directive Enforcer Sentry.
 > 2. Follow the detailed Sentry consultation procedure outlined in `docs/features/directive-enforcer-sentry.md` to validate and apply the Sentry's strict Markdown rewrite.

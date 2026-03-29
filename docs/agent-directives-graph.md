@@ -1,5 +1,9 @@
 # Agent Directives Graph
 
+> [!NOTE]
+> **Architectural Context**
+> This is a component-specific technical specification. For the unified master pipeline map and inter-component relationships, please refer to the [V3 Swarming Model Architecture Master Document](v3-swarming-model-architecture.md).
+
 This graph visualizes the relationships between codebase files, the agent directives, instructions, and hints they contain, and the core architectural concepts these rules address. It serves as a comprehensive overview to combat context rot and ensure logical consistency across the multi-agent workspace.
 
 ```mermaid

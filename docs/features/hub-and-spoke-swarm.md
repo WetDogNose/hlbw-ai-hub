@@ -1,25 +1,32 @@
 # Hub-and-Spoke Swarm Architecture
 
+> [!NOTE]
+> **Architectural Context**
+> This is a component-specific technical specification. For the unified master pipeline map and inter-component relationships, please refer to the [V3 Swarming Model Architecture Master Document](../v3-swarming-model-architecture.md).
+
 ## Overview
 
-The Hub-and-Spoke Swarm Architecture is an evolution of Wot-Box's core AI toolchain orchestration. As Wot-Box grew to integrate dozens of external dependencies, cloud environments, and complex tools via the Model Context Protocol (MCP), it hit a critical architectural barrier: modern IDE extensions (and many LLM contexts) enforce strict limits on the maximum quantity of available functional tools (typically capping at 100). 
+The Hub-and-Spoke Swarm Architecture is an evolution of Wot-Box's core AI toolchain orchestration. As Wot-Box grew to integrate dozens of external dependencies, cloud environments, and complex tools via the Model Context Protocol (MCP), it hit a critical architectural barrier: modern IDE extensions (and many LLM contexts) enforce strict limits on the maximum quantity of available functional tools (typically capping at 100).
 
-To solve this and introduce better security domains, the monolithic root agent was split into a **Master Orchestrator (Hub)** and distinct, isolated **Sub-Agents (Spokes)** that each carry a subset of specialized MCP capabilities. 
+To solve this and introduce better security domains, the monolithic root agent was split into a **Master Orchestrator (Hub)** and distinct, isolated **Sub-Agents (Spokes)** that each carry a subset of specialized MCP capabilities.
 
 ## Architectural Design
 
 ### 1. Master Agent (Hub)
-The IDE environment runs identically to a "Master Orchestrator." 
-Instead of loading every tool across the workspace (e.g., test runners, database queries, and log parsers all at once), the Master Agent only loads tools related to **planning, editing, memory, and orchestration**. 
+
+The IDE environment runs identically to a "Master Orchestrator."
+Instead of loading every tool across the workspace (e.g., test runners, database queries, and log parsers all at once), the Master Agent only loads tools related to **planning, editing, memory, and orchestration**.
 
 **Primary Responsibilities:**
+
 - Code implementation and source editing.
 - Interfacing directly with the developer via chat.
 - Spawning Ephemeral Docker Sub-Agents using the `scripts/swarm/docker-worker.ts` pipeline when specialized tools are needed.
 - Consolidating work via the Shared Neo4j Memory graph.
 
 ### 2. Specialized Sub-Agents (Spokes)
-Specialized tools are relocated to containerized configuration files, mapped to an exact 9-category taxonomy. 
+
+Specialized tools are relocated to containerized configuration files, mapped to an exact 9-category taxonomy.
 
 When a Sub-Agent is spawned, it does not inherit the Master Agent's configuration. Instead, `scripts/swarm/docker-worker.ts` dynamically binds the category-specific `mcp_config.json` file into the container via Docker volume mounts. The Sub-Agent wakes up fully dedicated to its specialized domain.
 
@@ -27,15 +34,15 @@ When a Sub-Agent is spawned, it does not inherit the Master Agent's configuratio
 
 The architecture is strictly divided into the following isolated namespaces, stored in `tools/docker-gemini-cli/configs/<category>/mcp_config.json`:
 
-* **`0_master`**: The orchestrator configuration. Exists at the IDE root. 
-* **`1_qa`**: Quality Assurance. Contains tools for test execution (`run_unit_tests`, `run_db_tests`, `run_type_checks`, etc).
-* **`2_source_control`**: Deep repository management, remote fetching, and PR reviews.
-* **`3_cloud`**: Cloud infrastructure monitoring (GCP Logging, GCP Trace, deployments).
-* **`4_db`**: Database operations and proxy connections (Postgres raw queries, Prisma administration).
-* **`5_bizops`**: Business, billing, and operational metrics (e.g., Stripe API).
-* **`6_project_specific`**: Transient capabilities dedicated strictly to dynamic or newly active project modules.
-* **`7_automation`**: Home Assistant controls and smart home automation workflows.
-* **`8_reserved`**: Unallocated.
+- **`0_master`**: The orchestrator configuration. Exists at the IDE root.
+- **`1_qa`**: Quality Assurance. Contains tools for test execution (`run_unit_tests`, `run_db_tests`, `run_type_checks`, etc).
+- **`2_source_control`**: Deep repository management, remote fetching, and PR reviews.
+- **`3_cloud`**: Cloud infrastructure monitoring (GCP Logging, GCP Trace, deployments).
+- **`4_db`**: Database operations and proxy connections (Postgres raw queries, Prisma administration).
+- **`5_bizops`**: Business, billing, and operational metrics (e.g., Stripe API).
+- **`6_project_specific`**: Transient capabilities dedicated strictly to dynamic or newly active project modules.
+- **`7_automation`**: Home Assistant controls and smart home automation workflows.
+- **`8_reserved`**: Unallocated.
 
 ## Spawning Sub-Agents
 
