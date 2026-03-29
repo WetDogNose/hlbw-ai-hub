@@ -21,7 +21,7 @@ Instead of loading every tool across the workspace (e.g., test runners, database
 
 - Code implementation and source editing.
 - Interfacing directly with the developer via chat.
-- Spawning Ephemeral Docker Sub-Agents using the `scripts/swarm/docker-worker.ts` pipeline when specialized tools are needed.
+- Spawning Persistent Networked Sub-Agents using native `docker exec` via the `scripts/swarm/docker-worker.ts` pipeline when specialized tools are needed. (Migrated from Ephemeral V2 logic).
 - Consolidating work via the Shared Neo4j Memory graph.
 
 ### 2. Specialized Sub-Agents (Spokes)
@@ -55,8 +55,8 @@ npx tsx scripts/swarm/docker-worker.ts spawn <taskId> <branch> "Detailed instruc
 ```
 
 > [!TIP]  
-> **Dynamic Injection**  
-> Notice the trailing `"1_qa"` argument. This signals the Docker Worker script to inject `tools/docker-gemini-cli/configs/category-1-qa/mcp_config.json` into the ephemeral sub-agent.
+> **Dynamic Routing**  
+> Notice the trailing `"1_qa"` argument. This signals the Docker Worker script to route instructions directly utilizing native `docker exec` to the active `hlbw-worker-warm-1` container, while implicitly enforcing `tools/docker-gemini-cli/configs/category-1-qa/mcp_config.json` capabilities.
 
 ## Best Practices & Security Boundaries
 

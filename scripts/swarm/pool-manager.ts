@@ -37,7 +37,7 @@ async function getMcpClient() {
   return client;
 }
 
-export async function initializePool(config: PoolConfig = { workerCount: 24 }) {
+export async function initializePool(config: PoolConfig = { workerCount: 21 }) {
   console.log(
     `[PoolManager] Booting warm pool with ${config.workerCount} generic straight-workers...`,
   );
@@ -45,17 +45,27 @@ export async function initializePool(config: PoolConfig = { workerCount: 24 }) {
   const absoluteRoot = process.cwd(); // Mount entire root so workers can dynamically `cd` into worktrees
 
   try {
+    const roles = ["1_qa", "2_source", "3_cloud", "4_db", "5_bizops", "6_project", "7_automation"];
+    const roleCounters: Record<string, number> = {};
+
     for (let i = 1; i <= config.workerCount; i++) {
-      const containerName = `hlbw-worker-warm-${i}`;
-      console.log(`[PoolManager] Starting ${containerName}...`);
+      const role = roles[(i - 1) % roles.length];
+      roleCounters[role] = (roleCounters[role] || 0) + 1;
+      const subIndex = roleCounters[role];
+      const containerName = `hlbw-worker-warm-${role}-${subIndex}`;
+      
+      console.log(`[PoolManager] Starting ${containerName} (Role: ${role})...`);
+      
       const envKeys: Record<string, string> = {
         WARM_POOL_ID: `pool-node-${i}`,
         A2A_MODE: "true",
+        AGENT_CATEGORY: role,
         OTEL_EXPORTER_OTLP_ENDPOINT:
           "http://host.docker.internal:4318/v1/traces",
         SENTRY_ENFORCER_URL: "http://host.docker.internal:8080/a2a/message",
         NODE_PATH: "/workspace/node_modules", // Force container to find host modules
       };
+      
       if (process.env.GEMINI_API_KEY)
         envKeys.GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
@@ -101,7 +111,7 @@ export async function initializePool(config: PoolConfig = { workerCount: 24 }) {
 if (require.main === module) {
   const cmd = process.argv[2];
   if (cmd === "start") {
-    const count = parseInt(process.argv[3] || "4");
+    const count = parseInt(process.argv[3] || "21");
     initializePool({ workerCount: count }).then(() =>
       console.log("Pool initialized."),
     );

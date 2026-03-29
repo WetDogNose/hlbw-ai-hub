@@ -1,12 +1,13 @@
 # Memory Tracking Toolchain
 
-> [!NOTE]
-> **Architectural Context**
-> This is a component-specific technical specification. For the unified master pipeline map and inter-component relationships, please refer to the [V3 Swarming Model Architecture Master Document](../v3-swarming-model-architecture.md).
-
 ## Overview
 
 The Memory Tracking Toolchain is a utility integrated directly into the `package.json` testing scripts. It provides visibility into system and process memory consumption during the execution of testing, validation, and linting pipelines. This is especially useful for identifying memory leaks in long-running processes, zombie MCP servers, or database connection pools that fail to close.
+
+> [!NOTE]
+> **Disambiguation**
+> This tool tracks **system RAM usage** (OS-level processes).
+> If you are looking for the real-time swarm graph visualization describing how workers share knowledge fragments, refer to the [Swarm Memory Real-Time Monitoring](./swarm-memory-monitoring.md) documentation and the `ai-memory-fragment-monitor` tool.
 
 ## Implementation Details
 

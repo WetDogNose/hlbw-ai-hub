@@ -189,6 +189,40 @@ export async function shareDecision(
   await createRelation(name, `task:${taskId}`, "DECIDED_FOR");
 }
 
+export async function getSharedContext(taskTitle: string): Promise<string[]> {
+  const tracer = getTracer();
+  return tracer.startActiveSpan("SharedMemory:getSharedContext", async (span) => {
+    span.setAttribute("task.title", taskTitle);
+    const session = getDriver().session();
+    try {
+      const query = `
+        MATCH (n:Memory)
+        WHERE n.type IN ['swarm_discovery', 'swarm_decision', 'swarm_context']
+        RETURN n.name AS name, n.observations AS observations
+        ORDER BY n.name DESC
+        LIMIT 10
+      `;
+      const result = await session.run(query, {});
+      const context: string[] = [];
+      for (const record of result.records) {
+        const name = record.get("name");
+        const obs = record.get("observations") as string[];
+        if (obs && obs.length > 0) {
+          context.push(`[${name}]: ${obs.join("; ")}`);
+        }
+      }
+      return context;
+    } catch (err: any) {
+      span.recordException(err);
+      console.error(`SharedMemory Error (getSharedContext): ${err.message}`);
+      return [];
+    } finally {
+      await session.close();
+      span.end();
+    }
+  });
+}
+
 export async function markTaskComplete(
   taskId: string,
   finalObservation: string,

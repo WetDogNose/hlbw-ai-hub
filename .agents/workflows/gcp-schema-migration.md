@@ -41,4 +41,3 @@ gcloud run jobs executions list --job=hlbw-ai-hub-db-migrate --region=asia-south
 
 > [!TIP]
 > **Agent Efficiency Hint:** If the schema migration job fails or hangs, IMMEDIATELY use `read_gcp_logs` from the `gcp-logging-mcp` server to pull the Cloud Run Job logs. Do not attempt to use `gcloud` CLI commands to fetch logs as they are slow and often truncate payload blocks.
-

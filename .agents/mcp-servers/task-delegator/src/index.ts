@@ -75,6 +75,35 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
           required: ["filePath", "instruction"],
         },
       },
+      {
+        name: "delegate_batch_code_edit",
+        description:
+          "Dispatches multiple swarm sub-agents to concurrently read, reason over, and rewrite multiple files according to strict instructions in a single batch. Massively parallelizes refactoring or cross-cutting changes across many files.",
+        inputSchema: {
+          type: "object",
+          properties: {
+            edits: {
+              type: "array",
+              description: "Array of files and instructions to process concurrently",
+              items: {
+                type: "object",
+                properties: {
+                  filePath: {
+                    type: "string",
+                    description: "Absolute path to the file to edit.",
+                  },
+                  instruction: {
+                    type: "string",
+                    description: "The specific refactoring or coding instruction for the sub-agent to apply to this file.",
+                  },
+                },
+                required: ["filePath", "instruction"],
+              },
+            },
+          },
+          required: ["edits"],
+        },
+      },
     ],
   };
 });
@@ -125,6 +154,56 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
          ],
          isError: true,
        };
+    }
+  }
+
+  if (request.params.name === "delegate_batch_code_edit") {
+    const edits = request.params.arguments?.edits as Array<{ filePath: string; instruction: string }>;
+    
+    if (!edits || !Array.isArray(edits)) {
+      throw new Error("edits array is required");
+    }
+
+    try {
+      const results = await Promise.all(
+        edits.map(async ({ filePath, instruction }) => {
+          try {
+            const currentContent = await fs.readFile(filePath, "utf8");
+            const prompt = `FILE PATH: ${filePath}\n\nINSTRUCTION:\n${instruction}\n\nCURRENT FILE CONTENT:\n${currentContent}\n\nCRITICAL REMINDER: Output EXACTLY the final intended file text with NO MARKDOWN WRAPPERS and NO EXPLANATIONS.`;
+            
+            const result = await model.generateContent(prompt);
+            let newContent = result.response.text();
+            newContent = newContent.replace(/^```[\w-]*\n/, "").replace(/\n```$/, "");
+            
+            await fs.writeFile(filePath, newContent, "utf8");
+            return `SUCCESS: ${filePath}`;
+          } catch (err) {
+            console.error(`Batch delegation failed for ${filePath}:`, err);
+            return `ERROR[${filePath}]: ${err instanceof Error ? err.message : String(err)}`;
+          }
+        })
+      );
+
+      return {
+        content: [
+          {
+            type: "text",
+            text: `Batch completed.\nResults:\n${results.join("\n")}`,
+          },
+        ],
+      };
+    } catch (error) {
+      console.error(`Batch delegation failed system-wide:`, error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      return {
+        content: [
+          {
+            type: "text",
+            text: `Failed to process batch delegation: ${errorMessage}`,
+          },
+        ],
+        isError: true,
+      };
     }
   }
 

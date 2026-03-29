@@ -10,20 +10,24 @@ The Swarm Memory Monitoring system provides real-time visibility into the Neo4j-
 
 ## Components
 
-### 1. CLI Live Monitor (`scripts/swarm/monitor-memory.mjs`)
+### 1. Web Monitor (`tools/ai-memory-fragment-monitor`)
 
-A high-signal terminal application that tails the swarm's audit logs (`.agents/swarm/audit.jsonl`) and formats memory-specific events for visual inspection.
+A Dockerized Node.js web application that connects to Neo4j to render the swarm memory graph in real time via `vis-network`. It runs an Express server and a WebSocket Server.
 
-**Key Visual Cues:**
+**Key Visual Cues (Graph):**
 
-- `[CREATED]` (Green): New entities (Tasks, Workers, Discoveries, Decisions) added to the graph.
-- `[LINKED]` (Blue): Relationships established between entities (e.g., `Worker --[ASSIGNED_TO]--> Task`).
-- `[UPDATED]` (Yellow): New observations or facts added to an existing entity.
-- `[REMOVED]` (Red): Entities deleted from the graph.
+- Blue Nodes: Tasks
+- Green Nodes: Workers
+- Purple Nodes: Discoveries
+- Orange Nodes: Decisions
+- Grey Nodes: General Context/Entities
 
-### 2. Audit Integration (`scripts/swarm/shared-memory.ts`)
+**Real-time Feed:**
+The Web UI features a scrolling activity feed displaying raw WebSocket events emitted natively by the running swarm agents.
 
-The `shared-memory.ts` client is instrumented to log 100% of graph mutations to the central audit trail. This ensures that the monitor captures every change made by any agent in the swarm.
+### 2. Audit Integration (`scripts/swarm/audit.ts`)
+
+The `audit.ts` logger is instrumented to broadcast 100% of graph mutations directly to the `ai-memory-fragment-monitor` via WebSockets. To ensure low legacy and prevent blocking worker threads, it caches the connection state every 2 minutes. If the monitor container is offline, the logger silently drops packets to ensure zero File I/O overhead.
 
 ### 3. MCP Diagnostic Tool (`scripts/mcp-trace-server.mjs`)
 
@@ -53,26 +57,34 @@ For deep-dive structural analysis, the Neo4j Browser remains the primary tool fo
 
 ### Starting the Monitor
 
-To start the real-time stream, run the following command in a dedicated terminal:
+To start the real-time stream and web visualizer, build and run the Docker container:
 
 ```bash
-npm run monitor:memory
+cd tools/ai-memory-fragment-monitor
+npm install
+npm start
 ```
+
+Or run via Docker:
+
+```bash
+docker build -t ai-memory-fragment-monitor .
+docker run -d -p 3000:3000 --network hlbw-network --name ai-memory-fragment-monitor ai-memory-fragment-monitor
+```
+
+Then visit `http://localhost:3000` in your browser.
 
 ### Typical Workflow
 
 1. Start the Gemini CLI session (which auto-starts the Neo4j container via the trace server).
-2. Open a second terminal and run `npm run monitor:memory`.
-3. Initiate a Swarm task (e.g., "Add a new feature across 5 files").
-4. Watch the monitor terminal to see:
-   - The Master Agent registering the task.
-   - Workers being assigned.
-   - Workers sharing "discoveries" or "decisions" as they progress.
+2. Spin up the `ai-memory-fragment-monitor` container.
+3. Open a browser to `http://localhost:3000`.
+4. Initiate a Swarm task (e.g., "Add a new feature across 5 files").
+5. Watch the monitor terminal to see:
    - The knowledge graph building in real-time.
+   - The scrolling feed displaying actions, relations, and entity creations.
 
 ## Technical Details
 
-- **Log Format:** JSONL (JSON Lines) for efficient tailing.
-- **Location:** `.agents/swarm/audit.jsonl`
-- **Transport:** The monitor uses `fs.watch` for sub-millisecond latency when new entries are appended.
-- **Persistence:** All memory events are persisted in the `hlbw-neo4j-data` Docker volume, while the audit log provides the temporal history.
+- **Transport:** Real-time WebSockets directly from the Hub and Spoke agents securely to the isolated UI container.
+- **Persistence:** All memory events are persisted in the `hlbw-neo4j-data` Docker volume. The legacy `.jsonl` audit file has been retired to completely eliminate filesystem I/O bottlenecking during concurrent agent execution token loops.

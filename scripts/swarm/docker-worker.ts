@@ -44,18 +44,36 @@ export async function spawnDockerWorker(
       span.setAttribute("worktree.path", worktreePath);
 
       // 2. Register Worker
-      const worker = await addWorker("docker-worker", agentCategory);
+      const worker = await addWorker({
+        taskId: taskId,
+        provider: "docker-worker",
+        modelId: "warm-pool",
+        status: WorkerStatus.Starting,
+        metadata: { branchName, agentType: agentCategory }
+      });
       span.setAttribute("worker.id", worker.id);
 
       await updateTaskStatus(taskId, TaskStatus.InProgress, "docker-worker");
       console.log(`Delegating task ${taskId} to warm pool...`);
 
-      // 3. Sharding across warm pool
-      const poolSize = 24;
-      const workerIndex =
-        (parseInt(taskId.split("-").pop() || "0", 16) % poolSize) + 1;
-      const targetHost = `hlbw-worker-warm-${isNaN(workerIndex) ? 1 : workerIndex}`;
+      // 3. Sharding across warm pool by explicit role
+      const poolSize = 21;
+      const roles = ["1_qa", "2_source", "3_cloud", "4_db", "5_bizops", "6_project", "7_automation"];
+      
+      // Exact calculation to mimic how pool-manager allocates replicas
+      let replicas = Math.floor(poolSize / roles.length);
+      const roleIndex = roles.indexOf(agentCategory);
+      if (roleIndex !== -1 && roleIndex < poolSize % roles.length) {
+          replicas += 1; // It gets the remainder bonus replica
+      }
+      // If agentCategory is entirely unknown, fallback to first generic
+      if (replicas === 0) replicas = 1; 
+      
+      const subIndex = (parseInt(taskId.split("-").pop() || "0", 16) % replicas) + 1;
+      
+      const targetHost = `hlbw-worker-warm-${agentCategory}-${subIndex}`;
       const containerId = `exec-${taskId}`;
+
 
       // 4. Synchronous Payload Execution
       const a2aPayload = {
@@ -123,7 +141,7 @@ export async function spawnDockerWorker(
         removeWorktree(branchName, true);
       } catch (e) {}
 
-      await updateWorkerStatus(worker.id, WorkerStatus.Stopped);
+      await updateWorkerStatus(worker.id, WorkerStatus.Completed);
       await updateTaskStatus(taskId, TaskStatus.Completed, "docker-worker");
 
       return {

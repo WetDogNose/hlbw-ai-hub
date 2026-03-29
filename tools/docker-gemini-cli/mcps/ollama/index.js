@@ -33,14 +33,13 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
       {
         name: "ollama_generate",
         description:
-          "Send a text prompt to a local Ollama model to generate a response. Use this to offload smaller, highly-parallelizable sub-tasks (like linting, formatting, simple AST parsing) to the local GPU.",
+          "Send a text prompt to a local Ollama model. Optimized for high-throughput GPU tasks.",
         inputSchema: {
           type: "object",
           properties: {
             model: {
               type: "string",
-              description:
-                "The name of the Ollama model. Prefer 'qwen2.5-coder:7b' for code tasks, and 'llama3.1:8b' or similar for general tasks.",
+              description: "The name of the Ollama model.",
             },
             prompt: {
               type: "string",
@@ -48,11 +47,41 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
             },
             system: {
               type: "string",
-              description:
-                "Optional system prompt setting the context or persona.",
+              description: "Optional system prompt.",
             },
+            options: {
+              type: "object",
+              description: "Advanced model parameters (num_ctx, num_gpu, num_thread, temperature, etc.).",
+              properties: {
+                num_ctx: { type: "number", description: "Sets the size of the context window." },
+                num_gpu: { type: "number", description: "The number of layers to send to the GPU(s)." },
+                num_thread: { type: "number", description: "Sets the number of threads to use." },
+                temperature: { type: "number" },
+                top_p: { type: "number" },
+                seed: { type: "number" }
+              }
+            }
           },
           required: ["model", "prompt"],
+        },
+      },
+      {
+        name: "ollama_batch_generate",
+        description:
+          "Executes multiple prompts in parallel across the local GPU cluster. Use this for massive data normalization or batch code analysis.",
+        inputSchema: {
+          type: "object",
+          properties: {
+            model: { type: "string" },
+            prompts: { 
+              type: "array", 
+              items: { type: "string" },
+              description: "Array of prompts to process concurrently."
+            },
+            system: { type: "string" },
+            options: { type: "object" }
+          },
+          required: ["model", "prompts"],
         },
       },
       {
@@ -111,7 +140,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     }
 
     if (name === "ollama_generate") {
-      const { model, prompt, system } = args;
+      const { model, prompt, system, options } = args;
 
       const response = await fetch(`${OLLAMA_BASE_URL}/api/generate`, {
         method: "POST",
@@ -122,6 +151,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           model,
           prompt,
           system,
+          options,
           stream: false,
         }),
       });
@@ -134,6 +164,29 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
       return {
         content: [{ type: "text", text: data.response }],
+      };
+    }
+
+    if (name === "ollama_batch_generate") {
+      const { model, prompts, system, options } = args;
+
+      const results = await Promise.all(prompts.map(async (p) => {
+        try {
+          const response = await fetch(`${OLLAMA_BASE_URL}/api/generate`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ model, prompt: p, system, options, stream: false }),
+          });
+          if (!response.ok) return `Error: ${response.statusText}`;
+          const data = await response.json();
+          return data.response;
+        } catch (err) {
+          return `Error: ${err.message}`;
+        }
+      }));
+
+      return {
+        content: [{ type: "text", text: JSON.stringify(results, null, 2) }],
       };
     }
 

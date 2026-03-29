@@ -24,11 +24,12 @@ The environment automatically provisions a local inference engine using `ollama`
 
 ### 2. The `ollama-mcp` Proxy Server
 
-To bridge the isolated Swarm Sub-Agents (running inside ephemeral Docker containers) with the host's GPU process, we developed an MCP Server (`tools/docker-gemini-cli/mcps/ollama`).
+To bridge the isolated Swarm Sub-Agents (running inside persistent Docker Warm Pool containers) with the host's GPU process, we developed an MCP Server (`tools/docker-gemini-cli/mcps/ollama`).
 
 This server acts as a structured API gateway operating over `host.docker.internal:11434`, exposing the following core tools:
 
-- `ollama_generate`: Prompts the local GPU models for offline reasoning without network latency.
+- `ollama_generate`: Prompts the local GPU models for offline reasoning with advanced `options` (num_gpu, num_thread) for precise hardware control.
+- `ollama_batch_generate`: Executes multiple prompts in parallel across the local GPU cluster for massive data normalization.
 - `ollama_list_models`: Discovers available models pre-cached on the host.
 - `ollama_embeddings`: Generates vector embeddings for memory processing wholly on the edge.
 
@@ -38,7 +39,9 @@ This MCP server is systematically injected into the configuration of **all 6 sub
 
 Simply having local GPU access is insufficient if the orchestration layer cannot saturatethose resources. The internal node deployment pipeline was rewritten for maximum concurrency:
 
-- **Throttling Lifted**: `maxActiveWorkers` was increased to 24, and `maxActiveIsolation` (worktrees) increased to 40 in `scripts/swarm/policy.ts`. This encourages AI Master Agents to dispatch tasks via asynchronous batches (`Promise.all`) rather than sequencial operations.
+- **Throttling Lifted**: `maxActiveWorkers` was increased to 48, and `maxActiveIsolation` (worktrees) increased to 60 in `scripts/swarm/policy.ts`. This encourages AI Master Agents to dispatch tasks via asynchronous batches (`Promise.all`) rather than sequencial operations.
+- **Warm Pool Expansion**: The persistent worker pool has been expanded to 12 concurrent nodes by default, utilizing round-robin task sharding.
+- **Non-Blocking State**: The state manager now uses lock-free reads to eliminate latency during high-concurrency bursts.
 - **Test Parallelization**: `package.json` test suites across the repository natively invoke `--maxWorkers=80%`, maximizing local CPU core saturation.
 
 ## Implementation Details

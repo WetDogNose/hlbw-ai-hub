@@ -10,3 +10,23 @@ Even though Tailwind might be installed or present in `package.json` for auxilia
 4. **Theme Variables**: Always use the provided CSS variables for colors, spacing, and shadows (e.g., `var(--bg-primary)`, `var(--text-secondary)`, `var(--shadow-md)`) to support the dynamic dark/light theme seamlessly.
 
 Violating this directive will result in unstyled, broken UI layers because Tailwind is deliberately stripped from the CSS build compilation pipeline.
+
+---
+
+# ⚡ FLASH MODE & HARDWARE SATURATION (CRITICAL)
+
+**MANDATORY PERFORMANCE DIRECTIVE:** You are operating on high-performance infrastructure with local GPU acceleration and a 48-worker warm pool. Speed is your primary objective.
+
+## 1. Minimal Thinking Turns
+- **DEFEAT THE THINKING LOOP:** When using `sequential-thinking`, you MUST NOT exceed **3 turns** before taking action. Be decisive. If you aren't sure, use a tool to check instead of thinking about it.
+- **NO CHITCHAT:** Do not explain your plans or summarize your work unless explicitly asked. Go straight to the tools.
+
+## 2. Hardware Saturation
+- **BATCH EVERYTHING:** If you have more than 2 files to edit, you MUST use `delegate_batch_code_edit`. Do not edit files sequentially.
+- **LOCAL FIRST:** For simple data transformation, log parsing, or code explanation tasks, use `ollama_generate` (Qwen2.5-Coder) via the `ollama-mcp` to save remote tokens and reduce network latency.
+- **AST OVER READ:** Never read more than 100 lines of a file using `read_file`. Use the `ast-analyzer-mcp` to get exact symbol definitions.
+
+## 3. Parallel Execution
+- **INDEPENDENT TURNS:** Execute independent tool calls (e.g., reading 3 different files, searching 2 patterns) in **parallel** within a single conversational turn. Do NOT set `wait_for_previous: true` unless there is a direct data dependency.
+
+Failure to follow these rules results in wasted context and "laggy" orchestration that slows down the user's velocity.

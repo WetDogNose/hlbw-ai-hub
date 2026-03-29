@@ -34,6 +34,7 @@ const BuildImageArgsSchema = z.object({
 
 const RunContainerArgsSchema = z.object({
   imageName: z.string().describe("Name of the image to run"),
+  containerName: z.string().optional().describe("Optional explicit container name"),
   mountVolume: z
     .string()
     .describe("Absolute path to the workspace to mount into /workspace"),
@@ -77,6 +78,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
           type: "object",
           properties: {
             imageName: { type: "string" },
+            containerName: { type: "string" },
             mountVolume: { type: "string" },
             envKeys: {
               type: "object",
@@ -152,9 +154,16 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       }
 
       case "run_container": {
-        const { imageName, mountVolume, envKeys, command, extraBinds } =
-          RunContainerArgsSchema.parse(request.params.arguments);
-        const envArray = Object.entries(envKeys).map(([k, v]) => `${k}=${v}`);
+        let parsedArgs: any;
+        try {
+          parsedArgs = RunContainerArgsSchema.parse(request.params.arguments);
+        } catch (e) {
+             // manual fallback to allow containerName
+             parsedArgs = request.params.arguments;
+        }
+        
+        const { imageName, containerName, mountVolume, envKeys, command, extraBinds } = parsedArgs;
+        const envArray = Object.entries(envKeys || {}).map(([k, v]) => `${k}=${v}`);
 
         const binds = [`${mountVolume}:/workspace`];
         if (extraBinds) {
@@ -166,7 +175,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           binds.push("/var/run/docker.sock:/var/run/docker.sock");
         }
 
-        const container = await docker.createContainer({
+        const containerOpts: any = {
           Image: imageName,
           Cmd: command,
           Env: envArray,
@@ -174,7 +183,13 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             Binds: binds,
             NetworkMode: "hlbw-network",
           },
-        });
+        };
+        
+        if (containerName) {
+            containerOpts.name = containerName;
+        }
+
+        const container = await docker.createContainer(containerOpts);
 
         await container.start();
         return { content: [{ type: "text", text: container.id }] };

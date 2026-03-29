@@ -39,6 +39,13 @@ A primary risk of persistent workers is cross-task context leakage. V3 introduce
 All worker nodes are injected with their respective category `mcp_config.json`, which centrally mounts the `ollama-mcp` (Local Hardware Acceleration subsystem).
 Because the workers are persistent, they continuously maintain the ability to route "simple" inference tasks (formatting, quick log parsing) to the localized GPU cluster without incurring external token costs or cold-start penalties, augmenting their true parallel throughput.
 
+### 5. Mass Parallelization & Temporal Map-Reduce
+
+To maximize Swarm throughput and eliminate sequential blocking in the Master Orchestrator, the V3 architecture introduces Map-Reduce logic utilizing the persistent low-latency worker pool:
+
+- **Parallel Dispatch**: Tools like the `delegate_batch_code_edit` MCP operate via `Promise.all` mapping to concurrently unleash identical tasks across isolated code domains without awaiting individual responses.
+- **`[CHUNK_N]` Metadata Tacking**: Networked sub-agents log their progress back to the master timeline with explicit chunk IDs. The hub utilizes a Reducer script natively locally to ingest and chronologically stitch the asynchronously returning Map jobs together, reconstructing massive multi-part results safely.
+
 ---
 
 ## Technical Interface
@@ -64,6 +71,7 @@ Because the workers are persistent, they continuously maintain the ability to ro
   }
 }
 ```
+
 1. Worker execution locally within container.
 2. Worker responds via A2A response stream.
 3. If `persistence_mode == "ephemeral"`, the worker executes `purge()`.

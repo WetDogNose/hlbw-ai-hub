@@ -18,6 +18,102 @@ import {
   addObservations,
   createRelation,
 } from "./shared-memory";
+import { Client } from "@modelcontextprotocol/sdk/client/index.js";
+import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
+
+// MCP Integrations State Storage
+const mcpClients: Record<string, Client> = {};
+const mcpToolDefinitions: any[] = [];
+let mcpInitialized = false;
+
+function translateWindowsPathToLinux(winPath: string): string {
+  if (!winPath) return winPath;
+  return winPath
+    .replace(/[Cc]:[/\\]+[Uu]sers[/\\]+[^/\\]+[/\\]+repos[/\\]+hlbw-ai-hub/gi, "/workspace")
+    .replace(/[/\\]+/g, "/");
+}
+
+async function initializeMCPServers() {
+  const category = process.env.AGENT_CATEGORY || "default";
+  let configPath = `/etc/mcp_configs/${category}/mcp_config.json`;
+  if (!fs.existsSync(configPath) || !fs.statSync(configPath).isFile()) {
+    configPath = `/etc/mcp_configs/category-${category.replace("_", "-")}/mcp_config.json`;
+  }
+
+  if (!fs.existsSync(configPath) || !fs.statSync(configPath).isFile()) {
+    console.warn(`[A2A][MCP] No config found at ${configPath}. Starting with base tools only.`);
+    return;
+  }
+
+  try {
+    const configRaw = fs.readFileSync(configPath, "utf8");
+    const config = JSON.parse(configRaw);
+    const mcpServers = (config as any).mcpServers;
+    if (mcpServers) {
+      const initPromises = Object.entries(mcpServers).map(async ([serverName, serverOpts]: [string, any]) => {
+        try {
+          console.log(`[A2A][MCP] Booting persistent Transport for ${serverName}...`);
+          const command = serverOpts.command === "node.exe" || serverOpts.command.includes("node") ? "node" : serverOpts.command;
+          
+          let args = serverOpts.args || [];
+          if (command === "node") {
+             args = args.map((arg: string) => translateWindowsPathToLinux(arg));
+          }
+
+          let client: any = null;
+          let connected = false;
+          let lastErr;
+          
+          for (let attempt = 1; attempt <= 3; attempt++) {
+            try {
+              const currentTransport = new StdioClientTransport({
+                command,
+                args,
+                env: { ...process.env, ...serverOpts.env, NODE_PATH: "/workspace/node_modules" }
+              });
+
+              client = new Client({ name: "swarm-runner", version: "1.0.0" }, { capabilities: {} });
+              
+              await client.connect(currentTransport);
+              connected = true;
+              break;
+            } catch (err: any) {
+              lastErr = err;
+              if (client) {
+                try { await client.close(); } catch (_) { /* ignore */ }
+              }
+              console.warn(`[A2A][MCP] Attempt ${attempt} failed to connect server ${serverName}: ${err.message}. Retrying...`);
+              await new Promise(r => setTimeout(r, 2000));
+            }
+          }
+
+          if (!connected || !client) throw lastErr;
+          
+          mcpClients[serverName] = client;
+          
+          // Expose tools
+          const { tools } = await client.listTools();
+          console.log(`[A2A][MCP] ${serverName} connected with ${tools.length} tools.`);
+          
+          for (const tool of tools) {
+             mcpToolDefinitions.push({
+               name: tool.name.replace(/-/g, "_"), // Gemini requires names to match ^[a-zA-Z0-9_]*$
+               description: tool.description?.slice(0, 1024) || "No description provided",
+               parameters: tool.inputSchema as any // Raw JSON schema compatibility
+             });
+          }
+        } catch (error: any) {
+          console.error(`[A2A][MCP] Failed to connect server ${serverName} after 3 attempts: ${error.message}`);
+        }
+      });
+
+      await Promise.all(initPromises);
+    }
+  } catch (err: any) {
+    console.error(`[A2A][MCP] Error reading config:`, err.message);
+  }
+}
+
 
 const API_KEY = process.env.GEMINI_API_KEY;
 if (!API_KEY) {
@@ -236,12 +332,15 @@ const server = http.createServer(async (req, res) => {
             },
           ];
 
+          // Safely merge dynamically loaded MCP capabilities!
+          const allTools = [...tools, ...mcpToolDefinitions];
+
           const model = genAI.getGenerativeModel({
             model: "gemini-2.5-flash",
             systemInstruction: `You are an autonomous AI swarm worker inside an isolated repository worktree: ${worktreePath}. Execute your instruction and write output. Say DONE when finished.
               
               CRITICAL: You MUST use the 'store_memory' and 'create_memory_relation' tools to document important discoveries, decisions, or architectural findings into the shared knowledge graph. This allows other agents to build upon your work.`,
-            tools: [{ functionDeclarations: tools }],
+            tools: [{ functionDeclarations: allTools }],
           });
 
           let chat = sessions[sessionId];
@@ -352,6 +451,46 @@ const server = http.createServer(async (req, res) => {
                       response: { success: true },
                     },
                   });
+                } else {
+                  // Must be an MCP Server Tool.
+                  const originalToolName = call.name.replace(/_/g, "-");
+                  
+                  // Find the Client that handles this.
+                  let handled = false;
+                  for (const [serverName, client] of Object.entries(mcpClients)) {
+                    // Ask the specific client if it can handle it (we assume unique tool names or we hit the first matching)
+                    try {
+                      // Attempt to call the MCP tool.
+                      const result = await client.callTool({
+                        name: originalToolName, // Try dashed name first
+                        arguments: args
+                      });
+                      toolResponses.push({
+                         functionResponse: {
+                           name: call.name, // Return original name so Gemini matches it
+                           response: { result: result.content }
+                         }
+                      });
+                      handled = true;
+                      break;
+                    } catch (e: any) {
+                       // Try snakecase name literally just in case
+                       try {
+                         const result = await client.callTool({ name: call.name, arguments: args });
+                         toolResponses.push({
+                            functionResponse: { name: call.name, response: { result: result.content } }
+                         });
+                         handled = true;
+                         break;
+                       } catch (e2) {
+                         continue; // Not this client
+                       }
+                    }
+                  }
+                  
+                  if (!handled) {
+                     throw new Error(`Tool ${call.name} not found in base list or MCP registry.`);
+                  }
                 }
               } catch (err: any) {
                 toolResponses.push({
@@ -390,6 +529,13 @@ const server = http.createServer(async (req, res) => {
 });
 
 const PORT = 8000;
-server.listen(PORT, "0.0.0.0", () => {
-  console.log(`[A2A] Concurrent Worker listening on port ${PORT}`);
+
+initializeMCPServers().then(() => {
+  mcpInitialized = true;
+  server.listen(PORT, "0.0.0.0", () => {
+    console.log(`[A2A] Persistent Role-Based Worker listening on port ${PORT} (Category: ${process.env.AGENT_CATEGORY || "default"})`);
+  });
+}).catch(err => {
+  console.error("Failed to initialize system:", err);
+  process.exit(1);
 });

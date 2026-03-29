@@ -101,7 +101,7 @@ Because IDE contexts limit total active tools (~100), functionality is highly se
 - `docker-mcp-gateway`: Master GitHub repository synchronization.
 - `memory`: Local Neo4j Knowledge Graph interaction.
 - `sequential-thinking`: Reflective logical decomposition.
-- `task-delegator-mcp`: Async sub-agent dispatchment.
+- `task-delegator-mcp`: Async sub-agent dispatchment and Mass Parallelization (via `delegate_batch_code_edit`).
 
 #### Shared Infrastructure Auto-Booting
 
@@ -149,7 +149,14 @@ The Swarming architecture has evolved from a strictly ephemeral, container-per-t
 
 ### Persistent Warm Pools
 
-Instead of strictly issuing `docker run` for every individual task, the swarm initializes fixed-capacity sub-agent pools. The Master orchestrator delegates tasks via network requests (HTTP/WS) directly to these running containers.
+Instead of strictly issuing `docker run` for every individual task, the swarm initializes fixed-capacity sub-agent pools. The Master orchestrator delegates tasks via network requests (HTTP/WS) directly to these running containers, drastically reducing dispatch latency from ~4000ms to ~25ms per task.
+
+### Mass Parallelization & Map-Reduce Temporal Stitching
+
+To fully capitalize on the low-latency Warm Pool and bypass traditional sequential bottlenecks limits, the Master Orchestrator orchestrates bulk tasks utilizing Map-Reduce generation techniques:
+
+- **`delegate_batch_code_edit`**: The native IDE `task-delegator-mcp` can now ingest arrays of instructions, decoupling operations by automatically mapping them into concurrent `Promise.all` async tasks. This enables massive 10x+ parallel codebase refactoring in a single generation cycle.
+- **`reduce-chunks.ts`**: When concurrent sub-agents write asynchronous text streams/logs back to the Master, their payloads are natively injected with `[CHUNK_N]` temporal tracking IDs. The master Orchestrator utilizes the reducer utility to extract, sort, and seamlessly stitch chaotic asynchronous parallel output logs back into cohesive chronological order.
 
 ### Dual Worker Archetypes
 
