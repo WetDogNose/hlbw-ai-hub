@@ -27,6 +27,10 @@ graph TD
         Sentry -->|Parses| GraphDoc
     end
 
+    subgraph Observability ["Telemetry & Metrics"]
+        Jaeger["Jaeger Tracing UI\n(gcp-trace-mcp)"]
+    end
+
     subgraph Orchestration ["Delegation & Transport"]
         Delegator["Task Delegators\n(V2 Legacy Foundations)"]
         A2A["Agent-To-Agent (A2A) SDK\n(adk-a2a-integration)"]
@@ -40,9 +44,14 @@ graph TD
     %% Define connections
     Master -->|Triggers| Delegator
     Master -->|Consults| Sentry
+    Master -->|Auto-Boots| Jaeger
     Delegator -->|Serializes Payload| A2A
     A2A -->|JSON-RPC Dispatch| V3
     V3 -->|Loads Specific| Spokes
+    
+    %% Bridge networking for V3
+    V3 -.->|OTEL Latency Waterfall\n(host.docker.internal)| Jaeger
+    V3 -.->|Remote Validation\n(host.docker.internal)| Sentry
     V3 -->|Shares Discoveries| Memory
     
     %% Hardware linking
