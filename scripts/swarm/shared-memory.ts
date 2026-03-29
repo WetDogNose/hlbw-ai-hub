@@ -1,58 +1,37 @@
 // Shared Memory Client for Swarm Orchestration
-// Connects to the neo4j-memory MCP server to provide a shared knowledge graph
-// across all swarm agents. Each agent can read/write context, discoveries, and
-// decisions that other agents can reference.
+// Uses native neo4j-driver for direct communication (Docker-compatible).
+// This allows both Hub and Spokes to write to the knowledge graph without sidecars.
 
-import { Client } from "@modelcontextprotocol/sdk/client/index.js";
-import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
+import neo4j, { Driver } from "neo4j-driver";
 import { getTracer } from "./tracing";
 import { appendAudit } from "./audit";
 import fs from "node:fs";
 
-const ACTOR = process.env.WORKER_ID || "shared-memory";
+const ACTOR =
+  process.env.WARM_POOL_ID || process.env.WORKER_ID || "shared-memory";
 
-// --- MCP Client Connection ---
+// --- Database Configuration ---
 
-let sharedClient: Client | null = null;
+const isContainer = fs.existsSync("/.dockerenv");
+const NEO4J_URL =
+  process.env.NEO4J_URL ||
+  (isContainer ? "bolt://hlbw-neo4j:7687" : "bolt://localhost:7687");
+const NEO4J_USER = "neo4j";
+const NEO4J_PASS = "wotbox-swarm";
 
-async function getMemoryClient(): Promise<Client> {
-  if (sharedClient) return sharedClient;
+let driver: Driver | null = null;
 
-  const isContainer = fs.existsSync("/.dockerenv");
-  const neo4jHost = isContainer ? "hlbw-neo4j" : "host.docker.internal";
-  const dockerArgs = [
-    "run",
-    "-i",
-    "--rm",
-    "-e",
-    `NEO4J_URL=bolt://${neo4jHost}:7687`,
-    "-e",
-    "NEO4J_USERNAME=neo4j",
-    "-e",
-    "NEO4J_PASSWORD=wotbox-swarm",
-    "-e",
-    "NEO4J_DATABASE=neo4j",
-    "mcp/neo4j-memory",
-  ];
-
-  if (isContainer) {
-    dockerArgs.splice(3, 0, "--network", "hlbw-network");
+function getDriver(): Driver {
+  if (!driver) {
+    driver = neo4j.driver(NEO4J_URL, neo4j.auth.basic(NEO4J_USER, NEO4J_PASS));
   }
-
-  const transport = new StdioClientTransport({
-    command: "docker",
-    args: dockerArgs,
-  });
-
-  sharedClient = new Client({ name: "swarm-memory-client", version: "1.0.0" });
-  await sharedClient.connect(transport);
-  return sharedClient;
+  return driver;
 }
 
 export async function closeMemoryClient(): Promise<void> {
-  if (sharedClient) {
-    await sharedClient.close();
-    sharedClient = null;
+  if (driver) {
+    await driver.close();
+    driver = null;
   }
 }
 
@@ -75,14 +54,18 @@ export async function storeEntity(
   return tracer.startActiveSpan("SharedMemory:storeEntity", async (span) => {
     span.setAttribute("entity.name", name);
     span.setAttribute("entity.type", type);
+    const session = getDriver().session();
     try {
-      const client = await getMemoryClient();
-      await client.callTool({
-        name: "create_entities",
-        arguments: {
-          entities: [{ name, type, observations }],
-        },
-      });
+      // Cypher: Create node with Memory label and specific type label
+      const query = `
+        MERGE (n:Memory {name: $name})
+        SET n.type = $type, n.observations = $observations
+        WITH n
+        CALL apoc.create.addLabels(n, [$type]) YIELD node
+        RETURN node
+      `;
+      await session.run(query, { name, type, observations });
+
       await appendAudit({
         actor: ACTOR,
         action: "memory.entity_stored",
@@ -92,47 +75,12 @@ export async function storeEntity(
       });
     } catch (err: any) {
       span.recordException(err);
-      console.error(
-        `SharedMemory: Failed to store entity "${name}":`,
-        err.message,
-      );
+      console.error(`SharedMemory Error (storeEntity): ${err.message}`);
     } finally {
+      await session.close();
       span.end();
     }
   });
-}
-
-/**
- * Add observations/facts to an existing entity.
- */
-export async function addObservations(
-  entityName: string,
-  observations: string[],
-): Promise<void> {
-  try {
-    const client = await getMemoryClient();
-    await client.callTool({
-      name: "add_observations",
-      arguments: {
-        observations: [{ entityName, observations }],
-      },
-    });
-    await appendAudit({
-      actor: ACTOR,
-      action: "memory.observations_added",
-      entityType: "observation",
-      entityId: entityName,
-      metadata: {
-        count: observations.length,
-        observations: observations.slice(0, 3),
-      },
-    });
-  } catch (err: any) {
-    console.error(
-      `SharedMemory: Failed to add observations to "${entityName}":`,
-      err.message,
-    );
-  }
 }
 
 /**
@@ -143,14 +91,16 @@ export async function createRelation(
   target: string,
   relationType: string,
 ): Promise<void> {
+  const session = getDriver().session();
   try {
-    const client = await getMemoryClient();
-    await client.callTool({
-      name: "create_relations",
-      arguments: {
-        relations: [{ source, target, relationType }],
-      },
-    });
+    const query = `
+      MATCH (a:Memory {name: $source})
+      MATCH (b:Memory {name: $target})
+      MERGE (a)-[r:RELATION {type: $relationType}]->(b)
+      RETURN r
+    `;
+    await session.run(query, { source, target, relationType });
+
     await appendAudit({
       actor: ACTOR,
       action: "memory.relation_created",
@@ -159,102 +109,44 @@ export async function createRelation(
       metadata: { source, target, relationType },
     });
   } catch (err: any) {
-    console.error(
-      `SharedMemory: Failed to create relation ${source} -> ${target}:`,
-      err.message,
-    );
+    console.error(`SharedMemory Error (createRelation): ${err.message}`);
+  } finally {
+    await session.close();
   }
 }
 
 /**
- * Search the shared knowledge graph for relevant context.
+ * Add observations/facts to an existing entity.
  */
-export async function searchMemory(query: string): Promise<any> {
-  const tracer = getTracer();
-  return tracer.startActiveSpan("SharedMemory:search", async (span) => {
-    span.setAttribute("query", query);
-    try {
-      const client = await getMemoryClient();
-      const response = await client.callTool({
-        name: "search_memories",
-        arguments: { query },
-      });
-      const result = (response as any).content?.[0]?.text;
-      span.end();
-      return result ? JSON.parse(result) : { entities: [], relations: [] };
-    } catch (err: any) {
-      span.recordException(err);
-      span.end();
-      return { entities: [], relations: [] };
-    }
-  });
-}
-
-/**
- * Find specific entities by exact name.
- */
-export async function findByName(names: string[]): Promise<any> {
+export async function addObservations(
+  entityName: string,
+  observations: string[],
+): Promise<void> {
+  const session = getDriver().session();
   try {
-    const client = await getMemoryClient();
-    const response = await client.callTool({
-      name: "find_memories_by_name",
-      arguments: { names },
-    });
-    const result = (response as any).content?.[0]?.text;
-    return result ? JSON.parse(result) : { entities: [], relations: [] };
-  } catch (err: any) {
-    console.error("SharedMemory: Failed to find by name:", err.message);
-    return { entities: [], relations: [] };
-  }
-}
+    const query = `
+      MATCH (n:Memory {name: $entityName})
+      SET n.observations = n.observations + $observations
+      RETURN n
+    `;
+    await session.run(query, { entityName, observations });
 
-/**
- * Read the entire shared knowledge graph.
- */
-export async function readGraph(): Promise<any> {
-  try {
-    const client = await getMemoryClient();
-    const response = await client.callTool({
-      name: "read_graph",
-      arguments: {},
-    });
-    const result = (response as any).content?.[0]?.text;
-    return result ? JSON.parse(result) : { entities: [], relations: [] };
-  } catch (err: any) {
-    console.error("SharedMemory: Failed to read graph:", err.message);
-    return { entities: [], relations: [] };
-  }
-}
-
-/**
- * Remove an entity from shared memory.
- */
-export async function removeEntity(name: string): Promise<void> {
-  try {
-    const client = await getMemoryClient();
-    await client.callTool({
-      name: "delete_entities",
-      arguments: { entityNames: [name] },
-    });
     await appendAudit({
       actor: ACTOR,
-      action: "memory.entity_removed",
-      entityType: "entity",
-      entityId: name,
+      action: "memory.observations_added",
+      entityType: "observation",
+      entityId: entityName,
+      metadata: { count: observations.length },
     });
   } catch (err: any) {
-    console.error(
-      `SharedMemory: Failed to remove entity "${name}":`,
-      err.message,
-    );
+    console.error(`SharedMemory Error (addObservations): ${err.message}`);
+  } finally {
+    await session.close();
   }
 }
 
 // --- Swarm-Specific Convenience Functions ---
 
-/**
- * When a task is delegated, store its context in shared memory so other agents can reference it.
- */
 export async function shareTaskContext(
   taskId: string,
   title: string,
@@ -270,10 +162,6 @@ export async function shareTaskContext(
   ]);
 }
 
-/**
- * When a worker discovers something important (e.g. a design decision, a blocker),
- * store it so other agents can see it.
- */
 export async function shareDiscovery(
   workerId: string,
   taskId: string,
@@ -288,9 +176,6 @@ export async function shareDiscovery(
   await createRelation(name, `task:${taskId}`, "DISCOVERED_DURING");
 }
 
-/**
- * Store a decision that affects other tasks or the overall project.
- */
 export async function shareDecision(
   taskId: string,
   decision: string,
@@ -304,9 +189,6 @@ export async function shareDecision(
   await createRelation(name, `task:${taskId}`, "DECIDED_FOR");
 }
 
-/**
- * Mark a task as complete and add final observations.
- */
 export async function markTaskComplete(
   taskId: string,
   finalObservation: string,
@@ -319,62 +201,12 @@ export async function markTaskComplete(
   ]);
 }
 
-/**
- * Before starting work, query shared memory for relevant context from other agents.
- */
-export async function getSharedContext(taskTitle: string): Promise<string[]> {
-  const graph = await searchMemory(taskTitle);
-  const observations: string[] = [];
-  if (graph.entities) {
-    for (const entity of graph.entities) {
-      if (entity.observations) {
-        observations.push(
-          ...entity.observations.map(
-            (o: string) => `[${entity.type}:${entity.name}] ${o}`,
-          ),
-        );
-      }
-    }
-  }
-  return observations;
-}
-
-// CLI usage
+// Minimal CLI compatibility for now
 if (require.main === module) {
   const cmd = process.argv[2];
-  const args = process.argv.slice(3);
-
-  if (cmd === "store") {
-    const [name, type, ...obs] = args;
-    storeEntity(name as any, type as any, obs)
-      .then(() => console.log("Entity stored."))
-      .catch(console.error)
-      .finally(closeMemoryClient);
-  } else if (cmd === "observe") {
-    const [name, ...obs] = args;
-    addObservations(name, obs)
-      .then(() => console.log("Observations added."))
-      .catch(console.error)
-      .finally(closeMemoryClient);
-  } else if (cmd === "relate") {
-    const [src, tgt, type] = args;
-    createRelation(src, tgt, type)
-      .then(() => console.log("Relation created."))
-      .catch(console.error)
-      .finally(closeMemoryClient);
-  } else if (cmd === "search") {
-    searchMemory(args[0])
-      .then((r) => console.log(JSON.stringify(r, null, 2)))
-      .catch(console.error)
-      .finally(closeMemoryClient);
-  } else if (cmd === "read") {
-    readGraph()
-      .then((r) => console.log(JSON.stringify(r, null, 2)))
-      .catch(console.error)
-      .finally(closeMemoryClient);
-  } else {
+  if (cmd === "read") {
     console.log(
-      "Usage: tsx shared-memory.ts [store|observe|relate|search|read] ...",
+      "Read via Neo4j Browser or specialized scripts. Native driver active.",
     );
   }
 }

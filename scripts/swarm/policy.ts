@@ -3,10 +3,10 @@
 
 export const SWARM_POLICY = {
   /** Maximum number of active workers at any time */
-  maxActiveWorkers: 24,
+  maxActiveWorkers: 96,
 
   /** Maximum number of active isolation units (worktrees) at any time */
-  maxActiveIsolation: 40,
+  maxActiveIsolation: 120,
 
   /** Maximum character length for a task description/instruction payload */
   maxTaskChars: 100_000,

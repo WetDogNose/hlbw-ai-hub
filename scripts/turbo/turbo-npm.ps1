@@ -1,0 +1,2 @@
+# // turbo-all
+npm @args

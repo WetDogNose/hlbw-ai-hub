@@ -34,11 +34,27 @@ export function createWorktree(branchName: string): string {
       }
 
       // Capacity check (Gap 5)
-      const active = listWorktrees().filter((w) => w.status === "active");
+      let active = listWorktrees().filter((w) => w.status === "active");
       if (active.length >= SWARM_POLICY.maxActiveIsolation) {
-        throw new Error(
-          `Isolation capacity exceeded: ${active.length}/${SWARM_POLICY.maxActiveIsolation} active worktrees.`,
+        console.warn(
+          `[Isolation] Capacity reached (${active.length}). Attempting panic prune...`,
         );
+        const prunable = listWorktrees().filter((w) => w.status === "prunable");
+        if (prunable.length > 0) {
+          // Prune the oldest 5
+          prunable.slice(0, 5).forEach((pw) => {
+            try {
+              removeWorktree(pw.branch, true);
+            } catch (e) {}
+          });
+          active = listWorktrees().filter((w) => w.status === "active");
+        }
+
+        if (active.length >= SWARM_POLICY.maxActiveIsolation) {
+          throw new Error(
+            `Isolation capacity exceeded: ${active.length}/${SWARM_POLICY.maxActiveIsolation} active worktrees and no prunable slots.`,
+          );
+        }
       }
 
       if (!fs.existsSync(WORKTREES_ROOT)) {

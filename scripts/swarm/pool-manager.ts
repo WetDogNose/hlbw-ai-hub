@@ -37,7 +37,7 @@ async function getMcpClient() {
   return client;
 }
 
-export async function initializePool(config: PoolConfig = { workerCount: 4 }) {
+export async function initializePool(config: PoolConfig = { workerCount: 24 }) {
   console.log(
     `[PoolManager] Booting warm pool with ${config.workerCount} generic straight-workers...`,
   );
@@ -48,13 +48,13 @@ export async function initializePool(config: PoolConfig = { workerCount: 4 }) {
     for (let i = 1; i <= config.workerCount; i++) {
       const containerName = `hlbw-worker-warm-${i}`;
       console.log(`[PoolManager] Starting ${containerName}...`);
-
       const envKeys: Record<string, string> = {
         WARM_POOL_ID: `pool-node-${i}`,
         A2A_MODE: "true",
         OTEL_EXPORTER_OTLP_ENDPOINT:
           "http://host.docker.internal:4318/v1/traces",
         SENTRY_ENFORCER_URL: "http://host.docker.internal:8080/a2a/message",
+        NODE_PATH: "/workspace/node_modules", // Force container to find host modules
       };
       if (process.env.GEMINI_API_KEY)
         envKeys.GEMINI_API_KEY = process.env.GEMINI_API_KEY;
@@ -69,6 +69,7 @@ export async function initializePool(config: PoolConfig = { workerCount: 4 }) {
         `${path.join(parentDir, "adk-python")}:/adk-python`,
         `${path.join(parentDir, "adk-js")}:/adk-js`,
         `${path.join(parentDir, "hlbw-home-assistant")}:/hlbw-home-assistant`,
+        `${path.join(parentDir, "hlbw-worktrees")}:/hlbw-worktrees`,
       ];
 
       try {
@@ -76,11 +77,12 @@ export async function initializePool(config: PoolConfig = { workerCount: 4 }) {
           name: "run_container",
           arguments: {
             imageName: "hlbw-swarm-worker:latest",
-            // Entire source tree is mounted, listener determines specific task worktree path
+            containerName: containerName,
+            // Entire source tree is mounted to /workspace by the MCP tool
             mountVolume: absoluteRoot,
             envKeys: envKeys,
             extraBinds: extraBinds,
-            command: ["npx", "tsx", "scripts/swarm/agent-runner.ts"],
+            command: ["npx", "tsx", "/workspace/scripts/swarm/agent-runner.ts"],
           },
         });
         const containerId = (response as any).content[0].text;

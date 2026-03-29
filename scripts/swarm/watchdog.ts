@@ -241,7 +241,7 @@ export async function runWatchdog() {
       );
       console.log(`-------------------------------\n`);
 
-      if (!modified && staleCount === 0) {
+      if (cleanupTargets.length === 0 && staleCount === 0) {
         console.log("Watchdog: All active workers healthy.");
       }
     } catch (err: any) {

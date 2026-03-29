@@ -36,51 +36,53 @@ export async function withStateLock<T>(
 ): Promise<T> {
   await ensureDbExists();
 
-  // Use robust retries for highly concurrent swarms
-  const release = await lockfile
-    .lock(DB_PATH, {
-      retries: {
-        retries: 200, // Retry many times under high load
-        factor: 1.2, // Exponential backoff
-        minTimeout: 50, // Fast retry interval
-        maxTimeout: 2000, // Max delay of 2 seconds
-        randomize: true, // Jitter spreads out stampedes
-      },
-    })
-    .catch((e) => {
-      throw new Error(`Failed to acquire lock for state.json: ${e.message}`);
-    });
+  let release: () => Promise<void> | void = () => {};
+  let retryCount = 0;
+  const maxRetries = 10;
+
+  while (retryCount < maxRetries) {
+    try {
+      // Use robust retries for highly concurrent swarms
+      release = await lockfile.lock(DB_PATH, {
+        retries: {
+          retries: 50, // Retry many times under high load
+          factor: 1.2, // Exponential backoff
+          minTimeout: 50, // Fast retry interval
+          maxTimeout: 1000, // Max delay
+          randomize: true, // Jitter spreads out stampedes
+        },
+        stale: 10000, // Increase stale check to 10s for heavy IO
+      });
+      break;
+    } catch (err) {
+      retryCount++;
+      if (retryCount >= maxRetries) throw err;
+      await new Promise((r) => setTimeout(r, 100 + Math.random() * 200));
+    }
+  }
 
   try {
     const data = await fs.readFile(DB_PATH, "utf-8");
     const state = JSON.parse(data) as SwarmState;
     const result = await fn(state);
-
-    // Write modified state back before releasing
     await fs.writeFile(DB_PATH, JSON.stringify(state, null, 2), "utf-8");
     return result;
   } finally {
-    await release();
+    try {
+      await release();
+    } catch (e) {}
   }
 }
-
 export async function getState(): Promise<SwarmState> {
   await ensureDbExists();
-  // Use a soft-lock for read to prevent reading partial writes
-  let release: () => Promise<void> | void = () => {};
-  try {
-    release = await lockfile.lock(DB_PATH, {
-      retries: { retries: 50, minTimeout: 50, maxTimeout: 1000 },
-    });
-  } catch (err) {
-    // If we fail to get a read lock, proceed anyway and hope fs.readFile hits a full buffer
-  }
-
   try {
     const data = await fs.readFile(DB_PATH, "utf-8");
     return JSON.parse(data) as SwarmState;
-  } finally {
-    await release();
+  } catch (err) {
+    // If we hit a race during write, return empty or wait slightly
+    await new Promise((r) => setTimeout(r, 100));
+    const data = await fs.readFile(DB_PATH, "utf-8");
+    return JSON.parse(data) as SwarmState;
   }
 }
 
