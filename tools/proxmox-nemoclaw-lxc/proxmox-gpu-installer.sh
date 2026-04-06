@@ -50,7 +50,8 @@ update-initramfs -u
 echo "[6/6] Installing Proprietary NVIDIA Drivers via Official Installer..."
 # The Debian apt repository (550 drivers) often fails DKMS build on edge Proxmox kernels (e.g. 6.17+).
 # Downloading the latest driver directly from NVIDIA (.run) ensures better kernel compatibility.
-apt-get install -y build-essential pkg-config libglvnd-dev wget
+# We also ensure dkms, libelf-dev (required by kbuild on newer kernels), and bc are installed.
+apt-get install -y build-essential pkg-config libglvnd-dev wget dkms libelf-dev bc module-assistant
 
 NVIDIA_VERSION="570.86.16"
 NVIDIA_URL="https://us.download.nvidia.com/XFree86/Linux-x86_64/${NVIDIA_VERSION}/NVIDIA-Linux-x86_64-${NVIDIA_VERSION}.run"
