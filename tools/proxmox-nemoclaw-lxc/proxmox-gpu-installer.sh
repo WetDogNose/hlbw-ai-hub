@@ -53,12 +53,27 @@ echo "[6/6] Installing Proprietary NVIDIA Drivers via Debian APT..."
 # The official NVIDIA .run installer struggles severely with path traversal on Proxmox custom Edge/Trixie kernels (missing os-interface.h).
 # Using the distribution-maintained DKMS package ensures proper Kbuild path patching for these kernels.
 # WARNING: We MUST use --no-install-recommends and omit firmware-misc-nonfree to prevent breaking the proxmox-ve meta-package dependency on pve-firmware!
-apt-get install -y --no-install-recommends build-essential pkg-config libglvnd-dev dkms libelf-dev bc module-assistant nvidia-driver nvidia-kernel-dkms || {
-  echo "ERROR: NVIDIA Installation failed!"
+# NOTE: We gracefully allow this to fail because the initial DKMS build will crash due to a DRM API mismatch in Linux 6.17.
+apt-get install -y --no-install-recommends build-essential pkg-config libglvnd-dev dkms libelf-dev bc module-assistant nvidia-driver nvidia-kernel-dkms || echo "Intercepting DKMS failure for patching..."
+
+echo "Patching DKMS to bypass DRM compilation on Edge kernels..."
+# Proxmox 6.17 DRM API broke the nvidia-drm helper signatures, causing GCC-14 fatal pointer mismatch errors.
+# Since this server is headless and GPU passthrough relies exclusively on nvidia/nvidia-uvm for CUDA compute, 
+# we can completely amputate the X11 Display DRM module from the build process to guarantee stability!
+
+# Tell the NVIDIA Kbuild system to skip compiling the DRM module
+sed -i 's/env NV_VERBOSE=1/env NV_VERBOSE=1 NV_EXCLUDE_KERNEL_MODULES=nvidia-drm/g' /usr/src/nvidia-*/dkms.conf 2>/dev/null || true
+
+# Strip nvidia-drm from the list of expected modules so DKMS doesn't crash when it goes looking for the .ko file
+sed -i '/BUILT_MODULE_NAME.*nvidia-drm/d' /usr/src/nvidia-*/dkms.conf 2>/dev/null || true
+sed -i '/DEST_MODULE_LOCATION.*nvidia-drm/d' /usr/src/nvidia-*/dkms.conf 2>/dev/null || true
+
+# Resume the half-configured apt installation, which will re-trigger the patched DKMS build
+echo "Rebuilding DKMS modules without DRM..."
+dpkg --configure -a || {
+  echo "ERROR: NVIDIA Post-Patch Installation failed! Check DKMS logs."
   exit 1
 }
-
-# We must ensure the UVM (Unified Virtual Memory) module loads on boot for passthrough mapping.
 cat <<'EOF' > /etc/modules-load.d/nvidia.conf
 nvidia
 nvidia_uvm
