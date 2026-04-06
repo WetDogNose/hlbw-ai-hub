@@ -23,6 +23,8 @@ if [ -z "$CODENAME" ]; then
     CODENAME="bookworm"
 fi
 
+# Remove previous duplicated list to avoid warnings if debian.sources already has it
+rm -f /etc/apt/sources.list.d/nvidia-components.list
 cat <<EOF > /etc/apt/sources.list.d/nvidia-components.list
 # Added by NemoClaw Proxmox Installer for Proprietary NVIDIA Drivers
 deb http://deb.debian.org/debian ${CODENAME} contrib non-free non-free-firmware
@@ -50,7 +52,8 @@ update-initramfs -u
 echo "[6/6] Installing Proprietary NVIDIA Drivers via Debian APT..."
 # The official NVIDIA .run installer struggles severely with path traversal on Proxmox custom Edge/Trixie kernels (missing os-interface.h).
 # Using the distribution-maintained DKMS package ensures proper Kbuild path patching for these kernels.
-apt-get install -y build-essential pkg-config libglvnd-dev dkms libelf-dev bc module-assistant nvidia-driver nvidia-kernel-dkms firmware-misc-nonfree || {
+# WARNING: We MUST use --no-install-recommends and omit firmware-misc-nonfree to prevent breaking the proxmox-ve meta-package dependency on pve-firmware!
+apt-get install -y --no-install-recommends build-essential pkg-config libglvnd-dev dkms libelf-dev bc module-assistant nvidia-driver nvidia-kernel-dkms || {
   echo "ERROR: NVIDIA Installation failed!"
   exit 1
 }
