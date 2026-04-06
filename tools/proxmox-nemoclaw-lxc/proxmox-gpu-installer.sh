@@ -61,8 +61,9 @@ chmod +x /tmp/nvidia-installer.run
 
 echo "Running NVIDIA Installer (this may take a few minutes)..."
 # --ui=none --no-questions --accept-license: unattended install
+# --kernel-module-type=proprietary: forces the proprietary module (the open-source one fails on 6.17+)
 # --dkms: registers module with DKMS to survive minor kernel updates
-/tmp/nvidia-installer.run --ui=none --no-questions --accept-license --dkms || {
+/tmp/nvidia-installer.run --ui=none --no-questions --accept-license --kernel-module-type=proprietary --dkms || {
   echo "ERROR: NVIDIA Installation failed! Check /var/log/nvidia-installer.log"
   exit 1
 }
