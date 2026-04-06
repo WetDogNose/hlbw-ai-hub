@@ -47,30 +47,13 @@ EOF
 echo "[5/6] Updating initramfs to apply blacklist..."
 update-initramfs -u
 
-echo "[6/6] Installing Proprietary NVIDIA Drivers via Official Installer..."
-# The Debian apt repository (550 drivers) often fails DKMS build on edge Proxmox kernels (e.g. 6.17+).
-# Downloading the latest driver directly from NVIDIA (.run) ensures better kernel compatibility.
-# We also ensure dkms, libelf-dev (required by kbuild on newer kernels), and bc are installed.
-apt-get install -y build-essential pkg-config libglvnd-dev wget dkms libelf-dev bc module-assistant
-
-NVIDIA_VERSION="570.86.16"
-NVIDIA_URL="https://us.download.nvidia.com/XFree86/Linux-x86_64/${NVIDIA_VERSION}/NVIDIA-Linux-x86_64-${NVIDIA_VERSION}.run"
-
-echo "Downloading NVIDIA Driver ${NVIDIA_VERSION}..."
-wget -q --show-progress -O /tmp/nvidia-installer.run "${NVIDIA_URL}"
-chmod +x /tmp/nvidia-installer.run
-
-echo "Running NVIDIA Installer (this may take a few minutes)..."
-# --ui=none --no-questions --accept-license: unattended install
-# --kernel-module-type=proprietary: forces the proprietary module (the open-source one fails on 6.17+)
-# --dkms: registers module with DKMS to survive minor kernel updates
-/tmp/nvidia-installer.run --ui=none --no-questions --accept-license --kernel-module-type=proprietary --dkms || {
-  echo "ERROR: NVIDIA Installation failed! Check /var/log/nvidia-installer.log"
+echo "[6/6] Installing Proprietary NVIDIA Drivers via Debian APT..."
+# The official NVIDIA .run installer struggles severely with path traversal on Proxmox custom Edge/Trixie kernels (missing os-interface.h).
+# Using the distribution-maintained DKMS package ensures proper Kbuild path patching for these kernels.
+apt-get install -y build-essential pkg-config libglvnd-dev dkms libelf-dev bc module-assistant nvidia-driver nvidia-kernel-dkms firmware-misc-nonfree || {
+  echo "ERROR: NVIDIA Installation failed!"
   exit 1
 }
-
-# Clean up
-rm /tmp/nvidia-installer.run
 
 # We must ensure the UVM (Unified Virtual Memory) module loads on boot for passthrough mapping.
 cat <<'EOF' > /etc/modules-load.d/nvidia.conf
