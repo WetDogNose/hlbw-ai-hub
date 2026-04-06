@@ -16,13 +16,19 @@ if [ "$EUID" -ne 0 ]; then
 fi
 
 echo "[1/6] Modifying apt sources to include non-free and non-free-firmware components..."
-# Proxmox 8 is Debian Bookworm. Proxmox 9 is Debian Trixie. Both use non-free-firmware.
-# We append non-free and non-free-firmware robustly to any base debian sources.
-for f in /etc/apt/sources.list /etc/apt/sources.list.d/*.list; do
-  if [ -f "$f" ]; then
-    sed -i -E 's/^(deb\s+.*\s+main).*$/\1 contrib non-free non-free-firmware/g' "$f"
-  fi
-done
+# Instead of relying on sed to parse an unknown sources.list format (which could be deb822),
+# we explicitly drop a new sources list strictly for the missing proprietary components.
+CODENAME=$(grep VERSION_CODENAME /etc/os-release | cut -d= -f2 | tr -d '"' || echo "bookworm")
+if [ -z "$CODENAME" ]; then
+    CODENAME="bookworm"
+fi
+
+cat <<EOF > /etc/apt/sources.list.d/nvidia-components.list
+# Added by NemoClaw Proxmox Installer for Proprietary NVIDIA Drivers
+deb http://deb.debian.org/debian ${CODENAME} contrib non-free non-free-firmware
+deb http://deb.debian.org/debian ${CODENAME}-updates contrib non-free non-free-firmware
+deb http://security.debian.org/debian-security ${CODENAME}-security contrib non-free non-free-firmware
+EOF
 
 echo "[2/6] Updating package lists..."
 apt-get update
