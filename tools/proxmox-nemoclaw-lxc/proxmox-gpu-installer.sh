@@ -16,10 +16,13 @@ if [ "$EUID" -ne 0 ]; then
 fi
 
 echo "[1/6] Modifying apt sources to include non-free and non-free-firmware components..."
-# Proxmox 8 is Debian Bookworm. It uses non-free-firmware.
-# We append non-free and non-free-firmware if they aren't present.
-sed -i -e 's/main contrib$/main contrib non-free non-free-firmware/g' /etc/apt/sources.list
-sed -i -e 's/main$/main contrib non-free non-free-firmware/g' /etc/apt/sources.list
+# Proxmox 8 is Debian Bookworm. Proxmox 9 is Debian Trixie. Both use non-free-firmware.
+# We append non-free and non-free-firmware robustly to any base debian sources.
+for f in /etc/apt/sources.list /etc/apt/sources.list.d/*.list; do
+  if [ -f "$f" ]; then
+    sed -i -E 's/^(deb\s+.*\s+main).*$/\1 contrib non-free non-free-firmware/g' "$f"
+  fi
+done
 
 echo "[2/6] Updating package lists..."
 apt-get update
