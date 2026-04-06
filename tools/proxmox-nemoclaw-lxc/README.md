@@ -4,7 +4,7 @@ This repository provides a deployment pipeline for installing [NVIDIA NemoClaw](
 
 ## System Architecture
 
-The architecture relies on defense-in-depth principles. At every layer, we restrict what the agent environment can touch, while enforcing safe remote management. 
+The architecture relies on defense-in-depth principles. At every layer, we restrict what the agent environment can touch, while enforcing safe remote management.
 
 ```mermaid
 flowchart TD
@@ -88,9 +88,10 @@ These protections are baked directly into the NVIDIA OpenShell runtime that Nemo
 
 ### Local AI Inference (Ollama Integration)
 
-The script automatically provisions **Ollama** natively within the LXC. 
+The script automatically provisions **Ollama** natively within the LXC.
+
 - **GPU Association**: It scans for and attaches itself directly to the `/dev/nvidia*` instances physically mapped via Proxmox `cgroups`.
-- **API Sandbox**: It dynamically spins up an OpenAI-compatible API endpoint exclusively on `http://localhost:11434/v1`. 
+- **API Sandbox**: It dynamically spins up an OpenAI-compatible API endpoint exclusively on `http://localhost:11434/v1`.
 - **Agent Connectivity**: Because the LXC is fiercely locked down by UFW and Unifi VLAN rules, NemoClaw securely accesses Ollama purely via the local loopback interface, pulling and executing models without risking private data exfiltration to external internet services.
 
 ### Required Manual Configurations (Least-Privilege Setup)
@@ -112,15 +113,18 @@ Even with powerful internal sandboxing, operating an LXC inside your homelab nec
 
 1. Put the three `.sh` scripts (`proxmox-gpu-installer.sh`, `nemoclaw.sh`, and `nemoclaw-install.sh`) onto your bare-metal Proxmox host (for example into a folder like `/root/nemoclaw`).
 2. Make them all fully executable. You can do this with a single command:
+
    ```bash
    chmod +x *.sh
    ```
+
 3. Optional: Obtain a [Tailscale Pre-Auth Key](https://login.tailscale.com/admin/settings/keys) for headless VPN onboarding.
 
 ### Step 0: Host NVIDIA Driver Installation (If Needed)
-If you have not already successfully installed the proprietary NVIDIA drivers directly on your bare-metal Proxmox host, you must do so before attempting to deploy the LXC container. **Do not install drivers inside the LXC.** 
 
-We have provided an automated wrapper that safely unlocks the Debian `non-free-firmware` repository, handles the complex Proxmox kernel header mappings, blocks the crashing open-source `nouveau` drivers, and installs `nvidia-driver` via APT.
+If you have not already successfully installed the proprietary NVIDIA drivers directly on your bare-metal Proxmox host, you must do so before attempting to deploy the LXC container. **Do not install drivers inside the LXC.**
+
+We have provided an automated wrapper that securely installs required dependencies and builds the official NVIDIA `.run` driver. This approach ensures compatibility with bleeding-edge Proxmox/Debian edge kernels (like 6.17+) that the default package manager (`apt`) drivers frequently fail to support.
 
 ```bash
 ./proxmox-gpu-installer.sh
@@ -128,8 +132,8 @@ We have provided an automated wrapper that safely unlocks the Debian `non-free-f
 
 > [!NOTE]
 > **Will standard OS updates wipe out the driver?**
-> No! Because this script natively installs the driver via the package manager and sets up the strict Proxmox headers, it rigorously triggers **DKMS** (Dynamic Kernel Module Support). When you run standard `apt upgrade` commands and Proxmox sequentially pulls down a newer kernel patch, DKMS automatically detects the update and seamlessly recompiles your NVIDIA drivers in the background to match it perfectly. 
-> *(If you ever actively want to wipe it out, simply run `apt purge "^nvidia.*"`)*
+> No! Because this script rigorously triggers **DKMS** (Dynamic Kernel Module Support), when you run standard `apt upgrade` commands and Proxmox sequentially pulls down a newer kernel patch, DKMS automatically detects the update and seamlessly recompiles your NVIDIA drivers in the background to match it perfectly.
+> *(If you ever actively want to wipe it out, simply run `/usr/bin/nvidia-uninstall`)*
 
 *Note: You must reboot your Proxmox server after running this script for the kernel modules to fully swap before manually running `nvidia-smi` to test.*
 
@@ -138,6 +142,7 @@ We have provided an automated wrapper that safely unlocks the Debian `non-free-f
 To prevent the autonomous agent from performing lateral movement across your local network if it goes rogue, you must isolate its outbound traffic. You can choose **one** of the two following methods:
 
 ### Option A: Physical UniFi VLAN (Recommended if you have managed switches)
+
 1. Open the Ubiquiti **UniFi Network Application**.
 2. Go to **Settings > Networks > Create New Network**.
 3. Create a network (e.g., VLAN ID `50`, Network Name: `AI-Isolation`).
@@ -146,6 +151,7 @@ To prevent the autonomous agent from performing lateral movement across your loc
 6. In **Proxmox Virtual Environment**, ensure that your node's bridge (usually `vmbr0`) is checked as **VLAN aware**. (You will pass the VLAN ID in Step 3).
 
 ### Option B: Proxmox Native Firewall (Recommended if you don't use VLANs)
+
 If you don't have a Unifi system or managed switches, you can achieve the exact same zero-trust isolation natively built right into the Proxmox hypervisor **fully automatically**.
 
 When you run the `./nemoclaw.sh` deployment script in Step 3, it will explicitly ask you:

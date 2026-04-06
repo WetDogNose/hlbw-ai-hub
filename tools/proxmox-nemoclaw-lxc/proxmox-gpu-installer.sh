@@ -47,9 +47,28 @@ EOF
 echo "[5/6] Updating initramfs to apply blacklist..."
 update-initramfs -u
 
-echo "[6/6] Installing Proprietary NVIDIA Drivers via APT..."
-# Using the Debian repository avoids kernel mismatch issues associated with downloading .run files manually.
-apt-get install -y nvidia-driver nvidia-smi
+echo "[6/6] Installing Proprietary NVIDIA Drivers via Official Installer..."
+# The Debian apt repository (550 drivers) often fails DKMS build on edge Proxmox kernels (e.g. 6.17+).
+# Downloading the latest driver directly from NVIDIA (.run) ensures better kernel compatibility.
+apt-get install -y build-essential pkg-config libglvnd-dev wget
+
+NVIDIA_VERSION="570.86.16"
+NVIDIA_URL="https://us.download.nvidia.com/XFree86/Linux-x86_64/${NVIDIA_VERSION}/NVIDIA-Linux-x86_64-${NVIDIA_VERSION}.run"
+
+echo "Downloading NVIDIA Driver ${NVIDIA_VERSION}..."
+wget -q --show-progress -O /tmp/nvidia-installer.run "${NVIDIA_URL}"
+chmod +x /tmp/nvidia-installer.run
+
+echo "Running NVIDIA Installer (this may take a few minutes)..."
+# --ui=none --no-questions --accept-license: unattended install
+# --dkms: registers module with DKMS to survive minor kernel updates
+/tmp/nvidia-installer.run --ui=none --no-questions --accept-license --dkms || {
+  echo "ERROR: NVIDIA Installation failed! Check /var/log/nvidia-installer.log"
+  exit 1
+}
+
+# Clean up
+rm /tmp/nvidia-installer.run
 
 # We must ensure the UVM (Unified Virtual Memory) module loads on boot for passthrough mapping.
 cat <<'EOF' > /etc/modules-load.d/nvidia.conf
