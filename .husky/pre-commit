@@ -1,2 +1,4 @@
 node scripts/toolchain-doctor.js --pre-commit
+npm run test:types
+npm run test:swarm:types
 npx lint-staged

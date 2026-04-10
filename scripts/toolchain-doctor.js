@@ -651,7 +651,7 @@ try {
         fs.mkdirSync(path.join(__dirname, "..", ".husky"));
       fs.writeFileSync(
         precommitPath,
-        "node scripts/toolchain-doctor.js --pre-commit\\nnpx lint-staged\\n",
+        "node scripts/toolchain-doctor.js --pre-commit\nnpm run test:types\nnpm run test:swarm:types\nnpx lint-staged\n",
       );
       logSuccess("Auto-healed .husky/pre-commit (Husky v9 native format).");
     } catch (e) {

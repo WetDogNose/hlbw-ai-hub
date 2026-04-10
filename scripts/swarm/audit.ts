@@ -1,7 +1,6 @@
 // Real-time Audit Logger (WebSocket Streamer)
 // Streams swarm state transitions to the ai-memory-fragment-monitor.
 
-// @ts-expect-error Types might not be strictly resolved
 import { WebSocket } from "ws";
 import fs from "node:fs";
 

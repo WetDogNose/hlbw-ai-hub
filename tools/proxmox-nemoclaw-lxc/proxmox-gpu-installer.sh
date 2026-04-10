@@ -58,14 +58,118 @@ echo "[6/6] Installing Proprietary NVIDIA Drivers via Debian APT..."
 apt-get purge -y nvidia-kernel-dkms || true
 
 # NOTE: We gracefully allow this to fail because the initial DKMS build will crash due to a DRM API mismatch in Linux 6.17.
-apt-get install -y --no-install-recommends build-essential pkg-config libglvnd-dev dkms libelf-dev bc module-assistant nvidia-driver nvidia-kernel-dkms || echo "Intercepting DKMS failure for patching..."
+apt-get install -y --no-install-recommends build-essential pkg-config libglvnd-dev dkms libelf-dev bc module-assistant nvidia-driver nvidia-kernel-dkms nvidia-smi || echo "Intercepting DKMS failure for patching..."
 
-echo "Patching DKMS to bypass DRM compilation on Edge kernels..."
+echo "Patching DKMS to accommodate DRM API changes on Edge kernels..."
 # Proxmox 6.17 DRM API broke the nvidia-drm helper signatures, causing GCC-14 fatal pointer mismatch errors.
-# Instead of deleting the module from building (which breaks dkms.conf arrays), we inject KCFLAGS to downgrade the fatal error to a warning.
-# Since this server is headless, the broken DRM display API will safely never be executed or cause panics.
-
+# We inject KCFLAGS to downgrade general pointer mismatch fatal errors to a warning.
 sed -i 's/env NV_VERBOSE=1/env NV_VERBOSE=1 KCFLAGS="-Wno-error=incompatible-pointer-types"/g' /usr/src/nvidia-*/dkms.conf 2>/dev/null || true
+
+# We also apply a community patch from Joan Bruguera Mico to fix the fb_create API mismatch:
+cat << 'EOF_PATCH' > /tmp/nvidia-6-17.patch
+From fd52e276f587394b9ae3ba7013b6a44cbdd526f2 Mon Sep 17 00:00:00 2001
+From: Joan Bruguera Mico <joanbrugueram@gmail.com>
+Date: Sat, 26 Jul 2025 21:19:03 +0000
+Subject: [PATCH] Fix for NVIDIA 550.xx driver for Linux 6.17+
+
+---
+ nvidia-drm/nvidia-drm-drv.c | 8 ++++++++
+ nvidia-drm/nvidia-drm-fb.c  | 9 +++++++++
+ nvidia-drm/nvidia-drm-fb.h  | 6 ++++++
+ 3 files changed, 23 insertions(+)
+
+diff --git a/nvidia-drm/nvidia-drm-drv.c b/nvidia-drm/nvidia-drm-drv.c
+index b50b17a..9da3294 100644
+--- a/nvidia-drm/nvidia-drm-drv.c
++++ b/nvidia-drm/nvidia-drm-drv.c
+@@ -202,6 +202,10 @@ static void nv_drm_output_poll_changed(struct drm_device *dev)
+ static struct drm_framebuffer *nv_drm_framebuffer_create(
+     struct drm_device *dev,
+     struct drm_file *file,
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 17, 0)
++    // Rel. commit. "drm: Pass the format info to .fb_create()" (Ville Syrjala, 1 Jul 2025)
++    const struct drm_format_info *info,
++#endif
+     #if defined(NV_DRM_HELPER_MODE_FILL_FB_STRUCT_HAS_CONST_MODE_CMD_ARG)
+     const struct drm_mode_fb_cmd2 *cmd
+     #else
+@@ -217,6 +221,10 @@ static struct drm_framebuffer *nv_drm_framebuffer_create(
+     fb = nv_drm_internal_framebuffer_create(
+             dev,
+             file,
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 17, 0)
++            // Rel. commit. "drm: Allow the caller to pass in the format info to drm_helper_mode_fill_fb_struct()" (Ville Syrjala, 1 Jul 2025)
++            info,
++#endif
+             &local_cmd);
+ 
+     #if !defined(NV_DRM_HELPER_MODE_FILL_FB_STRUCT_HAS_CONST_MODE_CMD_ARG)
+diff --git a/nvidia-drm/nvidia-drm-fb.c b/nvidia-drm/nvidia-drm-fb.c
+index d119e7c..b84e026 100644
+--- a/nvidia-drm/nvidia-drm-fb.c
++++ b/nvidia-drm/nvidia-drm-fb.c
+@@ -33,6 +33,7 @@
+ #include "nvidia-drm-format.h"
+ 
+ #include <drm/drm_crtc_helper.h>
++#include <linux/version.h>
+ 
+ static void __nv_drm_framebuffer_free(struct nv_drm_framebuffer *nv_fb)
+ {
+@@ -246,6 +247,10 @@ static int nv_drm_framebuffer_init(struct drm_device *dev,
+ struct drm_framebuffer *nv_drm_internal_framebuffer_create(
+     struct drm_device *dev,
+     struct drm_file *file,
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 17, 0)
++    // Rel. commit. "drm: Allow the caller to pass in the format info to drm_helper_mode_fill_fb_struct()" (Ville Syrjala, 1 Jul 2025)
++    const struct drm_format_info *info,
++#endif
+     struct drm_mode_fb_cmd2 *cmd)
+ {
+     struct nv_drm_device *nv_dev = to_nv_device(dev);
+@@ -299,6 +304,10 @@ struct drm_framebuffer *nv_drm_internal_framebuffer_create(
+         dev,
+         #endif
+         &nv_fb->base,
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 17, 0)
++        // Rel. commit. "drm: Allow the caller to pass in the format info to drm_helper_mode_fill_fb_struct()" (Ville Syrjala, 1 Jul 2025)
++        info,
++#endif
+         cmd);
+ 
+     /*
+diff --git a/nvidia-drm/nvidia-drm-fb.h b/nvidia-drm/nvidia-drm-fb.h
+index cf477cc..b61b309 100644
+--- a/nvidia-drm/nvidia-drm-fb.h
++++ b/nvidia-drm/nvidia-drm-fb.h
+@@ -35,6 +35,8 @@
+ #include <drm/drm_framebuffer.h>
+ #endif
+ 
++#include <linux/version.h>
++
+ #include "nvidia-drm-gem-nvkms-memory.h"
+ #include "nvkms-kapi.h"
+ 
+@@ -59,6 +61,10 @@ static inline struct nv_drm_framebuffer *to_nv_framebuffer(
+ struct drm_framebuffer *nv_drm_internal_framebuffer_create(
+     struct drm_device *dev,
+     struct drm_file *file,
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 17, 0)
++    // Rel. commit. "drm: Allow the caller to pass in the format info to drm_helper_mode_fill_fb_struct()" (Ville Syrjala, 1 Jul 2025)
++    const struct drm_format_info *info,
++#endif
+     struct drm_mode_fb_cmd2 *cmd);
+ 
+ #endif /* NV_DRM_ATOMIC_MODESET_AVAILABLE */
+EOF_PATCH
+
+for dkms_dir in /usr/src/nvidia-* ; do
+    if [ -d "$dkms_dir" ]; then
+        echo "Applying Linux 6.17 fb_create patch to $dkms_dir..."
+        patch -p1 -d "$dkms_dir" < /tmp/nvidia-6-17.patch || echo "Patch failed or already applied."
+    fi
+done
 
 # Resume the half-configured apt installation, which will re-trigger the patched DKMS build
 echo "Rebuilding DKMS modules..."
