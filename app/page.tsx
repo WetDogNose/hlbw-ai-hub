@@ -99,11 +99,11 @@ export default async function Home() {
           }}
         >
           <Link
-            href="/docs"
-            className="btn btn-primary w-full"
-            style={{ padding: "var(--spacing-2)" }}
+            href="/admin/scion"
+            className="btn w-full"
+            style={{ padding: "var(--spacing-2)", background: "linear-gradient(to right, #38bdf8, #818cf8)", color: "white", border: "none", fontWeight: "bold" }}
           >
-            Documentation Hub
+            Scion Command Center
           </Link>
           <Link
             href="/admin/stats"
@@ -111,6 +111,13 @@ export default async function Home() {
             style={{ padding: "var(--spacing-2)" }}
           >
             Admin Dashboard
+          </Link>
+          <Link
+            href="/docs"
+            className="btn btn-outline w-full"
+            style={{ padding: "var(--spacing-2)" }}
+          >
+            Documentation Hub
           </Link>
         </div>
       </div>

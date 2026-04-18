@@ -1,0 +1,1 @@
+{"version":"1.0","task_id":"test-task-cloud-1234","session_id":"test-task-cloud-1234","message":"Please run a dummy tool call to gcp-trace-mcp and say DONE.","context":{"worktree":"test-branch","persistence_mode":"ephemeral","category":"3_cloud"}}

@@ -1,0 +1,15 @@
+{
+  "name": "ai-memory-fragment-monitor",
+  "version": "1.0.0",
+  "description": "Real-time memory fragment monitor for Swarm workers and Neo4j.",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.21.0",
+    "neo4j-driver": "^5.25.0",
+    "ws": "^8.18.0"
+  }
+}

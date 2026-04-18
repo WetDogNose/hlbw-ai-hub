@@ -30,3 +30,38 @@ Violating this directive will result in unstyled, broken UI layers because Tailw
 - **INDEPENDENT TURNS:** Execute independent tool calls (e.g., reading 3 different files, searching 2 patterns) in **parallel** within a single conversational turn. Do NOT set `wait_for_previous: true` unless there is a direct data dependency.
 
 Failure to follow these rules results in wasted context and "laggy" orchestration that slows down the user's velocity.
+
+---
+
+### [SYSTEM DIRECTIVE FOR HARNESS-REFACTORING AGENT]
+
+**ROLE:** You are an expert systems architect upgrading a legacy LLM agent harness to meet Q1 2026 production standards. Your mandate is to eliminate fragile, linear execution loops and replace them with a stateful, self-improving, multi-agent architecture.
+
+**CORE ARCHITECTURAL SHIFTS TO IMPLEMENT:**
+
+**1. Transition from Linear Chaining to Stateful Graph Orchestration**
+* **The Flaw:** Standard `while` loops and linear chains fail in long-horizon tasks. They lack interruptibility and state persistence.
+* **The Fix:** Implement a cyclical graph architecture (e.g., LangGraph or an equivalent state machine). The harness must treat every agent step as a discrete node that reads from and writes to a persistent state object. 
+* **Implementation:** The harness must support human-in-the-loop interruption points, context offloading to a local database (episodic memory), and explicit control boundaries using MCP (Model Context Protocol) for tool execution.
+* *Source Context:* [AI Agent Architecture: Build Systems That Work in 2026 (Redis, Feb 2026)](https://redis.io/blog/ai-agent-architecture/) | [On Agent Frameworks and Agent Observability (LangChain, Feb 2026)](https://www.langchain.com/blog/on-agent-frameworks-and-agent-observability)
+
+**2. Scale Test-Time Interaction, Not Just "Thinking"**
+* **The Flaw:** Traditional test-time scaling simply asks the model to generate longer Chain-of-Thought traces before acting. This fails in partially observable environments because the agent cannot acquire new information by just "thinking harder."
+* **The Fix:** The harness must implement **Test-Time Interaction Scaling**. 
+* **Implementation:** Modify the agent's core loop to enforce information-gathering prior to final execution. The harness must allow the agent to take exploratory actions, query the environment, backtrack, and dynamically re-plan *within a single rollout*. Do not force the agent to predict the optimal path from step zero.
+* *Source Context:* [Thinking vs. Doing: Improving Agent Reasoning by Scaling Test-Time Interaction (NeurIPS, Dec 2025)](https://neurips.cc/virtual/2025/poster/115466)
+
+**3. Implement Intrinsic Metacognition (Separation of Roles)**
+* **The Flaw:** A single agent generating an output and then grading its own output in the same context window leads to severe bias and hallucination loops.
+* **The Fix:** The harness must instantiate distinct, specialized roles: an Actor, an Evaluator/Critic, and an Orchestrator.
+* **Implementation:** Build a reflection loop where the Evaluator explicitly scores the Actor's proposed plan or tool call against a strict rubric *before* execution. If the score falls below a threshold, the Evaluator generates a critique, and the task is routed back to the Actor for refinement. Implement early stopping with confidence scoring to prevent endless critique loops.
+* *Source Context:* [Reflective and Self-Improving Agents (Medium, Mar 2026)](https://medium.com/@swapnilshekade/reflective-and-self-improving-agents-building-ai-systems-that-critique-iterate-and-learn-from-fd3a57f62085) | [Stanford CS329A: Self-Improving AI Agents](https://cs329a.stanford.edu/)
+
+**4. Shift Multi-Turn Reinforcement Learning to Turn-PPO**
+* **The Flaw:** Using standard GRPO (Group Relative Policy Optimization)—the method popularized by earlier models like DeepSeek-R1—for multi-turn, interactive agent training has proven highly unstable in complex environments.
+* **The Fix:** If the harness incorporates live RL, implement **Turn-PPO**.
+* **Implementation:** Introduce a learnable critic model at the *turn level* rather than the token level. The harness must calculate advantage estimation for multi-turn interactions using Proximal Policy Optimization (PPO), which stabilizes credit assignment when the agent is using complex tools over a long horizon.
+* *Source Context:* [Turn-PPO: Turn-Level Advantage Estimation with PPO for Improved Multi-Turn RL in Agentic LLMs (EACL, Mar 2026)](https://aclanthology.org/2026.findings-eacl.328.pdf) | [Process-Supervised RL for Tool-Use Agents (OpenReview, 2026)](https://openreview.net/pdf?id=UtEY8lF8q2)
+
+**EXECUTION MANDATE:**
+Review the current codebase. Rip out any hardcoded procedural recovery logic. Replace it with a centralized orchestrator that routes state to specialized evaluator agents, utilizes graph-based memory, and scales interaction steps prior to final execution. Output the refactored code block by block.

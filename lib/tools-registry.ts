@@ -26,10 +26,14 @@ function parseFrontmatter(content: string): {
     const frontmatter = match[1];
 
     const nameMatch = frontmatter.match(/^name:\s*(.*)/m);
-    if (nameMatch) name = nameMatch[1].trim();
+    if (nameMatch) {
+      name = nameMatch[1].trim().replace(/^["']|["']$/g, '');
+    }
 
     const descMatch = frontmatter.match(/^description:\s*(.*)/m);
-    if (descMatch) description = descMatch[1].trim();
+    if (descMatch) {
+      description = descMatch[1].trim().replace(/^["']|["']$/g, '');
+    }
   }
 
   return { name, description };

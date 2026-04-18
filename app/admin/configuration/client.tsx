@@ -66,7 +66,10 @@ export default function ConfigurationClient({
       [service]: { status: "loading" },
     }));
     try {
-      const res = await fetch(`/api/admin/health?service=${service}`);
+      const controller = new AbortController();
+      const id = setTimeout(() => controller.abort(), 10000);
+      const res = await fetch(`/api/admin/health?service=${service}`, { signal: controller.signal });
+      clearTimeout(id);
       const data = await res.json();
 
       if (res.ok && data.status === "ok") {
@@ -88,7 +91,7 @@ export default function ConfigurationClient({
         ...prev,
         [service]: {
           status: "error",
-          message: error.message || "Network error",
+          message: error.name === 'AbortError' ? "Timeout after 10s" : (error.message || "Network error"),
         },
       }));
     }

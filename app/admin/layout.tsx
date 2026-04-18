@@ -3,15 +3,10 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import {
   ArrowLeft,
-  Users,
   ShieldAlert,
-  Activity,
-  Cpu,
-  Wrench,
-  Settings,
-  Palette,
 } from "lucide-react";
 import { getAdminNotificationCounts } from "@/lib/admin-notifications";
+import AdminNav from "@/components/admin-nav";
 
 export default async function AdminLayout({
   children,
@@ -46,33 +41,7 @@ export default async function AdminLayout({
         </div>
       </header>
 
-      <nav className="admin-nav-bar">
-        <Link href="/admin/stats" className="nav-pill">
-          <Activity size={18} style={{ color: "var(--info-color)" }} />
-          <span>App Stats & Costs</span>
-        </Link>
-        <Link href="/admin/ai" className="nav-pill">
-          <Cpu size={18} style={{ color: "var(--purple-color)" }} />
-          <span>AI Configuration</span>
-        </Link>
-        <Link href="/admin/maintenance" className="nav-pill relative">
-          <Wrench size={18} style={{ color: "var(--warning-color)" }} />
-          <span>Maintenance</span>
-          {notifications.systemIssues > 0 && (
-            <span className="badge badge-danger ml-2">
-              {notifications.systemIssues}
-            </span>
-          )}
-        </Link>
-        <Link href="/admin/configuration" className="nav-pill">
-          <Settings size={18} style={{ color: "var(--success-color)" }} />
-          <span>Configuration</span>
-        </Link>
-        <Link href="/admin/appearance" className="nav-pill">
-          <Palette size={18} style={{ color: "var(--accent-color)" }} />
-          <span>Appearance</span>
-        </Link>
-      </nav>
+      <AdminNav notifications={notifications} />
 
       <main className="card">
         <div className="card-body">{children}</div>

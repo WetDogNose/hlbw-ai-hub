@@ -4,14 +4,25 @@ import useSWR from "swr";
 import { Activity, Database, Server, Users } from "lucide-react";
 
 const fetcher = async (url: string) => {
-  const res = await fetch(url);
-  const data = await res.json();
-  if (!res.ok) {
-    throw new Error(
-      data?.error || "An error occurred while fetching the data.",
-    );
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), 10000);
+  try {
+    const res = await fetch(url, { signal: controller.signal });
+    clearTimeout(id);
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(
+        data?.error || "An error occurred while fetching the data.",
+      );
+    }
+    return data;
+  } catch (err: any) {
+    clearTimeout(id);
+    if (err.name === 'AbortError') {
+      throw new Error("Connection timed out (10s) waiting for stats endpoint.");
+    }
+    throw err;
   }
-  return data;
 };
 
 export default function StatsClient() {

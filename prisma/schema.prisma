@@ -143,3 +143,102 @@ model SystemSetting {
   updatedAt           DateTime @updatedAt
   autoApproveNewUsers Boolean  @default(false)
 }
+
+// --- Paperclip.ing Orchestration Models ---
+
+model Organization {
+  id          String   @id @default(cuid())
+  name        String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  agents      AgentPersona[]
+  goals       Goal[]
+}
+
+model AgentPersona {
+  id             String       @id @default(cuid())
+  name           String
+  role           String       // e.g. "CTO", "QA", "DEV"
+  status         String       @default("IDLE") // IDLE, RUNNING, PAUSED
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  issues         Issue[]      @relation("AssignedAgent")
+  ledgers        BudgetLedger[]
+}
+
+model Goal {
+  id             String       @id @default(cuid())
+  description    String
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  issues         Issue[]
+}
+
+model Thread {
+  id        String   @id @default(cuid())
+  title     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  issues    Issue[]
+}
+
+model Issue {
+  id               String          @id @default(cuid())
+  instruction      String
+  status           String          @default("OPEN") // OPEN, IN_PROGRESS, PAUSED, COMPLETED, BLOCKED
+  threadId         String
+  thread           Thread          @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  assignedAgentId  String?
+  assignedAgent    AgentPersona?   @relation("AssignedAgent", fields: [assignedAgentId], references: [id])
+  goalId           String?
+  goal             Goal?           @relation(fields: [goalId], references: [id])
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+  parentRelations  IssueRelation[] @relation("ParentIssue")
+  childRelations   IssueRelation[] @relation("ChildIssue")
+  ledgers          BudgetLedger[]
+}
+
+model IssueRelation {
+  id            String   @id @default(cuid())
+  parentIssueId String
+  childIssueId  String
+  parentIssue   Issue    @relation("ParentIssue", fields: [parentIssueId], references: [id], onDelete: Cascade)
+  childIssue    Issue    @relation("ChildIssue", fields: [childIssueId], references: [id], onDelete: Cascade)
+  dependencyType String  @default("BLOCKS") // BLOCKS, RELATES_TO
+}
+
+model Routine {
+  id             String   @id @default(cuid())
+  cronExpression String
+  taskPayload    String
+  isActive       Boolean  @default(true)
+  lastRunAt      DateTime?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model BudgetLedger {
+  id            String       @id @default(cuid())
+  agentId       String
+  agent         AgentPersona @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  issueId       String?
+  issue         Issue?       @relation(fields: [issueId], references: [id], onDelete: SetNull)
+  tokensUsed    Int
+  cost          Float        @default(0.0)
+  timestamp     DateTime     @default(now())
+}
+
+model WebhookConfig {
+  id          String   @id @default(cuid())
+  name        String
+  endpoint    String
+  secret      String
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
