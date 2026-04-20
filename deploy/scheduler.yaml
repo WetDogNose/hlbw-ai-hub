@@ -1,0 +1,38 @@
+# -----------------------------------------------------------------------------
+# Drafted in pass 6 of the re-architecture. NOT deployed by cloudbuild.yaml.
+# Per docs/re-arch/decisions.md D4: draft the YAML, do NOT deploy.
+#
+# To enable (deferred to pass 20), add a step to cloudbuild.yaml that runs:
+#
+#   gcloud scheduler jobs create http hlbw-ai-hub-heartbeat \
+#     --schedule="*/2 * * * *" \
+#     --location=asia-southeast1 \
+#     --http-method=POST \
+#     --uri="https://hlbw-ai-hub.com/api/orchestrator/heartbeat" \
+#     --headers="Content-Type=application/json,x-orchestrator-secret=$(gcloud secrets versions access latest --secret=orchestrator-shared-secret)" \
+#     --message-body='{"limit":10}' \
+#     --description="Heartbeat-driven dispatch of pending Issues to swarm workers."
+#
+# OR consume this file:
+#
+#   gcloud scheduler jobs create http hlbw-ai-hub-heartbeat \
+#     --location=asia-southeast1 \
+#     --flags-file=deploy/scheduler.yaml
+#
+# The decision to wire this is deferred to pass 20.
+# -----------------------------------------------------------------------------
+
+schedule: "*/2 * * * *"
+time-zone: "Etc/UTC"
+http-method: POST
+uri: "https://hlbw-ai-hub.com/api/orchestrator/heartbeat"
+headers:
+  Content-Type: "application/json"
+  # Populated at deploy time from the `orchestrator-shared-secret` Secret Manager
+  # secret. Do NOT commit a real value here. Cloud Scheduler supports
+  # `oidc-token` for IAM-gated calls; the shared-secret header is retained
+  # for symmetry with local dev where IAM is not available.
+  x-orchestrator-secret: "${ORCHESTRATOR_SHARED_SECRET}"
+message-body: '{"limit":10}'
+description: "Pass 6 draft — heartbeat dispatch. Not deployed until pass 20."
+attempt-deadline: "60s"

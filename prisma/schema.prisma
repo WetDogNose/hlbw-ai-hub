@@ -188,8 +188,19 @@ model Thread {
 
 model Issue {
   id               String          @id @default(cuid())
+  // Pass 4: unified Task/Issue model — see docs/re-arch/pass-04-result.md
+  title            String?
   instruction      String
-  status           String          @default("OPEN") // OPEN, IN_PROGRESS, PAUSED, COMPLETED, BLOCKED
+  status           String          @default("pending") // pending, in_progress, blocked, completed, failed, cancelled, needs_human
+  priority         Int             @default(5)
+  dependencies     String[]        @default([])
+  blockedBy        String[]        @default([])
+  agentCategory    String?
+  isolationId      String?
+  assignedAgentLabel String?
+  startedAt        DateTime?
+  completedAt      DateTime?
+  metadata         Json            @default("{}")
   threadId         String
   thread           Thread          @relation(fields: [threadId], references: [id], onDelete: Cascade)
   assignedAgentId  String?
@@ -201,6 +212,7 @@ model Issue {
   parentRelations  IssueRelation[] @relation("ParentIssue")
   childRelations   IssueRelation[] @relation("ChildIssue")
   ledgers          BudgetLedger[]
+  graphState       TaskGraphState?
 }
 
 model IssueRelation {
@@ -241,4 +253,55 @@ model WebhookConfig {
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+// Pass 7: single episodic memory store (decisions.md D1 — Postgres + pgvector).
+// `taskId` is a loose scalar reference to `Issue.id`; no FK because some episodes
+// aren't task-scoped (global discoveries, bootstrap context, etc.).
+model MemoryEpisode {
+  id            String                       @id @default(cuid())
+  taskId        String?
+  kind          String
+  agentCategory String?
+  content       Json
+  summary       String
+  embedding     Unsupported("vector(768)")?
+  createdAt     DateTime                     @default(now())
+
+  @@index([taskId])
+  @@index([kind])
+  @@index([createdAt])
+  @@map("memory_episode")
+}
+
+// Pass 8: StateGraph runtime persistence. One row per Issue that is being
+// driven by the in-house graph runtime. `currentNode` + `status` form the
+// atomic progress marker; `context` is the running state object each node
+// reads/writes; `history` is an append-only log of HistoryEntry records.
+// Every mutation MUST be wrapped in `prisma.$transaction` with a `FOR UPDATE`
+// row lock acquired via $queryRaw — see lib/orchestration/graph/StateGraph.ts.
+model TaskGraphState {
+  id               String           @id @default(cuid())
+  issueId          String           @unique
+  issue            Issue            @relation(fields: [issueId], references: [id], onDelete: Cascade)
+  currentNode      String
+  status           GraphStateStatus @default(running)
+  context          Json             @default("{}")
+  history          Json             @default("[]")
+  interruptReason  String?
+  lastTransitionAt DateTime         @default(now())
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  @@index([status])
+  @@index([currentNode])
+  @@map("task_graph_state")
+}
+
+enum GraphStateStatus {
+  running
+  paused
+  interrupted
+  completed
+  failed
 }

@@ -608,3 +608,543 @@ button {
   pointer-events: none;
 }
 
+/* === SCION / Orchestration (added pass 3) === */
+/* Pass 3 of the re-arch replaces Tailwind utilities on the SCION dashboard
+   and orchestration components with the semantic classes below. Colors use
+   existing CSS variables where possible; the SCION surface is intentionally
+   dark-biased (not theme-switched) so a handful of dark-panel literals are
+   inlined with explanatory comments. */
+
+.scion-container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-8);
+  padding: var(--spacing-8);
+  min-height: 80vh;
+  border-radius: var(--border-radius-2xl, 20px);
+  /* SCION surface is dark regardless of theme; literal gradient kept. */
+  background: linear-gradient(145deg, #0f172a, #1e293b);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.35);
+  color: #f8fafc;
+}
+
+.scion-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding-bottom: var(--spacing-6);
+  gap: var(--spacing-4);
+  flex-wrap: wrap;
+}
+
+.scion-title {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3);
+  margin: 0;
+  font-size: 2.25rem;
+  font-weight: 800;
+  /* Literal gradient matches the SCION dashboard brand colours. */
+  background: linear-gradient(to right, #38bdf8, #818cf8);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+
+.scion-title-icon {
+  color: #38bdf8;
+}
+
+.scion-subtitle {
+  color: #94a3b8;
+  margin-top: var(--spacing-2);
+  font-size: 1.125rem;
+}
+
+.scion-actions {
+  display: flex;
+  gap: var(--spacing-4);
+  flex-wrap: wrap;
+}
+
+.scion-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  padding: var(--spacing-2) var(--spacing-4);
+  border-radius: var(--border-radius-md);
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+  border: 1px solid transparent;
+}
+
+.scion-status-pill--settings {
+  background-color: rgba(30, 41, 59, 0.5);
+  border-color: #334155;
+  color: #cbd5e1;
+}
+
+.scion-status-pill--settings:hover {
+  background-color: #334155;
+}
+
+.scion-status-pill--ok {
+  background-color: rgba(16, 185, 129, 0.1);
+  border-color: rgba(16, 185, 129, 0.2);
+  color: #34d399;
+}
+
+.scion-status-pill--warn {
+  background-color: rgba(239, 68, 68, 0.1);
+  border-color: rgba(239, 68, 68, 0.2);
+  color: #f87171;
+}
+
+.orchestration-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--spacing-8);
+}
+
+@media (min-width: 1024px) {
+  .orchestration-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.orchestration-panel {
+  background-color: #0f172a;
+  border: 1px solid #1e293b;
+  border-radius: var(--border-radius-lg);
+  padding: var(--spacing-6);
+  box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.35);
+}
+
+.orchestration-panel--full {
+  grid-column: 1 / -1;
+}
+
+.orchestration-panel__title {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  margin: 0 0 var(--spacing-4) 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.orchestration-panel__title--info {
+  color: #38bdf8;
+}
+
+.orchestration-panel__title--goal {
+  color: #818cf8;
+}
+
+.orchestration-panel__title--inbox {
+  color: #fbbf24;
+}
+
+.orchestration-panel__title--ledger {
+  color: #34d399;
+}
+
+/* Topography tree */
+.topography-tree {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-4);
+  color: #cbd5e1;
+}
+
+.topography-node {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3);
+  padding: var(--spacing-3);
+  background-color: #1e293b;
+  border: 1px solid #334155;
+  border-radius: var(--border-radius-md);
+}
+
+.topography-node__icon--coordinator { color: #c084fc; }
+.topography-node__icon--ok { color: #4ade80; }
+.topography-node__icon--info { color: #60a5fa; }
+
+.topography-node__body { flex: 1; }
+
+.topography-node__label {
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.topography-node__meta {
+  font-size: 0.75rem;
+  color: #94a3b8;
+}
+
+.topography-children {
+  margin-left: var(--spacing-8);
+  border-left: 2px solid #334155;
+  padding-left: var(--spacing-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-4);
+}
+
+/* Goal tracker */
+.goal-tracker {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-3);
+}
+
+.goal-tracker__item {
+  background-color: #1e293b;
+  padding: var(--spacing-3);
+  border-radius: var(--border-radius-md);
+  border: 1px solid #334155;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  transition: border-color 0.2s ease;
+}
+
+.goal-tracker__item:hover {
+  border-color: #6366f1;
+}
+
+.goal-tracker__label {
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.goal-tracker__meta {
+  font-size: 0.75rem;
+  color: #94a3b8;
+}
+
+.goal-tracker__arrow {
+  color: #818cf8;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.goal-tracker__item:hover .goal-tracker__arrow {
+  opacity: 1;
+}
+
+/* Issue inbox */
+.issue-inbox {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+}
+
+.issue-inbox__link {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+}
+
+.issue-row {
+  background-color: #1e293b;
+  padding: var(--spacing-4);
+  border-radius: var(--border-radius-md);
+  border: 1px solid #334155;
+  transition: border-color 0.2s ease;
+  cursor: pointer;
+}
+
+.issue-row:hover {
+  border-color: #f59e0b;
+}
+
+.issue-row__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--spacing-2);
+}
+
+.issue-row__title {
+  font-weight: 700;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+}
+
+.issue-row__body {
+  font-size: 0.875rem;
+  color: #94a3b8;
+}
+
+.issue-status {
+  font-size: 0.75rem;
+  padding: var(--spacing-1) var(--spacing-2);
+  border-radius: var(--border-radius-sm);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.issue-status--blocked {
+  background-color: rgba(239, 68, 68, 0.2);
+  color: #f87171;
+}
+
+.issue-status--open {
+  background-color: rgba(59, 130, 246, 0.2);
+  color: #60a5fa;
+}
+
+.issue-status--in-progress {
+  background-color: rgba(245, 158, 11, 0.2);
+  color: #fbbf24;
+}
+
+/* Global ledger */
+.global-ledger {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--spacing-4);
+}
+
+.ledger-cell {
+  background-color: #1e293b;
+  padding: var(--spacing-4);
+  border-radius: var(--border-radius-md);
+  border: 1px solid #334155;
+}
+
+.ledger-cell__label {
+  font-size: 0.875rem;
+  color: #94a3b8;
+  margin-bottom: var(--spacing-1);
+}
+
+.ledger-cell__value {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.ledger-cell__trend--up { color: #f87171; }
+.ledger-cell__trend--down { color: #34d399; }
+
+/* Pass 16 additions — execute dialog, filters, progress bars, empty states. */
+
+.scion-error-banner {
+  margin-top: var(--spacing-4);
+  padding: var(--spacing-3) var(--spacing-4);
+  border-radius: var(--border-radius-md);
+  background-color: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #fecaca;
+  font-size: 0.9rem;
+}
+
+.execute-dialog {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-4);
+  padding: var(--spacing-4);
+  background-color: #0f172a;
+  border: 1px solid #1e293b;
+  border-radius: var(--border-radius-lg);
+}
+
+.execute-dialog__title {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  margin: 0;
+  font-size: 1.1rem;
+  color: #60a5fa;
+}
+
+.execute-dialog__row {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: var(--spacing-4);
+}
+
+.execute-dialog__label {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-1);
+  font-size: 0.85rem;
+  color: #cbd5e1;
+}
+
+.execute-dialog__input,
+.execute-dialog__textarea {
+  padding: var(--spacing-2) var(--spacing-3);
+  background-color: #1e293b;
+  border: 1px solid #334155;
+  border-radius: var(--border-radius-sm);
+  color: #f8fafc;
+  font: inherit;
+}
+
+.execute-dialog__textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.execute-dialog__footer {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-4);
+}
+
+.execute-dialog__submit {
+  padding: var(--spacing-2) var(--spacing-4);
+  background-color: #38bdf8;
+  color: #0f172a;
+  border: none;
+  border-radius: var(--border-radius-sm);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.execute-dialog__submit:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.execute-dialog__toast {
+  font-size: 0.85rem;
+}
+
+.execute-dialog__toast--ok { color: #34d399; }
+.execute-dialog__toast--error { color: #f87171; }
+
+/* Topography grouping */
+.topography-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-2);
+  margin-bottom: var(--spacing-3);
+}
+
+.topography-summary__chip {
+  padding: var(--spacing-1) var(--spacing-2);
+  background-color: #1e293b;
+  border: 1px solid #334155;
+  border-radius: var(--border-radius-sm);
+  font-size: 0.75rem;
+  color: #cbd5e1;
+}
+
+.topography-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+}
+
+.topography-group__header {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #94a3b8;
+}
+
+.topography-group__children {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+}
+
+.topography-empty {
+  padding: var(--spacing-3);
+  color: #94a3b8;
+  font-style: italic;
+}
+
+/* Goal progress */
+.goal-progress {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+  margin-bottom: var(--spacing-4);
+}
+
+.goal-progress__label {
+  font-size: 0.85rem;
+  color: #cbd5e1;
+}
+
+.goal-progress__bar,
+.ledger-progress__bar {
+  width: 100%;
+  height: 8px;
+  background-color: #1e293b;
+  border-radius: var(--border-radius-full);
+  overflow: hidden;
+}
+
+.goal-progress__fill,
+.ledger-progress__fill {
+  height: 100%;
+  background: linear-gradient(to right, #38bdf8, #818cf8);
+  transition: width 0.3s ease;
+}
+
+.ledger-progress {
+  margin-top: var(--spacing-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+}
+
+.ledger-progress__label {
+  font-size: 0.8rem;
+  color: #94a3b8;
+}
+
+.goal-tracker__item--empty {
+  font-style: italic;
+  color: #94a3b8;
+}
+
+/* Issue inbox controls */
+.issue-inbox__controls {
+  display: flex;
+  gap: var(--spacing-4);
+  margin-bottom: var(--spacing-3);
+}
+
+.issue-inbox__control-label {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  font-size: 0.85rem;
+  color: #cbd5e1;
+}
+
+.issue-inbox__control {
+  padding: var(--spacing-1) var(--spacing-2);
+  background-color: #1e293b;
+  border: 1px solid #334155;
+  border-radius: var(--border-radius-sm);
+  color: #f8fafc;
+  font: inherit;
+}
+
+.issue-inbox__empty {
+  padding: var(--spacing-3);
+  color: #94a3b8;
+  font-style: italic;
+}

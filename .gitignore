@@ -38,6 +38,10 @@ mcp-wrapper-execution.log*
 # env files (can opt-in for committing if needed)
 .env*
 
+# local dev binaries
+cloud-sql-proxy*.exe
+cloud-sql-proxy
+
 # vercel
 .vercel
 

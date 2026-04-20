@@ -1,20 +1,53 @@
-import React from 'react';
-import { Target, ArrowRight } from 'lucide-react';
+"use client";
 
-export default function GoalTracker() {
+import React from "react";
+import { Target } from "lucide-react";
+import type { IssueWithGraphState } from "@/app/api/scion/state/route";
+
+export interface GoalTrackerProps {
+  issues: IssueWithGraphState[];
+}
+
+export default function GoalTracker({ issues }: GoalTrackerProps) {
+  const total = issues.length;
+  const completed = issues.filter((i) => i.status === "completed").length;
+  const percentage = total === 0 ? 0 : Math.round((completed / total) * 100);
+
   return (
-    <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-2xl">
-      <h2 className="text-xl font-bold text-indigo-400 mb-4 flex items-center gap-2">
-        <Target size={20} /> Macro Goals
+    <div className="orchestration-panel">
+      <h2 className="orchestration-panel__title orchestration-panel__title--goal">
+        <Target size={20} /> Macro Progress
       </h2>
-      <ul className="space-y-3">
-        <li className="bg-slate-800 p-3 rounded-lg border border-slate-700 flex justify-between items-center group cursor-pointer hover:border-indigo-500 transition-colors">
-          <div>
-            <div className="font-semibold text-white">Migrate Auth to NextAuth v5</div>
-            <div className="text-xs text-slate-400">3 blocking issues</div>
-          </div>
-          <ArrowRight className="text-indigo-400 opacity-0 group-hover:opacity-100 transition-opacity" />
-        </li>
+      <div className="goal-progress">
+        <div className="goal-progress__label">
+          {completed} / {total} completed ({percentage}%)
+        </div>
+        <div className="goal-progress__bar">
+          <div
+            className="goal-progress__fill"
+            style={{ width: `${percentage}%` }}
+          />
+        </div>
+      </div>
+      <ul className="goal-tracker">
+        {issues.slice(0, 5).map((i) => (
+          <li key={i.id} className="goal-tracker__item">
+            <div>
+              <div className="goal-tracker__label">
+                {i.title ?? i.instruction.slice(0, 80)}
+              </div>
+              <div className="goal-tracker__meta">
+                {i.status}
+                {i.graphState ? ` / ${i.graphState.currentNode}` : ""}
+              </div>
+            </div>
+          </li>
+        ))}
+        {issues.length === 0 ? (
+          <li className="goal-tracker__item goal-tracker__item--empty">
+            <div className="goal-tracker__label">No issues yet.</div>
+          </li>
+        ) : null}
       </ul>
     </div>
   );

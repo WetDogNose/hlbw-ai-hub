@@ -13,5 +13,5 @@
     }
   },
   "include": ["**/*.ts", "**/*.tsx"],
-  "exclude": ["swarm/__tests__"]
+  "exclude": ["swarm/__tests__", "swarm/runner/__tests__"]
 }

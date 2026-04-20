@@ -3,7 +3,8 @@ import dotenv from "dotenv";
 dotenv.config({ path: path.resolve(process.cwd(), ".env") });
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
-import { SWARM_POLICY } from "./policy";
+import prisma from "@/lib/prisma";
+import { resumeIssue } from "./resume-worker";
 
 /**
  * V3 SWARM WARM POOL MANAGER
@@ -45,7 +46,15 @@ export async function initializePool(config: PoolConfig = { workerCount: 21 }) {
   const absoluteRoot = process.cwd(); // Mount entire root so workers can dynamically `cd` into worktrees
 
   try {
-    const roles = ["1_qa", "2_source", "3_cloud", "4_db", "5_bizops", "6_project", "7_automation"];
+    const roles = [
+      "1_qa",
+      "2_source",
+      "3_cloud",
+      "4_db",
+      "5_bizops",
+      "6_project",
+      "7_automation",
+    ];
     const roleCounters: Record<string, number> = {};
 
     for (let i = 1; i <= config.workerCount; i++) {
@@ -53,9 +62,9 @@ export async function initializePool(config: PoolConfig = { workerCount: 21 }) {
       roleCounters[role] = (roleCounters[role] || 0) + 1;
       const subIndex = roleCounters[role];
       const containerName = `hlbw-worker-warm-${role}-${subIndex}`;
-      
+
       console.log(`[PoolManager] Starting ${containerName} (Role: ${role})...`);
-      
+
       const envKeys: Record<string, string> = {
         WARM_POOL_ID: `pool-node-${i}`,
         A2A_MODE: "true",
@@ -65,7 +74,7 @@ export async function initializePool(config: PoolConfig = { workerCount: 21 }) {
         SENTRY_ENFORCER_URL: "http://host.docker.internal:8080/a2a/message",
         NODE_PATH: "/workspace/node_modules", // Force container to find host modules
       };
-      
+
       if (process.env.GEMINI_API_KEY)
         envKeys.GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
@@ -108,6 +117,29 @@ export async function initializePool(config: PoolConfig = { workerCount: 21 }) {
   }
 }
 
+/**
+ * Pass 10 — resume-preference shortcut.
+ *
+ * Before picking up a new pending `Issue`, ask the graph state table for
+ * any row with status in { 'paused', 'interrupted' }. If one exists,
+ * resume it (via the same spawn pattern docker-worker uses for a fresh
+ * start, just without `graph.start()`). Callers who find `null` should
+ * fall through to the normal Postgres-backed arbiter.
+ *
+ * Exported so `arbiter.ts` / dispatcher / future scheduling code can
+ * preempt the queue with a resumable task.
+ */
+export async function pickNextResumable(): Promise<string | null> {
+  const row = await prisma.taskGraphState.findFirst({
+    where: { status: { in: ["paused", "interrupted"] } },
+    orderBy: { lastTransitionAt: "asc" },
+    select: { issueId: true },
+  });
+  if (!row) return null;
+  await resumeIssue(row.issueId, { spawn: true });
+  return row.issueId;
+}
+
 if (require.main === module) {
   const cmd = process.argv[2];
   if (cmd === "start") {
@@ -115,5 +147,15 @@ if (require.main === module) {
     initializePool({ workerCount: count }).then(() =>
       console.log("Pool initialized."),
     );
+  } else if (cmd === "resume-next") {
+    pickNextResumable()
+      .then((id) => {
+        if (id) console.log(`[pool-manager] resumed ${id}`);
+        else console.log("[pool-manager] no resumable rows.");
+      })
+      .catch((err) => {
+        console.error("[pool-manager] resume-next failed:", err);
+        process.exit(1);
+      });
   }
 }

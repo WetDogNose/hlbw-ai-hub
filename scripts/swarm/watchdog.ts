@@ -1,265 +1,204 @@
-import {
-  getState,
-  saveState,
-  updateTaskStatus,
-  updateWorkerStatus,
-  cleanupRetention,
-  listWorkers,
-} from "./state-manager";
-import { TaskStatus, WorkerStatus } from "./types";
-import { removeWorktree, listWorktrees } from "./manage-worktree";
-import { Client } from "@modelcontextprotocol/sdk/client/index.js";
-import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
+// Pass 10 — Watchdog now operates on task_graph_state, not workers.json.
+//
+// The watchdog's new charter:
+//   1. Scan `task_graph_state` for rows where status='running' AND
+//      `lastTransitionAt < now() - SWARM_POLICY.workerTimeoutMinutes`.
+//   2. For each stale row, call `StateGraph.interrupt(issueId, reason)` —
+//      this is transactional; the row flips to status='interrupted' with a
+//      reason attached. GraphState is preserved; resume-worker.ts can pick
+//      it up on the next pool-manager tick.
+//   3. Flip the owning `Issue.status` back to `pending` so the dispatcher
+//      will pick it up again through the normal queue.
+//   4. If a warm-pool container whose name contains the issueId is still
+//      running, best-effort `docker kill` it via `child_process.spawn`.
+//   5. Audit every intervention via `appendAudit`.
+//
+// The watchdog NEVER destroys state. Worktrees are left in place because
+// the graph row is resumable; cleanup of orphaned worktrees is deferred to
+// the dead-code cull scheduled for pass 20.
+
+import prisma from "@/lib/prisma";
+import { StateGraph, defineGraph } from "@/lib/orchestration/graph";
+import { TaskStatus } from "./types";
 import { getTracer, startTracing, stopTracing } from "./tracing";
 import { SWARM_POLICY } from "./policy";
 import { appendAudit } from "./audit";
-import { getNextAvailableTask } from "./arbiter";
-import { addObservations, closeMemoryClient } from "./shared-memory";
+import { spawnSync } from "node:child_process";
+import { closeMemoryClient } from "./shared-memory";
 
-async function getMcpClient() {
-  const transport = new StdioClientTransport({
-    command: "node",
-    args: [".agents/mcp-servers/docker-manager-mcp/build/index.js"],
+// Reason tag written onto the interrupted row; matches the string documented
+// in checkpoint-10.md frozen interfaces.
+export const WATCHDOG_TIMEOUT_REASON = "watchdog_timeout";
+
+/**
+ * A minimal StateGraph instance built solely for `.interrupt()`. The node
+ * registry is irrelevant to the interrupt path — the transaction only
+ * touches the row's status/reason columns. We pass a trivial `no_op` node
+ * so the constructor invariant (startNode exists in `nodes`) is satisfied.
+ */
+function getInterruptGraph(): StateGraph {
+  return defineGraph({
+    startNode: "no_op",
+    nodes: {
+      no_op: {
+        name: "no_op",
+        async run() {
+          return { kind: "complete" };
+        },
+      },
+    },
   });
-  const client = new Client({ name: "watchdog-client", version: "1.0.0" });
-  await client.connect(transport);
-  return client;
 }
 
-// --- Gap 8: Watchdog Feed (Auto-Assign) ---
-
-async function feedPendingTasks(): Promise<number> {
-  let fed = 0;
-  // Check active worker count
-  const activeWorkers = await listWorkers({ status: WorkerStatus.Running });
-  const startingWorkers = await listWorkers({ status: WorkerStatus.Starting });
-  const activeCount = activeWorkers.length + startingWorkers.length;
-  const availableSlots = SWARM_POLICY.maxActiveWorkers - activeCount;
-
-  if (availableSlots <= 0) {
-    console.log(
-      `Watchdog feed: No available slots (${activeCount}/${SWARM_POLICY.maxActiveWorkers}).`,
-    );
-    return 0;
-  }
-
-  // Try to assign up to availableSlots pending tasks
-  for (let i = 0; i < availableSlots; i++) {
-    const nextTask = await getNextAvailableTask();
-    if (!nextTask) break;
-
-    await updateTaskStatus(nextTask.id, TaskStatus.InProgress, "watchdog-feed");
-    await appendAudit({
-      actor: "watchdog",
-      action: "watchdog.fed",
-      entityType: "task",
-      entityId: nextTask.id,
-      newState: TaskStatus.InProgress,
-      reason: "Auto-assigned by watchdog feed",
-    });
-    console.log(`Watchdog fed task: ${nextTask.id} (${nextTask.title})`);
-    fed++;
-  }
-
-  return fed;
+/**
+ * Best-effort: find a running container whose name contains `issueId` and
+ * issue `docker kill`. Never throws. Designed for the warm-pool naming
+ * convention `hlbw-worker-warm-<role>-<n>`; if the issueId is not in the
+ * container name we return without killing anything.
+ */
+function maybeKillContainer(issueId: string): {
+  killed: boolean;
+  containerId?: string;
+} {
+  const ps = spawnSync(
+    "docker",
+    ["ps", "--filter", `name=worker-`, "--format", "{{.ID}} {{.Names}}"],
+    { encoding: "utf8" },
+  );
+  if (ps.status !== 0) return { killed: false };
+  const line = (ps.stdout ?? "")
+    .split(/\r?\n/)
+    .map((l) => l.trim())
+    .find((l) => l.includes(issueId));
+  if (!line) return { killed: false };
+  const [containerId] = line.split(/\s+/);
+  if (!containerId) return { killed: false };
+  const kill = spawnSync("docker", ["kill", containerId], { encoding: "utf8" });
+  if (kill.status !== 0) return { killed: false, containerId };
+  return { killed: true, containerId };
 }
 
-// --- Gap 9: Stale Requeue with Counter ---
+export interface WatchdogInterruption {
+  issueId: string;
+  currentNode: string;
+  lastTransitionAt: string;
+  staleMinutes: number;
+  killed: boolean;
+  containerId?: string;
+}
 
-export async function runWatchdog() {
+/**
+ * Single run of the watchdog. Returns the list of interruptions performed.
+ * Exported so tests can invoke it with a mocked Prisma client.
+ */
+export async function runWatchdog(): Promise<WatchdogInterruption[]> {
   const tracer = getTracer();
   return tracer.startActiveSpan("Watchdog:run", async (span) => {
     span.setAttribute("timeout.minutes", SWARM_POLICY.workerTimeoutMinutes);
 
     const now = Date.now();
-    let client: Client | null = null;
-    let staleCount = 0;
+    const staleCutoff = new Date(
+      now - SWARM_POLICY.workerTimeoutMinutes * 60 * 1000,
+    );
 
-    const { withStateLock } = await import("./state-manager");
-    const cleanupTargets: {
-      workerId: string;
-      taskId: string;
-      containerId?: unknown;
-      branchName?: unknown;
-      elapsedMinutes: number;
-      staleCount: number;
-      isolationId: string | undefined;
-    }[] = [];
+    const staleRows = await prisma.taskGraphState.findMany({
+      where: {
+        status: "running",
+        lastTransitionAt: { lt: staleCutoff },
+      },
+      select: {
+        issueId: true,
+        currentNode: true,
+        lastTransitionAt: true,
+      },
+    });
 
-    try {
-      await withStateLock(async (state) => {
-        for (const worker of state.workers) {
-          if (
-            worker.status === WorkerStatus.Running ||
-            worker.status === WorkerStatus.Starting
-          ) {
-            if (worker.startedAt) {
-              const startedTime = new Date(worker.startedAt).getTime();
-              const elapsedMinutes = (now - startedTime) / (1000 * 60);
+    span.setAttribute("stale.count", staleRows.length);
 
-              if (elapsedMinutes > SWARM_POLICY.workerTimeoutMinutes) {
-                staleCount++;
-                console.log(
-                  `Worker ${worker.id} exceeded timeout. Re-queuing task ${worker.taskId}.`,
-                );
-                worker.status = WorkerStatus.Timeout;
-                worker.completedAt = new Date().toISOString();
+    const graph = getInterruptGraph();
+    const interruptions: WatchdogInterruption[] = [];
 
-                // Increment stale count on the task (Gap 9)
-                const task = state.tasks.find((t) => t.id === worker.taskId);
-                let currentStaleCount = 1;
-                let isolationId: string | undefined = worker.metadata
-                  ?.branchName as string;
-                if (task) {
-                  currentStaleCount =
-                    ((task.metadata.staleCount as number) || 0) + 1;
-                  task.metadata.staleCount = currentStaleCount;
-                  task.metadata.lastStaleAgent = worker.metadata?.branchName;
-                  task.metadata.lastStaleAt = new Date().toISOString();
-                  task.status = TaskStatus.Pending;
-                  task.startedAt = undefined;
-                  task.assignedAgent = undefined;
-                  isolationId = task.isolationId || isolationId;
-                }
+    for (const row of staleRows) {
+      const staleMinutes = Math.round(
+        (now - row.lastTransitionAt.getTime()) / 60000,
+      );
+      const reason = `${WATCHDOG_TIMEOUT_REASON} (stale ${staleMinutes}m at node=${row.currentNode})`;
 
-                cleanupTargets.push({
-                  workerId: worker.id,
-                  taskId: worker.taskId,
-                  containerId: worker.metadata?.containerId,
-                  branchName: worker.metadata?.branchName,
-                  elapsedMinutes,
-                  staleCount: currentStaleCount,
-                  isolationId,
-                });
-
-                await appendAudit({
-                  actor: "watchdog",
-                  action: "worker.timeout",
-                  entityType: "worker",
-                  entityId: worker.id,
-                  previousState: WorkerStatus.Running,
-                  newState: WorkerStatus.Timeout,
-                  metadata: {
-                    taskId: worker.taskId,
-                    elapsedMinutes,
-                    staleCount: currentStaleCount,
-                  },
-                });
-              }
-            }
-          }
-        }
-      });
-
-      // Process slow network/docker cleanup operations OUTSIDE the state lock
-      for (const target of cleanupTargets) {
-        // Update shared memory with stale status
-        try {
-          await addObservations(`task:${target.taskId}`, [
-            `Status: stale (timeout after ${Math.round(target.elapsedMinutes)}min)`,
-            `Stale count: ${target.staleCount}`,
-            `RequeuedAt: ${new Date().toISOString()}`,
-          ]);
-        } catch (memErr) {
-          // Non-fatal
-        }
-
-        // Stop container via MCP
-        if (target.containerId && typeof target.containerId === "string") {
-          if (!client) client = await getMcpClient();
-          try {
-            await client.callTool({
-              name: "stop_container",
-              arguments: { containerId: target.containerId },
-            });
-            console.log(
-              `Stopped container ${target.containerId} via Docker MCP.`,
-            );
-          } catch (err) {
-            console.error(
-              `Failed to stop container ${target.containerId}:`,
-              err,
-            );
-          }
-        }
-
-        // Cleanup worktree
-        if (target.isolationId && typeof target.isolationId === "string") {
-          console.log(`Cleaning up worktree ${target.isolationId}`);
-          try {
-            removeWorktree(target.isolationId, true);
-          } catch (e) {
-            console.error(
-              `Failed to cleanup worktree ${target.isolationId}:`,
-              e,
-            );
-          }
-        }
+      try {
+        await graph.interrupt(row.issueId, reason);
+      } catch (err) {
+        console.error(
+          `[watchdog] failed to interrupt ${row.issueId}:`,
+          (err as Error).message,
+        );
+        continue;
       }
 
-      span.setAttribute("stale.count", staleCount);
-      span.setAttribute("state.modified", cleanupTargets.length > 0);
-
-      // --- Gap 8: Feed pending tasks ---
-      const fed = await feedPendingTasks();
-      console.log(
-        `Watchdog: Fed ${fed} pending tasks into available capacity.`,
-      );
-
-      // --- Gap 9: Retention cleanup ---
-      const cleanup = await cleanupRetention();
-      if (cleanup.removedTasks > 0 || cleanup.removedWorkers > 0) {
-        console.log(
-          `Watchdog: Cleaned up ${cleanup.removedTasks} tasks, ${cleanup.removedWorkers} workers (retention policy).`,
+      // Flip the parent Issue back to `pending` so the dispatcher and
+      // pool-manager can re-queue. See checkpoint-10 §"Live invariants".
+      try {
+        await prisma.issue.update({
+          where: { id: row.issueId },
+          data: {
+            status: TaskStatus.Pending,
+            startedAt: null,
+          },
+        });
+      } catch (err) {
+        console.warn(
+          `[watchdog] Issue.update failed for ${row.issueId}:`,
+          (err as Error).message,
         );
       }
 
-      // --- Health summary ---
-      const currentState = await getState();
-      const activeTasks = currentState.tasks.filter(
-        (t) => t.status === TaskStatus.InProgress,
-      ).length;
-      const pendingTasks = currentState.tasks.filter(
-        (t) => t.status === TaskStatus.Pending,
-      ).length;
-      const activeW = currentState.workers.filter(
-        (w) =>
-          w.status === WorkerStatus.Running ||
-          w.status === WorkerStatus.Starting,
-      ).length;
-      const worktrees = listWorktrees();
+      const killResult = maybeKillContainer(row.issueId);
 
-      console.log(`\n--- Watchdog Health Summary ---`);
-      console.log(
-        `Tasks:    ${pendingTasks} pending, ${activeTasks} active, ${staleCount} stale`,
-      );
-      console.log(
-        `Workers:  ${activeW} active / ${SWARM_POLICY.maxActiveWorkers} max`,
-      );
-      console.log(
-        `Isolation: ${worktrees.length} worktrees / ${SWARM_POLICY.maxActiveIsolation} max`,
-      );
-      console.log(`-------------------------------\n`);
+      await appendAudit({
+        actor: "watchdog",
+        action: "graph.interrupted",
+        entityType: "task_graph_state",
+        entityId: row.issueId,
+        previousState: "running",
+        newState: "interrupted",
+        reason,
+        metadata: {
+          currentNode: row.currentNode,
+          staleMinutes,
+          containerKilled: killResult.killed,
+          containerId: killResult.containerId,
+        },
+      });
 
-      if (cleanupTargets.length === 0 && staleCount === 0) {
-        console.log("Watchdog: All active workers healthy.");
-      }
-    } catch (err: any) {
-      span.recordException(err);
-      throw err;
-    } finally {
-      if (client) {
-        await client.close();
-      }
-      span.end();
+      interruptions.push({
+        issueId: row.issueId,
+        currentNode: row.currentNode,
+        lastTransitionAt: row.lastTransitionAt.toISOString(),
+        staleMinutes,
+        killed: killResult.killed,
+        containerId: killResult.containerId,
+      });
+
+      console.log(
+        `[watchdog] interrupted ${row.issueId} at node=${row.currentNode} (${staleMinutes}m stale); container killed=${killResult.killed}`,
+      );
     }
+
+    span.setAttribute("interruptions", interruptions.length);
+    span.end();
+    return interruptions;
   });
 }
 
 if (require.main === module) {
   startTracing();
   runWatchdog()
-    .catch(console.error)
+    .then((r) => {
+      console.log(`[watchdog] interrupted ${r.length} stale graph rows.`);
+    })
+    .catch((err) => {
+      console.error("[watchdog] fatal:", err);
+      process.exitCode = 1;
+    })
     .finally(async () => {
       await closeMemoryClient();
       await stopTracing();

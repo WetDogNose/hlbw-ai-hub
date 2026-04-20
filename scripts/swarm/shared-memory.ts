@@ -1,45 +1,101 @@
-// Shared Memory Client for Swarm Orchestration
-// Uses native neo4j-driver for direct communication (Docker-compatible).
-// This allows both Hub and Spokes to write to the knowledge graph without sidecars.
+// Pass 7 — shared memory is now a thin adapter over MemoryStore.
+//
+// Decisions.md D1 names Postgres + pgvector as the single episodic store.
+// `PgvectorMemoryStore` is the default; `Neo4jReadAdapter` stays behind the
+// `MEMORY_READ_LEGACY=1` flag so operators can read historical Neo4j data
+// without unblocking writes to it. Nothing new writes to Neo4j.
+//
+// Every previously-exported function keeps its signature so existing callers
+// (agent-runner.ts, delegate.ts, demo-memory-full.ts, watchdog.ts, …) don't
+// have to change in this pass.
 
-import neo4j, { Driver } from "neo4j-driver";
 import { getTracer } from "./tracing";
 import { appendAudit } from "./audit";
-import fs from "node:fs";
+import type {
+  MemoryEpisodeKind,
+  MemoryStore,
+} from "@/lib/orchestration/memory/MemoryStore";
+import { getPgvectorMemoryStore } from "@/lib/orchestration/memory/PgvectorMemoryStore";
+import { Neo4jReadAdapter } from "@/lib/orchestration/memory/Neo4jReadAdapter";
 
 const ACTOR =
   process.env.WARM_POOL_ID || process.env.WORKER_ID || "shared-memory";
 
-// --- Database Configuration ---
+// Legacy-read flag is opt-in. Default path is pgvector-only.
+const LEGACY_READ = process.env.MEMORY_READ_LEGACY === "1";
 
-const isContainer = fs.existsSync("/.dockerenv");
-const NEO4J_URL =
-  process.env.NEO4J_URL ||
-  (isContainer ? "bolt://hlbw-neo4j:7687" : "bolt://localhost:7687");
-const NEO4J_USER = "neo4j";
-const NEO4J_PASS = "wotbox-swarm";
+let writeStore: MemoryStore | null = null;
+let readStore: MemoryStore | null = null;
+let legacyReadStore: Neo4jReadAdapter | null = null;
 
-let driver: Driver | null = null;
-
-function getDriver(): Driver {
-  if (!driver) {
-    driver = neo4j.driver(NEO4J_URL, neo4j.auth.basic(NEO4J_USER, NEO4J_PASS));
-  }
-  return driver;
+function getWriteStore(): MemoryStore {
+  if (!writeStore) writeStore = getPgvectorMemoryStore();
+  return writeStore;
 }
+
+function getReadStore(): MemoryStore {
+  if (!readStore) {
+    readStore = LEGACY_READ
+      ? (legacyReadStore ??= new Neo4jReadAdapter())
+      : getPgvectorMemoryStore();
+  }
+  return readStore;
+}
+
+// ---- Mapping from legacy entity types to canonical kinds ---------------
+
+type LegacyEntityType =
+  | "swarm_task"
+  | "swarm_worker"
+  | "swarm_discovery"
+  | "swarm_decision"
+  | "swarm_context";
+
+function legacyTypeToKind(type: LegacyEntityType | string): MemoryEpisodeKind {
+  switch (type) {
+    case "swarm_task":
+      return "task_context";
+    case "swarm_discovery":
+      return "discovery";
+    case "swarm_decision":
+      return "decision";
+    case "swarm_worker":
+      return "entity";
+    case "swarm_context":
+      return "observation";
+    default:
+      return "entity";
+  }
+}
+
+function parseTaskIdFromName(name: string): string | null {
+  // Names look like `task:<id>`, `discovery:<worker>:<ts>`,
+  // `decision:<taskId>:<ts>`. Only the first two forms carry a clean taskId.
+  if (name.startsWith("task:")) return name.slice("task:".length);
+  if (name.startsWith("decision:")) {
+    const parts = name.split(":");
+    return parts[1] ?? null;
+  }
+  return null;
+}
+
+// ---- Public API (signatures preserved) ---------------------------------
 
 export async function closeMemoryClient(): Promise<void> {
-  if (driver) {
-    await driver.close();
-    driver = null;
+  if (writeStore) {
+    await writeStore.close();
+    writeStore = null;
+  }
+  if (readStore && readStore !== writeStore) {
+    await readStore.close();
+    readStore = null;
+  }
+  if (legacyReadStore) {
+    await legacyReadStore.close();
+    legacyReadStore = null;
   }
 }
 
-// --- High-Level Shared Memory API ---
-
-/**
- * Store a swarm entity (task, worker, discovery, decision) into the shared knowledge graph.
- */
 export async function storeEntity(
   name: string,
   type:
@@ -54,17 +110,14 @@ export async function storeEntity(
   return tracer.startActiveSpan("SharedMemory:storeEntity", async (span) => {
     span.setAttribute("entity.name", name);
     span.setAttribute("entity.type", type);
-    const session = getDriver().session();
     try {
-      // Cypher: Create node with Memory label and specific type label
-      const query = `
-        MERGE (n:Memory {name: $name})
-        SET n.type = $type, n.observations = $observations
-        WITH n
-        CALL apoc.create.addLabels(n, [$type]) YIELD node
-        RETURN node
-      `;
-      await session.run(query, { name, type, observations });
+      await getWriteStore().write({
+        taskId: parseTaskIdFromName(name),
+        kind: legacyTypeToKind(type),
+        agentCategory: process.env.AGENT_CATEGORY ?? null,
+        content: { name, type, observations },
+        summary: `${name}: ${observations.join("; ")}`,
+      });
 
       await appendAudit({
         actor: ACTOR,
@@ -73,33 +126,30 @@ export async function storeEntity(
         entityId: name,
         metadata: { observationCount: observations.length },
       });
-    } catch (err: any) {
-      span.recordException(err);
-      console.error(`SharedMemory Error (storeEntity): ${err.message}`);
+    } catch (err) {
+      span.recordException(err as Error);
+      console.error(
+        `SharedMemory Error (storeEntity): ${(err as Error).message}`,
+      );
     } finally {
-      await session.close();
       span.end();
     }
   });
 }
 
-/**
- * Create a relationship between two entities.
- */
 export async function createRelation(
   source: string,
   target: string,
   relationType: string,
 ): Promise<void> {
-  const session = getDriver().session();
   try {
-    const query = `
-      MATCH (a:Memory {name: $source})
-      MATCH (b:Memory {name: $target})
-      MERGE (a)-[r:RELATION {type: $relationType}]->(b)
-      RETURN r
-    `;
-    await session.run(query, { source, target, relationType });
+    await getWriteStore().write({
+      taskId: parseTaskIdFromName(target) ?? parseTaskIdFromName(source),
+      kind: "relation",
+      agentCategory: process.env.AGENT_CATEGORY ?? null,
+      content: { source, target, relationType },
+      summary: `${source} --${relationType}--> ${target}`,
+    });
 
     await appendAudit({
       actor: ACTOR,
@@ -108,28 +158,25 @@ export async function createRelation(
       entityId: `${source}->${target}`,
       metadata: { source, target, relationType },
     });
-  } catch (err: any) {
-    console.error(`SharedMemory Error (createRelation): ${err.message}`);
-  } finally {
-    await session.close();
+  } catch (err) {
+    console.error(
+      `SharedMemory Error (createRelation): ${(err as Error).message}`,
+    );
   }
 }
 
-/**
- * Add observations/facts to an existing entity.
- */
 export async function addObservations(
   entityName: string,
   observations: string[],
 ): Promise<void> {
-  const session = getDriver().session();
   try {
-    const query = `
-      MATCH (n:Memory {name: $entityName})
-      SET n.observations = n.observations + $observations
-      RETURN n
-    `;
-    await session.run(query, { entityName, observations });
+    await getWriteStore().write({
+      taskId: parseTaskIdFromName(entityName),
+      kind: "observation",
+      agentCategory: process.env.AGENT_CATEGORY ?? null,
+      content: { entityName, observations },
+      summary: `${entityName}: ${observations.join("; ")}`,
+    });
 
     await appendAudit({
       actor: ACTOR,
@@ -138,14 +185,12 @@ export async function addObservations(
       entityId: entityName,
       metadata: { count: observations.length },
     });
-  } catch (err: any) {
-    console.error(`SharedMemory Error (addObservations): ${err.message}`);
-  } finally {
-    await session.close();
+  } catch (err) {
+    console.error(
+      `SharedMemory Error (addObservations): ${(err as Error).message}`,
+    );
   }
 }
-
-// --- Swarm-Specific Convenience Functions ---
 
 export async function shareTaskContext(
   taskId: string,
@@ -191,36 +236,36 @@ export async function shareDecision(
 
 export async function getSharedContext(taskTitle: string): Promise<string[]> {
   const tracer = getTracer();
-  return tracer.startActiveSpan("SharedMemory:getSharedContext", async (span) => {
-    span.setAttribute("task.title", taskTitle);
-    const session = getDriver().session();
-    try {
-      const query = `
-        MATCH (n:Memory)
-        WHERE n.type IN ['swarm_discovery', 'swarm_decision', 'swarm_context']
-        RETURN n.name AS name, n.observations AS observations
-        ORDER BY n.name DESC
-        LIMIT 10
-      `;
-      const result = await session.run(query, {});
-      const context: string[] = [];
-      for (const record of result.records) {
-        const name = record.get("name");
-        const obs = record.get("observations") as string[];
-        if (obs && obs.length > 0) {
-          context.push(`[${name}]: ${obs.join("; ")}`);
-        }
+  return tracer.startActiveSpan(
+    "SharedMemory:getSharedContext",
+    async (span) => {
+      span.setAttribute("task.title", taskTitle);
+      try {
+        const store = getReadStore();
+        // Pull the most recent context-like episodes across kinds.
+        const kinds: MemoryEpisodeKind[] = [
+          "discovery",
+          "decision",
+          "observation",
+          "task_context",
+        ];
+        const buckets = await Promise.all(
+          kinds.map((k) => store.queryByKind(k, 10)),
+        );
+        const merged = buckets.flat();
+        merged.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+        return merged.slice(0, 10).map((ep) => `[${ep.kind}] ${ep.summary}`);
+      } catch (err) {
+        span.recordException(err as Error);
+        console.error(
+          `SharedMemory Error (getSharedContext): ${(err as Error).message}`,
+        );
+        return [];
+      } finally {
+        span.end();
       }
-      return context;
-    } catch (err: any) {
-      span.recordException(err);
-      console.error(`SharedMemory Error (getSharedContext): ${err.message}`);
-      return [];
-    } finally {
-      await session.close();
-      span.end();
-    }
-  });
+    },
+  );
 }
 
 export async function markTaskComplete(
@@ -240,7 +285,7 @@ if (require.main === module) {
   const cmd = process.argv[2];
   if (cmd === "read") {
     console.log(
-      "Read via Neo4j Browser or specialized scripts. Native driver active.",
+      "Read via Postgres (memory_episode table) or Neo4j Browser (deprecated).",
     );
   }
 }

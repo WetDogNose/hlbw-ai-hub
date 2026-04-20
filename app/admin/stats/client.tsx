@@ -18,8 +18,11 @@ const fetcher = async (url: string) => {
     return data;
   } catch (err: any) {
     clearTimeout(id);
-    if (err.name === 'AbortError') {
-      throw new Error("Connection timed out (10s) waiting for stats endpoint.");
+    if (err.name === "AbortError") {
+      throw new Error(
+        "Connection timed out (10s) waiting for stats endpoint.",
+        { cause: err },
+      );
     }
     throw err;
   }

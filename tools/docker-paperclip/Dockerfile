@@ -1,5 +1,13 @@
 FROM node:20-slim
 
+# Pass 17 — expose the LiteLLM model + port as build args so the same
+# image can back different providers / categories without editing the
+# CMD. Defaults preserve prior behaviour (qwen2.5-coder:32b on 4000).
+ARG LITELLM_MODEL=ollama_chat/qwen2.5-coder:32b
+ARG LITELLM_PORT=4000
+ENV LITELLM_MODEL=${LITELLM_MODEL}
+ENV LITELLM_PORT=${LITELLM_PORT}
+
 # Install wait-for-it for optional dependencies, socat, and paperclipai globally
 RUN apt-get update && apt-get install -y --no-install-recommends curl jq wget socat python3 python3-pip python3-venv \
     && rm -rf /var/lib/apt/lists/* \
@@ -23,7 +31,7 @@ ENV OPENAI_BASE_URL=http://host.docker.internal:11434/v1
 ENV OPENAI_API_KEY=ollama
 
 # Mock Anthropic variables so Claude Code CLI works without credentials and routes to local proxy
-ENV ANTHROPIC_BASE_URL=http://127.0.0.1:4000
+ENV ANTHROPIC_BASE_URL=http://127.0.0.1:${LITELLM_PORT}
 ENV ANTHROPIC_API_KEY=sk-mock
 
 # Database mounts and artifact persistence
@@ -32,4 +40,4 @@ EXPOSE 3100
 
 # The orchestrator gracefully handles new setups by forcing a silent onboard and kicking off the daemon.
 # We also spool LiteLLM in the background to serve as an Anthropic-to-Ollama transcription proxy.
-CMD ["sh", "-c", "socat TCP-LISTEN:3101,fork TCP:127.0.0.1:3100 & /opt/litellm/bin/litellm --model ollama_chat/qwen2.5-coder:32b --api_base http://host.docker.internal:11434 --port 4000 --drop_params & paperclipai onboard --yes -d /paperclip && paperclipai run -d /paperclip"]
+CMD ["sh", "-c", "socat TCP-LISTEN:3101,fork TCP:127.0.0.1:3100 & /opt/litellm/bin/litellm --model \"${LITELLM_MODEL}\" --api_base http://host.docker.internal:11434 --port \"${LITELLM_PORT}\" --drop_params & paperclipai onboard --yes -d /paperclip && paperclipai run -d /paperclip"]

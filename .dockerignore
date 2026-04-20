@@ -1,0 +1,12 @@
+node_modules
+.next
+.git
+.cursorrules
+.geminirules
+build_log.txt
+*.log
+scratch/
+tools/
+logs.txt
+log3.txt
+docs/
