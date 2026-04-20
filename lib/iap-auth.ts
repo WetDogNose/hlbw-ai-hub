@@ -16,8 +16,12 @@ export async function getIapUser(): Promise<IapUser | null> {
   const email = iapEmailHeader?.replace("accounts.google.com:", "");
 
   if (!email) {
-    if (process.env.NODE_ENV === "development") {
-      // Graceful fallback for local development
+    // Local dev bypass: NODE_ENV gets statically inlined by Next.js, so also honor
+    // a runtime-only flag for previewing the prod build locally.
+    if (
+      process.env.NODE_ENV === "development" ||
+      process.env.LOCAL_TRUSTED_ADMIN === "1"
+    ) {
       return {
         id: "dev-local-user",
         email: process.env.ADMIN_EMAIL || "dev@local",

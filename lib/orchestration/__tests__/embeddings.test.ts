@@ -65,11 +65,12 @@ describe("createEmbeddingProvider factory", () => {
     expect(p.name).toBe("stub-hash");
   });
 
-  it("returns VertexEmbeddingProvider when GEMINI_API_KEY is set", () => {
+  it("returns a Vertex-backed provider (resilient wrapper) when GEMINI_API_KEY is set", () => {
     process.env.GEMINI_API_KEY = "test-key-does-not-call-network";
     const p = createEmbeddingProvider();
-    expect(p).toBeInstanceOf(VertexEmbeddingProvider);
-    expect(p.name).toBe("vertex-text-embedding-004");
+    // Factory returns ResilientEmbeddingProvider which forwards `name` + `dim`
+    // from the wrapped VertexEmbeddingProvider and falls back to Stub on error.
+    expect(p.name).toBe("vertex-embedding");
     expect(p.dim).toBe(768);
   });
 });

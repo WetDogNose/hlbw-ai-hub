@@ -57,3 +57,6 @@ node_modules/
 .gemini/
 # GitHub App credentials
 gha-creds-*.json
+
+# claude-code per-project local settings
+.claude/settings.local.json

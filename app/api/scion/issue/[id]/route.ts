@@ -1,13 +1,31 @@
-// Pass 16 — SCION issue detail endpoint.
+// Pass 16 — SCION issue detail endpoint (GET).
+// Pass 22 — adds PATCH for admin-gated priority/agentCategory/metadata edits.
 //
 // GET /api/scion/issue/[id]
 // Returns the single Issue with its graphState and a `recentHistory` slice
 // (last 25 HistoryEntry records from `TaskGraphState.history`). 404 when
-// the issue is not found.
+// the issue is not found. When `?includeMemory=true`, also includes the most
+// recent `MemoryEpisode kind:"decision"` rows tagged with this issue's id
+// (audit trail + last critic decisions).
+//
+// PATCH /api/scion/issue/[id]
+// Body: { priority?: number; agentCategory?: string | null; metadata?: object }
+// Admin-only. Status, dependencies, blockedBy, threadId stay system-managed.
+// Audit-logged.
 
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import type { Prisma } from "@prisma/client";
 import type { HistoryEntry } from "@/lib/orchestration/graph/types";
+import { requireAdmin } from "@/lib/orchestration/auth-guard";
+import { recordAdminAction } from "@/lib/orchestration/audit";
+
+export interface IssueMemoryRow {
+  id: string;
+  createdAt: string;
+  summary: string;
+  content: unknown;
+}
 
 export interface IssueDetailResponse {
   id: string;
@@ -32,14 +50,16 @@ export interface IssueDetailResponse {
     context: unknown;
   } | null;
   recentHistory: HistoryEntry[];
+  recentDecisions?: IssueMemoryRow[];
 }
 
 const HISTORY_LIMIT = 25;
+const DECISION_LIMIT = 25;
 
 export async function GET(
-  _req: Request,
+  req: Request,
   context: { params: Promise<{ id: string }> } | { params: { id: string } },
-) {
+): Promise<NextResponse> {
   const paramsMaybePromise = (context as { params: unknown }).params;
   const params =
     paramsMaybePromise instanceof Promise
@@ -50,6 +70,9 @@ export async function GET(
   if (!id || typeof id !== "string") {
     return NextResponse.json({ error: "issue id required" }, { status: 400 });
   }
+
+  const url = new URL(req.url);
+  const includeMemory = url.searchParams.get("includeMemory") === "true";
 
   try {
     const issue = await prisma.issue.findUnique({
@@ -64,6 +87,27 @@ export async function GET(
     if (issue.graphState && Array.isArray(issue.graphState.history)) {
       const arr = issue.graphState.history as unknown as HistoryEntry[];
       recentHistory = arr.slice(-HISTORY_LIMIT);
+    }
+
+    let recentDecisions: IssueMemoryRow[] | undefined;
+    if (includeMemory) {
+      const rows = await prisma.memoryEpisode.findMany({
+        where: { taskId: id, kind: "decision" },
+        orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+        take: DECISION_LIMIT,
+        select: {
+          id: true,
+          createdAt: true,
+          summary: true,
+          content: true,
+        },
+      });
+      recentDecisions = rows.map((r) => ({
+        id: r.id,
+        createdAt: r.createdAt.toISOString(),
+        summary: r.summary,
+        content: r.content,
+      }));
     }
 
     const response: IssueDetailResponse = {
@@ -91,13 +135,133 @@ export async function GET(
           }
         : null,
       recentHistory,
+      ...(recentDecisions ? { recentDecisions } : {}),
     };
 
-    return NextResponse.json(response);
+    return NextResponse.json(response, {
+      headers: { "Cache-Control": "no-store" },
+    });
   } catch (error: unknown) {
     const message =
       error instanceof Error ? error.message : "Internal Server Error";
     console.error("/api/scion/issue/[id] error:", error);
     return NextResponse.json({ error: message }, { status: 500 });
+  }
+}
+
+export async function PATCH(
+  req: Request,
+  context: { params: Promise<{ id: string }> } | { params: { id: string } },
+): Promise<NextResponse> {
+  const guard = await requireAdmin();
+  if (guard instanceof NextResponse) return guard;
+  const user = guard;
+
+  const paramsMaybePromise = (context as { params: unknown }).params;
+  const params =
+    paramsMaybePromise instanceof Promise
+      ? await paramsMaybePromise
+      : (paramsMaybePromise as { id: string });
+  const id = params.id;
+  if (!id || typeof id !== "string") {
+    return NextResponse.json(
+      { error: "issue id required" },
+      { status: 400, headers: { "Cache-Control": "no-store" } },
+    );
+  }
+
+  let patch: {
+    priority?: number;
+    agentCategory?: string | null;
+    metadata?: Record<string, unknown>;
+  };
+  try {
+    const body = (await req.json().catch(() => null)) as Record<
+      string,
+      unknown
+    > | null;
+    if (!body || typeof body !== "object") {
+      return NextResponse.json(
+        { error: "invalid body" },
+        { status: 400, headers: { "Cache-Control": "no-store" } },
+      );
+    }
+    patch = {};
+    if ("priority" in body) {
+      const v = body.priority;
+      if (typeof v !== "number" || !Number.isFinite(v)) {
+        return NextResponse.json(
+          { error: "priority must be a number" },
+          { status: 400, headers: { "Cache-Control": "no-store" } },
+        );
+      }
+      patch.priority = Math.floor(v);
+    }
+    if ("agentCategory" in body) {
+      const v = body.agentCategory;
+      if (v !== null && typeof v !== "string") {
+        return NextResponse.json(
+          { error: "agentCategory must be string or null" },
+          { status: 400, headers: { "Cache-Control": "no-store" } },
+        );
+      }
+      patch.agentCategory = v as string | null;
+    }
+    if ("metadata" in body) {
+      const v = body.metadata;
+      if (v === null || typeof v !== "object" || Array.isArray(v)) {
+        return NextResponse.json(
+          { error: "metadata must be a JSON object" },
+          { status: 400, headers: { "Cache-Control": "no-store" } },
+        );
+      }
+      patch.metadata = v as Record<string, unknown>;
+    }
+  } catch {
+    return NextResponse.json(
+      { error: "invalid body" },
+      { status: 400, headers: { "Cache-Control": "no-store" } },
+    );
+  }
+
+  if (Object.keys(patch).length === 0) {
+    return NextResponse.json(
+      { error: "no editable fields supplied" },
+      { status: 400, headers: { "Cache-Control": "no-store" } },
+    );
+  }
+
+  try {
+    const data: Prisma.IssueUpdateInput = {};
+    if (patch.priority !== undefined) data.priority = patch.priority;
+    if (patch.agentCategory !== undefined)
+      data.agentCategory = patch.agentCategory;
+    if (patch.metadata !== undefined)
+      data.metadata = patch.metadata as Prisma.InputJsonValue;
+    const updated = await prisma.issue.update({
+      where: { id },
+      data,
+      select: {
+        id: true,
+        priority: true,
+        agentCategory: true,
+        metadata: true,
+      },
+    });
+    await recordAdminAction(user, "issue.patch", {
+      issueId: id,
+      patch,
+    });
+    return NextResponse.json(
+      { ok: true, issue: updated },
+      { headers: { "Cache-Control": "no-store" } },
+    );
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "patch failed";
+    console.error("/api/scion/issue/[id] PATCH error:", err);
+    return NextResponse.json(
+      { error: message },
+      { status: 500, headers: { "Cache-Control": "no-store" } },
+    );
   }
 }

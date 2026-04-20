@@ -99,9 +99,16 @@ export default async function Home() {
           }}
         >
           <Link
-            href="/admin/scion"
+            href="/scion"
             className="btn w-full"
-            style={{ padding: "var(--spacing-2)", background: "linear-gradient(to right, #38bdf8, #818cf8)", color: "white", border: "none", fontWeight: "bold" }}
+            style={{
+              padding: "var(--spacing-2)",
+              background:
+                "linear-gradient(to right, var(--scion-accent-1), var(--scion-accent-2))",
+              color: "white",
+              border: "none",
+              fontWeight: "bold",
+            }}
           >
             Scion Command Center
           </Link>

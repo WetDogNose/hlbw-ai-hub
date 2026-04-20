@@ -438,3 +438,159 @@ Each pass header lists: **Goal · Touches · New artifacts · Verifier extras**.
 - Does not implement RL training in pass 19 — only the seam.
 - Does not change the GCP region (stays `asia-southeast1` per [cloudbuild.yaml](../../cloudbuild.yaml)).
 - Does not rewrite the MCP wrappers in `wrappers/a2a/` or `wrappers/mcp/` — they're the standard contract the new system targets.
+
+---
+
+## 6. Post-pass-20 extensions — operations console (passes 21–24)
+
+Pass 20 closed the original 20-pass scope. Operating the system surfaced a real gap: the SCION UI was a viewer, not a console. Passes 21–24 close that gap. Same Actor → Critic → verified protocol. Same critic-rubric. Same compression cadence.
+
+### Pass 21 — SCION operations console (introspection — DONE)
+**Status**: PASS, see [pass-21-verified.md](pass-21-verified.md).
+- 5 read-only API routes (`/api/scion/{config,abilities,workflow/[id],workers,memory}`).
+- 6 components (`ConfigPanel`, `WorkflowGraph`, `AbilityMatrix`, `LiveWorkers`, `TraceSidebar`, `MemoryBrowser`).
+- 4-tab dashboard (Operations / Workflow / Abilities / Memory).
+- `lib/orchestration/introspection.ts` is the canonical server-side introspection module.
+
+### Pass 22 — operational write paths
+**Goal**: every action you currently do via shell or DB poke becomes a button. Make the UI a real console.
+
+- **New write routes** under `app/api/scion/`:
+  - `POST /api/scion/heartbeat-now` — proxies the existing heartbeat with the shared secret so the UI can fire it; returns the same shape.
+  - `POST /api/scion/watchdog-now` — runs `reclaimStaleWorkers` + the watchdog logic in-process.
+  - `POST /api/scion/issue/[id]/cancel` — sets status=`cancelled`, GraphState→`failed` with reason="user_cancelled".
+  - `POST /api/scion/issue/[id]/rerun` — clones the Issue (new id, status=`pending`, copies instruction/category/priority/metadata, blank graph state).
+  - `POST /api/scion/issue/[id]/resume` — calls `StateGraph.resume` then enqueues a fresh worker for that issue.
+  - `POST /api/scion/issue/[id]/resolve` — flips a `needs_human` Issue back to `pending` with a stored resolution note (writes `MemoryEpisode kind:"decision"`).
+  - `PATCH /api/scion/issue/[id]` — narrow editor: priority, agentCategory, metadata. Status/dependencies/blockedBy stay system-managed.
+  - `GET /api/scion/workers/[name]/logs` — `docker logs --tail 200` of the named worker.
+  - `POST /api/scion/workers/[name]/kill` — `docker kill` the named worker.
+  - `POST /api/scion/workers/[name]/restart` — `docker restart` the named worker.
+  - `POST /api/scion/pool/restart` — stop all `hlbw-worker-warm-*` then spawn fresh via existing `pool-manager` logic; long-running so returns 202 Accepted with a job id.
+  - `GET /api/scion/me` — returns `IapUser` from `getIapUser()` for the current-user chip.
+
+- **Components / wiring**:
+  - `IssueInbox` — add status filter pills (pending / in_progress / interrupted / needs_human / completed / failed / cancelled), free-text search on instruction substring, per-row actions (cancel / rerun / resume / resolve) gated by current status.
+  - `IssueDetail` (NEW) — full Issue + last actor proposal + last critic findings (read from `MemoryEpisode kind:"decision"` history), plus Edit form for the PATCH route.
+  - `WorkflowGraph` — add a "Force interrupt" button on running graphs (admin only — checks `me.role`).
+  - `LiveWorkers` — per-row Logs / Kill / Restart buttons + a "Restart pool" header button.
+  - `OperationsHeader` (NEW) — fires Heartbeat-Now and Watchdog-Now; shows last-fire timestamp + result.
+  - `UserChip` (NEW) — current-user email + role; theme toggle (uses existing `next-themes` provider).
+  - All actions use SWR `mutate` to refresh the relevant queries on success.
+
+- **Hard rules**: write routes require admin role (assert via `getIapUser`). Destructive actions confirm-then-execute. No new schema. No new top-level deps.
+
+- **Verifier extras**: per-route tests assert non-admin returns 403. Container smoke test: `curl -X POST http://localhost:3000/api/scion/heartbeat-now` returns 200/4xx (not 5xx).
+
+### Pass 23 — config + analytics write paths
+**Goal**: runtime knobs become editable; spend is breakable down by dimension; trace+memory get search.
+
+- **New `RuntimeConfig` Prisma model** (one migration; user-gated per D5):
+  - `key String @id`, `value Json`, `updatedAt DateTime @updatedAt`, `updatedBy String?`.
+  - Keys: `category_provider_overrides`, `cycle_cap`, `confidence_threshold`, `exploration_budget`, `watchdog_timeout_minutes`. Loader `lib/orchestration/runtime-config.ts:getRuntimeConfig(key, fallbackEnv)` reads DB then falls back to env.
+
+- **New write routes**:
+  - `GET /api/scion/runtime-config` — returns all keys + effective values (DB ?? env ?? hardcoded default).
+  - `PUT /api/scion/runtime-config/[key]` — admin-only, validated by per-key schema.
+  - `GET /api/scion/budget?groupBy=task|model|day&from=&to=` — `BudgetLedger` aggregation.
+  - `GET /api/scion/traces?status=&category=&from=&to=` — extends pass-18's route with filters.
+  - `POST /api/scion/memory/search` — body `{ query, limit?, kind? }` → calls `embeddings.embed(query)` then `memory.queryBySimilarity`; returns top-k episodes.
+  - `DELETE /api/scion/memory/[id]` — admin-only.
+  - `GET /api/scion/mcp/[server]/tools` — opens the MCP server stdio just long enough to call `tools/list`, returns the catalog. Caches 60s.
+
+- **Components**:
+  - `RuntimeConfigPanel` — table editor; per-key form respecting type (string / number / json).
+  - `BudgetBreakdown` — three small charts (per-task / per-model / per-day). Inline SVG bars; no charting library.
+  - `TraceFilters` — date range + status + category pickers above the existing `TraceSidebar` list. Each row gets a "Open in Jaeger" link.
+  - `MemorySearch` — text input + similarity results below the existing `MemoryBrowser`.
+  - `MCPToolBrowser` — under Abilities tab; expand a server → list its tools.
+
+- **Hard rules**: migration drafted via `--create-only` then ESCALATE. `runtime-config` writes audited (writer email + timestamp). Memory `DELETE` admin-only.
+
+### Pass 24 — code-index seeder + niche capabilities
+**Goal**: stop the symbol-index being empty; add the test/preview tools that round out the console.
+
+- **Symbol seeder script** `scripts/seed-code-symbols.ts`:
+  - Walks `app/`, `components/`, `lib/`, `scripts/` for `.ts/.tsx`.
+  - Uses the AST analyzer MCP (existing `.agents/mcp-servers/ast-analyzer/`) to extract exported symbols.
+  - For each symbol, embed `summary` via `EmbeddingProvider`, upsert into `MemoryEpisode kind:"entity"`.
+  - Idempotent: skips symbols whose source hash hasn't changed.
+  - CLI flags: `--paths a,b,c`, `--reembed`, `--dry-run`.
+
+- **New write routes**:
+  - `POST /api/scion/code-index/seed` — admin-only; spawns the seeder as a child process; returns 202 + a poll URL.
+  - `GET /api/scion/code-index/seed/[jobId]` — returns progress (counts).
+  - `POST /api/scion/embeddings/test` — body `{ text }` → returns `{ provider, dim, vector: number[12] }` (only first 12 elements for inspection).
+  - `POST /api/scion/providers/test` — body `{ provider, prompt }` → runs a short generation, returns response + token usage. Capped at 200 tokens output.
+  - `POST /api/scion/workflow/[id]/force-transition` — admin-only debug; force the graph to a named node. Audited.
+  - `GET /api/scion/templates` — surfaces the existing `app/api/scion/templates/route.ts`.
+
+- **Components**:
+  - `CodeIndexPanel` — total indexed count, last seed run, "Re-seed" + "Re-embed all" buttons + progress.
+  - `EmbeddingTester` — text input + vector preview.
+  - `ProviderTester` — provider picker + prompt + result.
+  - `TemplateBrowser` — list of templates; select to pre-fill `ExecuteDialog`.
+  - `GraphDebugPanel` — admin-only; force-transition controls inside `WorkflowGraph`.
+
+- **Hard rules**: seeder is incremental (source hash gate). All admin-only routes assert role. Provider tester output capped to prevent runaway cost.
+
+---
+
+## 7. Post-pass-20 protocol amendments
+
+The §2 protocol applies to passes 21+ unchanged, plus these **UI-pass-specific** guards. The user re-raised hallucination and context-bloat concerns specifically for the chained passes 22–24 — the amendments below address them.
+
+### 7.1 Component-grounding rule (extends §2.2 rule 2)
+For every new component file:
+- Before authoring, the Actor must `Read` the props interface (or function signature) of every other component / hook / route handler it consumes. Cite the file:line in the result artifact.
+- Before final commit, every `<ChildComponent prop={...}>` usage is type-checked against the child's declared `Props`. `npm run test:types` is the ground truth.
+- Critic verifies: pick 5 random `<Foo prop={x}>` JSX occurrences in the diff, Read `Foo`'s declared props, confirm `x`'s type matches.
+
+### 7.2 CSS-grounding rule
+- Every `className="some-class"` literal in a new TSX file MUST have a matching rule in `app/globals.css`.
+- Critic Greps each cited class against `globals.css`. Missing rule → FAIL.
+- Tailwind utility patterns continue to be banned in pass-scope files.
+
+### 7.3 API-shape grounding rule
+- Any UI fetcher (`useSWR`, `fetch`, `Invoke-RestMethod` patterns) must Read the corresponding `route.ts` to confirm the response shape it consumes.
+- Type the SWR hook with the route's exported type alias (e.g. `useSWR<ConfigSnapshot>("/api/scion/config")`). Untyped fetchers FAIL.
+- Critic verifies the route's `NextResponse.json(...)` body shape matches the consumer's expected type.
+
+### 7.4 Build-must-pass gate (mandatory for UI passes)
+- `npm run build` is part of the standard test gate for any pass touching `app/` or `components/`.
+- A successful build catches a large class of UI hallucinations (missing exports, prop-type mismatches, server/client boundary violations).
+- This was already in §2.2 rule 3 list; restating because UI passes were skipping it informally.
+
+### 7.5 In-container smoke test (new — UI passes only)
+- After the standard test gate, the dispatcher rebuilds the local container image, swaps `hlbw-hub-local`, and `curl`s every new route asserting non-5xx response.
+- Smoke checklist appended to the pass result file.
+- If a route is admin-gated, smoke includes the `LOCAL_TRUSTED_ADMIN=1` flag so the dispatcher can hit it.
+- A 5xx during smoke → REWORK with the route's stack trace from `docker logs hlbw-hub-local --tail 50`.
+
+### 7.6 Compression cadence amendment (extends §2.3)
+Post-pass-20 the cadence continues:
+- Every pass: write `pass-NN-verified.md` (≤300 words), discard `pass-NN-result.md` + `pass-NN-critic.md` from dispatcher working set after one verification read.
+- **Compaction checkpoint at pass 25** (or at the conclusion of any post-20 sequence ≥3 passes — write `checkpoint-25.md` regardless).
+- The dispatcher's working set for any post-20 pass NN is exactly: PLAN.md, critic-rubric.md, **most recent checkpoint** (currently `checkpoint-15.md` until 25 lands), `pass-{NN-1}-verified.md` (and any other post-checkpoint verified summaries since), the current pass spec from §6. **Hard cap: 5 documents.**
+
+### 7.7 Dispatcher self-handoff trigger (extends §2.2 rule 5)
+Specifically for chained passes 22→23→24:
+- Between passes the dispatcher MUST drop the prior pass's result+critic+verified-text from in-conversation memory and re-load only the verified summary file.
+- If the dispatcher's accumulated tool output for a single chain exceeds 35k tokens (raised from 20k for chained UI work), it writes `dispatcher-handoff.md` and asks the user to re-launch with a single instruction: "resume from pass-NN-verified.md per docs/re-arch/PLAN.md §6". A fresh dispatcher then continues.
+
+### 7.8 UI-specific Critic checks (extends critic-rubric pass-NN-specific section)
+Pass 22, 23, 24 Critics MUST additionally verify:
+- **Admin-gating**: every write route in the pass that mutates state asserts `me.role === "ADMIN"` and returns 403 otherwise. Critic must invoke each route as both admin and non-admin and observe the difference.
+- **Audit trail**: every state-mutating action writes a `MemoryEpisode kind:"decision"` row with the actor's email and the action payload (sanitized — no secrets).
+- **Confirmations on destructive actions**: components issuing DELETE / cancel / kill / force-transition must show a confirmation prompt (component prop or `window.confirm`). Critic Greps the diff for these patterns.
+- **No client-side secret use**: no `process.env.X` access from client components except `NEXT_PUBLIC_*`. Grep client files for `process.env.[A-Z_]+` and exclude `NEXT_PUBLIC_`.
+
+### 7.9 Sequential dispatch order is enforced
+Passes 22 → 23 → 24 must run sequentially. Pass 23 depends on pass-22 routes existing for `me.role` admin-gating consistency. Pass 24 depends on pass-23's `RuntimeConfig` being applied. Never dispatch in parallel.
+
+### 7.10 Why this is enough (re-verification of safety against the user's concerns)
+Two specific worries:
+1. **Auto-compaction-driven definition loss**: addressed by §7.6's enforced per-pass write+drop cadence and the 5-document hard cap. The dispatcher never lets raw conversation grow past the next compaction trigger.
+2. **Sloppiness / hallucination at scale**: addressed by §7.1–7.5 layering five additional grounding requirements on UI passes specifically (component, CSS, API-shape, build, smoke), plus §7.8's UI-specific Critic checks. Every claim is Grep-verifiable; every route is curl-verifiable; every component compiles or the gate fails.
+
+**TURBO-ALL is now safe to invoke for the chain `pass 22 → 23 → 24`** because (a) each pass is verifiable in isolation, (b) the dispatcher's context never accumulates past the cap, (c) the Critic is a fresh adversarial agent per pass, (d) any failure stops the chain at that pass's REWORK cycle, never silently propagating.

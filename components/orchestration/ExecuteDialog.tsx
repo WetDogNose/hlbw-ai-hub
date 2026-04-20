@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Rocket } from "lucide-react";
 
 const AGENT_CATEGORIES = [
@@ -14,14 +14,43 @@ const AGENT_CATEGORIES = [
 
 type AgentCategory = (typeof AGENT_CATEGORIES)[number];
 
-export interface ExecuteDialogProps {
-  onSubmitted?: () => void;
+export interface ExecuteDialogPrefill {
+  // Pass 24 — TemplateBrowser raises a selected template into the dashboard;
+  // the dashboard hands a prefill object down so the Execute form shows the
+  // template content without breaking the controlled-input model.
+  instruction?: string;
+  agentName?: string;
+  agentCategory?: AgentCategory;
+  // Monotonically-increasing key so two clicks on the same template retrigger
+  // the useEffect below.
+  nonce?: number;
 }
 
-export default function ExecuteDialog({ onSubmitted }: ExecuteDialogProps) {
+export interface ExecuteDialogProps {
+  onSubmitted?: () => void;
+  prefill?: ExecuteDialogPrefill;
+}
+
+export default function ExecuteDialog({
+  onSubmitted,
+  prefill,
+}: ExecuteDialogProps) {
   const [agentName, setAgentName] = useState("");
   const [instruction, setInstruction] = useState("");
   const [agentCategory, setAgentCategory] = useState<AgentCategory>("default");
+
+  useEffect(() => {
+    if (!prefill) return;
+    if (typeof prefill.instruction === "string") {
+      setInstruction(prefill.instruction);
+    }
+    if (typeof prefill.agentName === "string") {
+      setAgentName(prefill.agentName);
+    }
+    if (prefill.agentCategory) {
+      setAgentCategory(prefill.agentCategory);
+    }
+  }, [prefill?.nonce, prefill]);
   const [submitting, setSubmitting] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const [isError, setIsError] = useState(false);

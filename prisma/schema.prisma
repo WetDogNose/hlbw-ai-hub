@@ -305,3 +305,16 @@ enum GraphStateStatus {
   completed
   failed
 }
+
+// Pass 23 — UI-editable runtime knobs (decisions.md D5 — user-gated migration).
+// Loader: `lib/orchestration/runtime-config.ts`. Write routes are admin-gated
+// via `requireAdmin()` and audited via `recordAdminAction()`. Keys are an
+// enumerated set (see `RuntimeConfigKey`).
+model RuntimeConfig {
+  key       String   @id
+  value     Json
+  updatedAt DateTime @updatedAt
+  updatedBy String?
+
+  @@map("runtime_config")
+}
