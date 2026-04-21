@@ -65,21 +65,25 @@ steps:
       - '--backup-start-time=03:00'
       - '--deletion-protection'
 
-  # Create or update the SCION swarm-worker Cloud Run Job. `jobs deploy` is
-  # the idempotent shape — creates on first run, updates the image+env on
-  # subsequent runs. The Job is one execution per claimed Issue; the
-  # CloudRunJobDispatcher injects per-task env on `runJob()`. Memory is
-  # conservative (1 GiB); bump if worker OOMs.
+  # Create or update the SCION swarm-worker Cloud Run Job. Idempotent —
+  # creates on first run, updates the image+env on subsequent runs. One
+  # execution per claimed Issue; CloudRunJobDispatcher injects per-task env
+  # via runJob(). Memory is conservative (1 GiB); bump if the worker OOMs.
+  #
+  # Note: `$$VAR` escapes the bash variable from Cloud Build's substitution
+  # parser. `$PROJECT_ID` and `$BUILD_ID` are built-in substitutions; `$$VERB`
+  # is a local bash variable evaluated inside the script.
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     entrypoint: bash
     args:
       - '-c'
       - |
-        gcloud run jobs describe hlbw-swarm-worker \
-          --region=asia-southeast1 >/dev/null 2>&1 \
-          && VERB=update \
-          || VERB=create
-        gcloud run jobs $VERB hlbw-swarm-worker \
+        if gcloud run jobs describe hlbw-swarm-worker --region=asia-southeast1 >/dev/null 2>&1; then
+          VERB=update
+        else
+          VERB=create
+        fi
+        gcloud run jobs $$VERB hlbw-swarm-worker \
           --image=gcr.io/$PROJECT_ID/hlbw-swarm-worker:$BUILD_ID \
           --region=asia-southeast1 \
           --memory=1Gi \
@@ -99,18 +103,18 @@ steps:
     args:
       - '-c'
       - |
-        UI_SA=$(gcloud run services describe hlbw-ai-hub \
+        UI_SA=$$(gcloud run services describe hlbw-ai-hub \
           --region=asia-southeast1 \
           --format='value(spec.template.spec.serviceAccountName)' 2>/dev/null)
         # Cloud Run services default to PROJECT_NUMBER-compute@developer.gserviceaccount.com
-        if [ -z "$UI_SA" ]; then
-          PROJECT_NUMBER=$(gcloud projects describe $PROJECT_ID --format='value(projectNumber)')
-          UI_SA="$PROJECT_NUMBER-compute@developer.gserviceaccount.com"
+        if [ -z "$$UI_SA" ]; then
+          PROJECT_NUMBER=$$(gcloud projects describe $PROJECT_ID --format='value(projectNumber)')
+          UI_SA="$$PROJECT_NUMBER-compute@developer.gserviceaccount.com"
         fi
-        echo "Granting run.invoker on hlbw-swarm-worker to $UI_SA"
+        echo "Granting run.invoker on hlbw-swarm-worker to $$UI_SA"
         gcloud run jobs add-iam-policy-binding hlbw-swarm-worker \
           --region=asia-southeast1 \
-          --member="serviceAccount:$UI_SA" \
+          --member="serviceAccount:$$UI_SA" \
           --role=roles/run.invoker || true
 
   # Deploy UI container image to Cloud Run. DISPATCHER_MODE defaults to
