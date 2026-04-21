@@ -13,6 +13,7 @@
 //   dependencies?: string[],
 //   blockedBy?: string[],
 //   metadata?: Record<string, unknown>,
+//   assignedAgentId?: string, // optional AgentPersona.id — picker sets this.
 // }
 // Response: { issueId: string } on success, { error } on budget / validation.
 
@@ -31,6 +32,8 @@ interface ExecuteBody {
   dependencies?: unknown;
   blockedBy?: unknown;
   metadata?: unknown;
+  goalId?: unknown;
+  assignedAgentId?: unknown;
 }
 
 function asStringArray(v: unknown): string[] {
@@ -89,8 +92,37 @@ export async function POST(req: Request) {
     !Array.isArray(body.metadata)
       ? (body.metadata as Record<string, unknown>)
       : {};
+  const goalId =
+    typeof body.goalId === "string" && body.goalId.length > 0
+      ? body.goalId
+      : null;
+  const assignedAgentId =
+    typeof body.assignedAgentId === "string" && body.assignedAgentId.length > 0
+      ? body.assignedAgentId
+      : null;
 
   try {
+    if (goalId) {
+      const goal = await prisma.goal.findUnique({ where: { id: goalId } });
+      if (!goal) {
+        return NextResponse.json(
+          { error: `goal ${goalId} not found` },
+          { status: 400 },
+        );
+      }
+    }
+    if (assignedAgentId) {
+      const persona = await prisma.agentPersona.findUnique({
+        where: { id: assignedAgentId },
+        select: { id: true },
+      });
+      if (!persona) {
+        return NextResponse.json(
+          { error: `assignedAgentId ${assignedAgentId} not found` },
+          { status: 400 },
+        );
+      }
+    }
     const thread = await prisma.thread.create({
       data: {
         title: `Manual execution: ${agentName}`,
@@ -104,6 +136,8 @@ export async function POST(req: Request) {
             blockedBy,
             agentCategory,
             metadata: metadata as object,
+            ...(goalId ? { goalId } : {}),
+            ...(assignedAgentId ? { assignedAgentId } : {}),
           },
         },
       },

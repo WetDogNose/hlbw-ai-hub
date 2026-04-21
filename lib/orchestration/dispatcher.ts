@@ -25,6 +25,27 @@ import type { Task } from "@/scripts/swarm/types";
 import { TaskStatus } from "@/scripts/swarm/types";
 import { SWARM_POLICY } from "@/scripts/swarm/policy";
 import { getDispatcher } from "./dispatchers";
+import { getRuntimeConfig } from "./runtime-config";
+
+export interface DispatcherState {
+  dispatcherMode: "docker" | "noop";
+  dispatchPaused: boolean;
+}
+
+async function readDispatcherState(): Promise<DispatcherState> {
+  const dispatcher = getDispatcher();
+  const paused = await getRuntimeConfig(
+    "dispatch_paused",
+    "SCION_DISPATCH_PAUSED",
+    false,
+  );
+  return {
+    dispatcherMode: dispatcher.mode,
+    dispatchPaused: paused.value === true,
+  };
+}
+
+export { readDispatcherState };
 
 export { spawnWorkerSubprocess } from "./dispatchers";
 export type {
@@ -101,6 +122,15 @@ export async function dispatchReadyIssues(
 
   const dispatcher = getDispatcher();
   if (dispatcher.mode === "noop") return [];
+
+  // Admin kill-switch: when dispatch_paused=true we refuse to claim Issues
+  // until an operator flips the flag back. The UI banner surfaces the state.
+  const paused = await getRuntimeConfig(
+    "dispatch_paused",
+    "SCION_DISPATCH_PAUSED",
+    false,
+  );
+  if (paused.value === true) return [];
 
   const results: DispatchResult[] = [];
 

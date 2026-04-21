@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import useSWR from "swr";
-import { Settings, Cpu, Activity, ShieldAlert } from "lucide-react";
+import { Settings, Cpu, Activity } from "lucide-react";
 import Link from "next/link";
 
 import TopographyTree from "./orchestration/TopographyTree";
@@ -16,6 +16,8 @@ import TraceSidebar from "./orchestration/TraceSidebar";
 import AbilityMatrix from "./orchestration/AbilityMatrix";
 import ConfigPanel from "./orchestration/ConfigPanel";
 import MemoryBrowser from "./orchestration/MemoryBrowser";
+import ThreadsBrowser from "./orchestration/ThreadsBrowser";
+import GoalsBrowser from "./orchestration/GoalsBrowser";
 // Pass 22 — new ops-console components.
 import UserChip from "./orchestration/UserChip";
 import OperationsHeader from "./orchestration/OperationsHeader";
@@ -35,6 +37,9 @@ import ProviderTester from "./orchestration/ProviderTester";
 import TemplateBrowser, {
   type TemplateBrowserTemplate,
 } from "./orchestration/TemplateBrowser";
+import AuditLogViewer from "./orchestration/AuditLogViewer";
+// AgentPersona surface.
+import PersonasBrowser from "./orchestration/PersonasBrowser";
 import type { ScionStateResponse } from "@/app/api/scion/state/route";
 import type { EngineHealthResponse } from "@/app/api/scion/engine-health/route";
 
@@ -62,13 +67,23 @@ const engineHealthFetcher = async (
 export const SCION_STATE_KEY = "/api/scion/state";
 export const SCION_ENGINE_HEALTH_KEY = "/api/scion/engine-health";
 
-type TabKey = "operations" | "workflow" | "abilities" | "memory";
+type TabKey =
+  | "operations"
+  | "threads"
+  | "workflow"
+  | "abilities"
+  | "personas"
+  | "memory"
+  | "goals";
 
 const TABS: Array<{ key: TabKey; label: string }> = [
   { key: "operations", label: "Operations" },
+  { key: "threads", label: "Threads" },
   { key: "workflow", label: "Workflow" },
   { key: "abilities", label: "Abilities" },
+  { key: "personas", label: "Personas" },
   { key: "memory", label: "Memory" },
+  { key: "goals", label: "Goals" },
 ];
 
 export default function ScionDashboard() {
@@ -116,7 +131,7 @@ export default function ScionDashboard() {
   // Engine status: prefer the /api/scion/engine-health signal (which knows
   // whether this deployment even has a data plane). Fall back to the old
   // state-error heuristic while that endpoint is loading.
-  const engineStatus: "online" | "remote" | "degraded" | "loading" =
+  const engineStatus: "online" | "remote" | "degraded" | "paused" | "loading" =
     engineHealth?.status ??
     (isLoading ? "loading" : error ? "degraded" : "online");
   const engineLabel =
@@ -126,9 +141,12 @@ export default function ScionDashboard() {
         ? "Engine Online"
         : engineStatus === "remote"
           ? "Remote Dispatcher"
-          : "Engine Offline";
+          : engineStatus === "paused"
+            ? "Dispatch Paused"
+            : "Engine Offline";
   const engineOk = engineStatus === "online" || engineStatus === "remote";
   const engineTitle = engineHealth?.message ?? undefined;
+  const dispatchPaused = engineHealth?.dispatchPaused === true;
 
   return (
     <div className="scion-container">
@@ -164,11 +182,16 @@ export default function ScionDashboard() {
               </span>
             ) : null}
           </div>
-          <div className="scion-status-pill scion-status-pill--warn">
-            <ShieldAlert size={18} /> Strict Mode Disabled
-          </div>
         </div>
       </div>
+
+      {dispatchPaused ? (
+        <div className="scion-dispatch-banner">
+          <Activity size={18} /> Dispatch is paused — no new Issues will be
+          claimed. Flip `dispatch_paused` in Runtime Config (Abilities tab) to
+          resume.
+        </div>
+      ) : null}
 
       <TemplateBrowser onSelect={handleTemplateSelect} />
 
@@ -226,6 +249,12 @@ export default function ScionDashboard() {
         </div>
       ) : null}
 
+      {tab === "threads" ? (
+        <div className="scion-tab-panel">
+          <ThreadsBrowser />
+        </div>
+      ) : null}
+
       {tab === "workflow" ? (
         <div className="scion-tab-panel">
           <div className="ops-issue-selector">
@@ -272,6 +301,7 @@ export default function ScionDashboard() {
           <ConfigPanel />
           <RuntimeConfigPanel />
           <MCPToolBrowser />
+          <AuditLogViewer />
           <div className="scion-tools-section">
             <h2 className="scion-tools-section__title">Tools</h2>
             <CodeIndexPanel />
@@ -282,10 +312,22 @@ export default function ScionDashboard() {
         </div>
       ) : null}
 
+      {tab === "personas" ? (
+        <div className="scion-tab-panel">
+          <PersonasBrowser />
+        </div>
+      ) : null}
+
       {tab === "memory" ? (
         <div className="scion-tab-panel">
           <MemorySearch />
           <MemoryBrowser />
+        </div>
+      ) : null}
+
+      {tab === "goals" ? (
+        <div className="scion-tab-panel">
+          <GoalsBrowser />
         </div>
       ) : null}
 

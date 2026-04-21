@@ -23,7 +23,10 @@ export type RuntimeConfigKey =
   | "cycle_cap"
   | "confidence_threshold"
   | "exploration_budget"
-  | "watchdog_timeout_minutes";
+  | "watchdog_timeout_minutes"
+  | "dispatch_paused"
+  | "budget_daily_ceiling_tokens"
+  | "pool_warm_count";
 
 export const RUNTIME_CONFIG_KEYS: ReadonlyArray<RuntimeConfigKey> = [
   "category_provider_overrides",
@@ -31,6 +34,9 @@ export const RUNTIME_CONFIG_KEYS: ReadonlyArray<RuntimeConfigKey> = [
   "confidence_threshold",
   "exploration_budget",
   "watchdog_timeout_minutes",
+  "dispatch_paused",
+  "budget_daily_ceiling_tokens",
+  "pool_warm_count",
 ];
 
 export interface RuntimeConfigEffective<K extends RuntimeConfigKey> {
@@ -48,6 +54,9 @@ const HARDCODED_DEFAULTS: Record<RuntimeConfigKey, unknown> = {
   confidence_threshold: 0.85,
   exploration_budget: 8,
   watchdog_timeout_minutes: 30,
+  dispatch_paused: false,
+  budget_daily_ceiling_tokens: 5_000_000,
+  pool_warm_count: 3,
 };
 
 // Env variable name the loader will consult when no DB row exists. Exposed
@@ -59,6 +68,9 @@ const ENV_MAPPING: Record<RuntimeConfigKey, string> = {
   confidence_threshold: "SCION_CONFIDENCE_THRESHOLD",
   exploration_budget: "SCION_EXPLORATION_BUDGET",
   watchdog_timeout_minutes: "SCION_WATCHDOG_TIMEOUT_MINUTES",
+  dispatch_paused: "SCION_DISPATCH_PAUSED",
+  budget_daily_ceiling_tokens: "SCION_BUDGET_DAILY_CEILING_TOKENS",
+  pool_warm_count: "SCION_POOL_WARM_COUNT",
 };
 
 const KNOWN_PROVIDERS = new Set(["gemini", "paperclip", "ollama"]);
@@ -79,10 +91,18 @@ function parseEnvValue(key: RuntimeConfigKey, raw: string): unknown {
       return undefined;
     }
   }
+  if (key === "dispatch_paused") {
+    const v = raw.trim().toLowerCase();
+    if (v === "true" || v === "1" || v === "yes") return true;
+    if (v === "false" || v === "0" || v === "no") return false;
+    return undefined;
+  }
   if (
     key === "cycle_cap" ||
     key === "exploration_budget" ||
-    key === "watchdog_timeout_minutes"
+    key === "watchdog_timeout_minutes" ||
+    key === "budget_daily_ceiling_tokens" ||
+    key === "pool_warm_count"
   ) {
     const n = Number.parseInt(raw, 10);
     return Number.isFinite(n) ? n : undefined;
@@ -167,6 +187,38 @@ export function validateRuntimeConfigValue(
         value > 480
       ) {
         throw new Error(`invalid value for key ${key}: must be integer 1..480`);
+      }
+      return;
+    }
+    case "dispatch_paused": {
+      if (typeof value !== "boolean") {
+        throw new Error(`invalid value for key ${key}: must be boolean`);
+      }
+      return;
+    }
+    case "budget_daily_ceiling_tokens": {
+      if (
+        typeof value !== "number" ||
+        !Number.isFinite(value) ||
+        !Number.isInteger(value) ||
+        value < 0 ||
+        value > 1_000_000_000
+      ) {
+        throw new Error(
+          `invalid value for key ${key}: must be integer 0..1_000_000_000`,
+        );
+      }
+      return;
+    }
+    case "pool_warm_count": {
+      if (
+        typeof value !== "number" ||
+        !Number.isFinite(value) ||
+        !Number.isInteger(value) ||
+        value < 0 ||
+        value > 64
+      ) {
+        throw new Error(`invalid value for key ${key}: must be integer 0..64`);
       }
       return;
     }

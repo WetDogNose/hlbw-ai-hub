@@ -6,11 +6,12 @@
 // 8-node graph as inline SVG (no Mermaid dep). Highlights the current node.
 // Below: history timeline + last critic verdict (when present).
 
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import useSWR from "swr";
 import type { WorkflowSnapshot } from "@/lib/orchestration/introspection";
 // Pass 24 — admin-only graph debug controls live inside the workflow card.
 import GraphDebugPanel from "./GraphDebugPanel";
+import { useGraphTransitionStream } from "@/lib/hooks/useGraphTransitionStream";
 
 const fetcher = async (url: string): Promise<WorkflowSnapshot> => {
   const res = await fetch(url);
@@ -65,10 +66,50 @@ export default function WorkflowGraph({
   const { data, error, isLoading, mutate } = useSWR<WorkflowSnapshot>(
     issueId ? `/api/scion/workflow/${issueId}` : null,
     fetcher,
-    { refreshInterval: 5000, revalidateOnFocus: false },
+    { refreshInterval: 15000, revalidateOnFocus: false },
   );
+  const { transitions: liveTransitions, status: streamStatus } =
+    useGraphTransitionStream(issueId);
   const [interrupting, setInterrupting] = useState(false);
   const [interruptError, setInterruptError] = useState<string | null>(null);
+
+  // Merge SWR-polled history with live-streamed transitions. Dedup by
+  // `exitedAt` so the same transition isn't rendered twice when SWR refetches.
+  const mergedHistory = useMemo(() => {
+    if (!data) return [];
+    const seen = new Set<string>();
+    const rows: WorkflowSnapshot["history"] = [];
+    const all: Array<{ source: "history" | "live"; entry: unknown }> = [
+      ...data.history.map((entry) => ({ source: "history" as const, entry })),
+      ...liveTransitions.map((t) => ({
+        source: "live" as const,
+        entry: {
+          node: t.node,
+          outcome: t.outcome,
+          detail: t.detail,
+          enteredAt: t.enteredAt,
+          exitedAt: t.exitedAt,
+          durationMs:
+            new Date(t.exitedAt).getTime() - new Date(t.enteredAt).getTime(),
+        },
+      })),
+    ];
+    for (const { entry } of all) {
+      const e = entry as WorkflowSnapshot["history"][number] & {
+        exitedAt?: string;
+      };
+      const key = e.exitedAt ?? `${e.node}:${e.enteredAt ?? ""}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      rows.push(e);
+    }
+    return rows;
+  }, [data, liveTransitions]);
+
+  const liveNode =
+    liveTransitions.length > 0
+      ? liveTransitions[liveTransitions.length - 1].node
+      : null;
 
   async function handleForceInterrupt(): Promise<void> {
     if (!data) return;
@@ -119,14 +160,24 @@ export default function WorkflowGraph({
     return <div className="workflow-graph">Loading workflow…</div>;
   }
 
-  const current = data.currentNode ?? "";
+  // Prefer the live node if we've received a newer transition since SWR last
+  // refreshed — otherwise fall back to what the snapshot says.
+  const current = liveNode ?? data.currentNode ?? "";
   const canInterrupt = data.graphStatus === "running";
+  const streamLabel =
+    streamStatus === "open"
+      ? "· live"
+      : streamStatus === "connecting"
+        ? "· connecting"
+        : streamStatus === "error" || streamStatus === "closed"
+          ? "· reconnecting"
+          : "";
   return (
     <div className="workflow-graph">
       <h3 className="ops-section-title">
         Workflow for {data.issueId}{" "}
         <span className="config-panel__row-meta">
-          status={data.graphStatus}
+          status={data.graphStatus} {streamLabel}
         </span>
         {canInterrupt ? (
           <button
@@ -202,10 +253,10 @@ export default function WorkflowGraph({
       </svg>
 
       <ol className="workflow-history">
-        {data.history.length === 0 ? (
+        {mergedHistory.length === 0 ? (
           <li className="workflow-history__item">No transitions yet.</li>
         ) : null}
-        {data.history.map((h, i) => {
+        {mergedHistory.map((h, i) => {
           let chipClass = "status-pill status-pill--neutral";
           if (h.outcome === "error") chipClass = "status-pill status-pill--err";
           if (h.outcome === "interrupt")

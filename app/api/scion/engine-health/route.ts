@@ -26,15 +26,30 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getDispatcher } from "@/lib/orchestration/dispatchers";
+import { getRuntimeConfig } from "@/lib/orchestration/runtime-config";
 
 export interface EngineHealthResponse {
   dispatcherMode: "docker" | "noop";
-  status: "online" | "remote" | "degraded";
+  status: "online" | "remote" | "degraded" | "paused";
   message: string;
+  dispatchPaused: boolean;
 }
 
 export async function GET() {
   const dispatcher = getDispatcher();
+
+  // Read dispatch_paused runtime flag; errors fall through as `false`.
+  let dispatchPaused = false;
+  try {
+    const eff = await getRuntimeConfig(
+      "dispatch_paused",
+      "SCION_DISPATCH_PAUSED",
+      false,
+    );
+    dispatchPaused = eff.value === true;
+  } catch {
+    // swallow — runtime-config failures shouldn't cascade into health check
+  }
 
   if (dispatcher.mode === "noop") {
     return NextResponse.json<EngineHealthResponse>({
@@ -42,6 +57,7 @@ export async function GET() {
       status: "remote",
       message:
         "Operator UI only — worker data plane runs in a separate deployment.",
+      dispatchPaused,
     });
   }
 
@@ -50,10 +66,19 @@ export async function GET() {
   // is up. Cheap `SELECT 1` round-trip.
   try {
     await prisma.$queryRaw`SELECT 1`;
+    if (dispatchPaused) {
+      return NextResponse.json<EngineHealthResponse>({
+        dispatcherMode: "docker",
+        status: "paused",
+        message: "Dispatch paused by operator — no new Issues will be claimed.",
+        dispatchPaused: true,
+      });
+    }
     return NextResponse.json<EngineHealthResponse>({
       dispatcherMode: "docker",
       status: "online",
       message: "Local Docker dispatcher ready.",
+      dispatchPaused: false,
     });
   } catch (err: unknown) {
     const detail = err instanceof Error ? err.message : String(err);
@@ -62,6 +87,7 @@ export async function GET() {
         dispatcherMode: "docker",
         status: "degraded",
         message: `Database unreachable: ${detail}`,
+        dispatchPaused,
       },
       { status: 503 },
     );

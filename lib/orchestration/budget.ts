@@ -11,8 +11,26 @@
 // agent. Issue linkage is optional.
 
 import prisma from "@/lib/prisma";
+import { getRuntimeConfig } from "./runtime-config";
 
 export const DAILY_TOKEN_LIMIT = 5_000_000;
+
+/**
+ * Return the effective daily token ceiling. Reads
+ * runtime-config `budget_daily_ceiling_tokens` (falling through env +
+ * hardcoded default). Callers that have a hardcoded override can still
+ * pass a literal `limit` to `assertBudgetAvailable`.
+ */
+export async function getEffectiveTokenCeiling(): Promise<number> {
+  const eff = await getRuntimeConfig(
+    "budget_daily_ceiling_tokens",
+    "SCION_BUDGET_DAILY_CEILING_TOKENS",
+    DAILY_TOKEN_LIMIT,
+  );
+  return typeof eff.value === "number" && Number.isFinite(eff.value)
+    ? eff.value
+    : DAILY_TOKEN_LIMIT;
+}
 
 export const SYSTEM_AGENT_NAME = "__system";
 export const SYSTEM_ORG_NAME = "__system";
@@ -53,17 +71,36 @@ export interface RecordTokenUsageInput {
  * when the sum exceeds `DAILY_TOKEN_LIMIT`. Pass 16 keeps the same ceiling
  * semantics the original `/api/scion/execute` enforced.
  */
-export async function assertBudgetAvailable(
-  limit: number = DAILY_TOKEN_LIMIT,
-): Promise<number> {
+export async function assertBudgetAvailable(limit?: number): Promise<number> {
+  const effectiveLimit =
+    typeof limit === "number" && Number.isFinite(limit)
+      ? limit
+      : await getEffectiveTokenCeiling();
   const sumResult = await prisma.budgetLedger.aggregate({
     _sum: { tokensUsed: true },
   });
   const totalUsage = sumResult._sum.tokensUsed ?? 0;
-  if (totalUsage > limit) {
-    throw new BudgetExceededError(totalUsage, limit);
+  if (totalUsage > effectiveLimit) {
+    throw new BudgetExceededError(totalUsage, effectiveLimit);
   }
   return totalUsage;
+}
+
+/**
+ * Return (and if necessary create) the singleton `Organization` used for
+ * system-owned rows (agents without a human tenant, seed goals created via
+ * the SCION admin UI, etc.). Exported because the Goals API needs the same
+ * FK resolution pattern.
+ */
+export async function ensureSystemOrg(): Promise<string> {
+  const existingOrg = await prisma.organization.findFirst({
+    where: { name: SYSTEM_ORG_NAME },
+  });
+  if (existingOrg) return existingOrg.id;
+  const created = await prisma.organization.create({
+    data: { name: SYSTEM_ORG_NAME },
+  });
+  return created.id;
 }
 
 /**
@@ -77,18 +114,13 @@ async function ensureSystemAgentId(): Promise<string> {
   });
   if (existingAgent) return existingAgent.id;
 
-  const existingOrg = await prisma.organization.findFirst({
-    where: { name: SYSTEM_ORG_NAME },
-  });
-  const org =
-    existingOrg ??
-    (await prisma.organization.create({ data: { name: SYSTEM_ORG_NAME } }));
+  const organizationId = await ensureSystemOrg();
 
   const created = await prisma.agentPersona.create({
     data: {
       name: SYSTEM_AGENT_NAME,
       role: "SYSTEM",
-      organizationId: org.id,
+      organizationId,
     },
   });
   return created.id;

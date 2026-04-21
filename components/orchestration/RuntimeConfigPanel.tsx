@@ -46,6 +46,12 @@ function parseForKey(
       };
     }
   }
+  if (key === "dispatch_paused") {
+    const v = raw.trim().toLowerCase();
+    if (v === "true") return { ok: true, value: true };
+    if (v === "false") return { ok: true, value: false };
+    return { ok: false, error: "must be true/false" };
+  }
   const num =
     key === "confidence_threshold"
       ? Number.parseFloat(raw)
@@ -57,6 +63,7 @@ function parseForKey(
 }
 
 function encodeValue(value: unknown): string {
+  if (typeof value === "boolean") return value ? "true" : "false";
   if (typeof value === "number") return String(value);
   return JSON.stringify(value, null, 2);
 }
@@ -75,6 +82,7 @@ function KeyEditor({
   });
 
   const isJson = entry.key === "category_provider_overrides";
+  const isBool = entry.key === "dispatch_paused";
 
   const handleSave = async (): Promise<void> => {
     const parsed = parseForKey(entry.key, state.raw);
@@ -132,6 +140,21 @@ function KeyEditor({
             setState((s) => ({ ...s, raw: e.target.value, error: null }))
           }
         />
+      ) : isBool ? (
+        <label className="runtime-config__bool">
+          <input
+            type="checkbox"
+            checked={state.raw === "true"}
+            onChange={(e) =>
+              setState((s) => ({
+                ...s,
+                raw: e.target.checked ? "true" : "false",
+                error: null,
+              }))
+            }
+          />
+          {state.raw === "true" ? "Paused" : "Active"}
+        </label>
       ) : (
         <input
           type="number"

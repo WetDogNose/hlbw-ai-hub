@@ -25,6 +25,7 @@ export interface IssueMemoryRow {
   createdAt: string;
   summary: string;
   content: unknown;
+  kind?: string;
 }
 
 export interface IssueDetailResponse {
@@ -50,11 +51,22 @@ export interface IssueDetailResponse {
     context: unknown;
   } | null;
   recentHistory: HistoryEntry[];
+  historyTotal: number;
   recentDecisions?: IssueMemoryRow[];
 }
 
 const HISTORY_LIMIT = 25;
+const HISTORY_LIMIT_MAX = 500;
 const DECISION_LIMIT = 25;
+const MEMORY_LIMIT_MAX = 200;
+const VALID_MEMORY_KINDS = new Set([
+  "task_context",
+  "discovery",
+  "decision",
+  "entity",
+  "observation",
+  "relation",
+]);
 
 export async function GET(
   req: Request,
@@ -73,6 +85,30 @@ export async function GET(
 
   const url = new URL(req.url);
   const includeMemory = url.searchParams.get("includeMemory") === "true";
+  const memoryKindsRaw = url.searchParams.get("memoryKinds");
+  const memoryLimitRaw = url.searchParams.get("memoryLimit");
+  const historyOffsetRaw = url.searchParams.get("historyOffset");
+  const historyLimitRaw = url.searchParams.get("historyLimit");
+
+  const memoryKinds = (() => {
+    if (!memoryKindsRaw) return ["decision"];
+    return memoryKindsRaw
+      .split(",")
+      .map((k) => k.trim())
+      .filter((k) => VALID_MEMORY_KINDS.has(k));
+  })();
+  const memoryLimit = Math.min(
+    Math.max(1, Number.parseInt(memoryLimitRaw ?? "", 10) || DECISION_LIMIT),
+    MEMORY_LIMIT_MAX,
+  );
+  const historyOffset = Math.max(
+    0,
+    Number.parseInt(historyOffsetRaw ?? "0", 10) || 0,
+  );
+  const historyLimit = Math.min(
+    Math.max(1, Number.parseInt(historyLimitRaw ?? "", 10) || HISTORY_LIMIT),
+    HISTORY_LIMIT_MAX,
+  );
 
   try {
     const issue = await prisma.issue.findUnique({
@@ -84,22 +120,28 @@ export async function GET(
     }
 
     let recentHistory: HistoryEntry[] = [];
+    let historyTotal = 0;
     if (issue.graphState && Array.isArray(issue.graphState.history)) {
       const arr = issue.graphState.history as unknown as HistoryEntry[];
-      recentHistory = arr.slice(-HISTORY_LIMIT);
+      historyTotal = arr.length;
+      // Return the most recent N entries, skipping `historyOffset` from the end.
+      const endExclusive = Math.max(0, arr.length - historyOffset);
+      const startInclusive = Math.max(0, endExclusive - historyLimit);
+      recentHistory = arr.slice(startInclusive, endExclusive);
     }
 
     let recentDecisions: IssueMemoryRow[] | undefined;
-    if (includeMemory) {
+    if (includeMemory && memoryKinds.length > 0) {
       const rows = await prisma.memoryEpisode.findMany({
-        where: { taskId: id, kind: "decision" },
+        where: { taskId: id, kind: { in: memoryKinds } },
         orderBy: [{ createdAt: "desc" }, { id: "desc" }],
-        take: DECISION_LIMIT,
+        take: memoryLimit,
         select: {
           id: true,
           createdAt: true,
           summary: true,
           content: true,
+          kind: true,
         },
       });
       recentDecisions = rows.map((r) => ({
@@ -107,6 +149,7 @@ export async function GET(
         createdAt: r.createdAt.toISOString(),
         summary: r.summary,
         content: r.content,
+        kind: r.kind,
       }));
     }
 
@@ -135,6 +178,7 @@ export async function GET(
           }
         : null,
       recentHistory,
+      historyTotal,
       ...(recentDecisions ? { recentDecisions } : {}),
     };
 

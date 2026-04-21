@@ -10,10 +10,11 @@
 //   - Edit form (priority / agentCategory / metadata JSON) hitting PATCH
 // Admin-gated at the API level; this component simply calls the API.
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import useSWR from "swr";
 import { X } from "lucide-react";
 import type { IssueDetailResponse } from "@/app/api/scion/issue/[id]/route";
+import { useGraphTransitionStream } from "@/lib/hooks/useGraphTransitionStream";
 
 const fetcher = async (url: string): Promise<IssueDetailResponse> => {
   const res = await fetch(url);
@@ -26,16 +27,48 @@ export interface IssueDetailProps {
   onClose?: () => void;
 }
 
+const MEMORY_KIND_OPTIONS: Array<{ key: string; label: string }> = [
+  { key: "decision", label: "decisions" },
+  { key: "all", label: "all kinds" },
+  { key: "task_context", label: "task_context" },
+  { key: "discovery", label: "discoveries" },
+  { key: "observation", label: "observations" },
+  { key: "entity", label: "entities" },
+  { key: "relation", label: "relations" },
+];
+
+const ALL_MEMORY_KINDS =
+  "decision,task_context,discovery,observation,entity,relation";
+
 export default function IssueDetail({
   issueId,
   onClose,
 }: IssueDetailProps): React.ReactElement {
-  const key = issueId ? `/api/scion/issue/${issueId}?includeMemory=true` : null;
+  const [memoryKind, setMemoryKind] = useState<string>("decision");
+  const [historyOffset, setHistoryOffset] = useState<number>(0);
+  const [contextOpen, setContextOpen] = useState<boolean>(false);
+
+  const kindQuery = memoryKind === "all" ? ALL_MEMORY_KINDS : memoryKind;
+  const key = issueId
+    ? `/api/scion/issue/${issueId}?includeMemory=true&memoryKinds=${encodeURIComponent(kindQuery)}&historyOffset=${historyOffset}&historyLimit=25`
+    : null;
   const { data, error, isLoading, mutate } = useSWR<IssueDetailResponse>(
     key,
     fetcher,
-    { refreshInterval: 5000, revalidateOnFocus: false },
+    { refreshInterval: 15000, revalidateOnFocus: false },
   );
+  const {
+    transitions,
+    latestTransition,
+    status: streamStatus,
+  } = useGraphTransitionStream(issueId);
+
+  // Revalidate the detail snapshot whenever a fresh transition lands so the
+  // decisions / graphState blocks stay in sync with the live node stream.
+  useEffect(() => {
+    if (!latestTransition) return;
+    void mutate();
+  }, [latestTransition?.exitedAt, mutate]);
 
   const [priority, setPriority] = useState<string>("");
   const [agentCategory, setAgentCategory] = useState<string>("");
@@ -136,25 +169,110 @@ export default function IssueDetail({
       <div className="issue-detail__meta">
         <span className="config-panel__row-meta">id: {data.id}</span>
         <span className="config-panel__row-meta">status: {data.status}</span>
+        <span className="config-panel__row-meta">
+          priority: {data.priority}
+        </span>
         {data.graphState ? (
           <span className="config-panel__row-meta">
             graph: {data.graphState.status} @ {data.graphState.currentNode}
           </span>
         ) : null}
       </div>
+      {data.dependencies.length > 0 || data.blockedBy.length > 0 ? (
+        <div className="issue-detail__section">
+          <div className="issue-detail__section-title">Dependencies</div>
+          {data.dependencies.length > 0 ? (
+            <div className="issue-detail__chips">
+              <span className="config-panel__row-meta">depends on:</span>
+              {data.dependencies.map((depId) => (
+                <span key={depId} className="issue-detail__chip">
+                  {depId.slice(0, 12)}
+                </span>
+              ))}
+            </div>
+          ) : null}
+          {data.blockedBy.length > 0 ? (
+            <div className="issue-detail__chips">
+              <span className="config-panel__row-meta">blocked by:</span>
+              {data.blockedBy.map((blockId) => (
+                <span
+                  key={blockId}
+                  className="issue-detail__chip issue-detail__chip--blocked"
+                >
+                  {blockId.slice(0, 12)}
+                </span>
+              ))}
+            </div>
+          ) : null}
+        </div>
+      ) : null}
       <div className="issue-detail__section">
         <div className="issue-detail__section-title">Instruction</div>
         <pre className="issue-detail__pre">{data.instruction}</pre>
       </div>
       <div className="issue-detail__section">
         <div className="issue-detail__section-title">
-          Recent decisions (audit + critic)
+          Live transitions{" "}
+          <span className="config-panel__row-meta">
+            {streamStatus === "open"
+              ? "· live"
+              : streamStatus === "connecting"
+                ? "· connecting"
+                : streamStatus === "error" || streamStatus === "closed"
+                  ? "· reconnecting"
+                  : ""}
+          </span>
+        </div>
+        {transitions.length === 0 ? (
+          <div className="config-panel__row-meta">Waiting for transitions…</div>
+        ) : (
+          <ol className="workflow-history">
+            {transitions.slice(-10).map((t, i) => (
+              <li key={`${t.exitedAt}-${i}`} className="workflow-history__item">
+                <span className="workflow-history__node">{t.node}</span>
+                <span
+                  className={
+                    t.outcome === "ok"
+                      ? "status-pill status-pill--ok"
+                      : t.outcome === "error"
+                        ? "status-pill status-pill--err"
+                        : "status-pill status-pill--warn"
+                  }
+                >
+                  {t.outcome}
+                </span>
+                {t.detail ? (
+                  <span className="config-panel__row-meta">{t.detail}</span>
+                ) : null}
+              </li>
+            ))}
+          </ol>
+        )}
+      </div>
+      <div className="issue-detail__section">
+        <div className="issue-detail__section-title">
+          Memory episodes{" "}
+          <select
+            className="issue-detail__input"
+            value={memoryKind}
+            onChange={(e) => setMemoryKind(e.target.value)}
+            style={{ width: "auto", marginLeft: "var(--spacing-2)" }}
+          >
+            {MEMORY_KIND_OPTIONS.map((o) => (
+              <option key={o.key} value={o.key}>
+                {o.label}
+              </option>
+            ))}
+          </select>
         </div>
         {data.recentDecisions && data.recentDecisions.length > 0 ? (
           <ul className="issue-detail__decisions">
             {data.recentDecisions.map((d) => (
               <li key={d.id} className="issue-detail__decision">
-                <div className="config-panel__row-meta">{d.createdAt}</div>
+                <div className="config-panel__row-meta">
+                  {d.createdAt}
+                  {d.kind ? ` · ${d.kind}` : ""}
+                </div>
                 <div className="issue-detail__decision-summary">
                   {d.summary}
                 </div>
@@ -165,9 +283,84 @@ export default function IssueDetail({
             ))}
           </ul>
         ) : (
-          <div className="config-panel__row-meta">No recorded decisions.</div>
+          <div className="config-panel__row-meta">
+            No {memoryKind === "all" ? "memory" : memoryKind} episodes.
+          </div>
         )}
       </div>
+      <div className="issue-detail__section">
+        <div className="issue-detail__section-title">
+          History ({data.recentHistory.length} of {data.historyTotal})
+        </div>
+        {data.recentHistory.length === 0 ? (
+          <div className="config-panel__row-meta">No recorded history.</div>
+        ) : (
+          <ol className="workflow-history">
+            {data.recentHistory.map((h, i) => (
+              <li key={i} className="workflow-history__item">
+                <span className="workflow-history__node">{h.node}</span>
+                <span
+                  className={
+                    h.outcome === "ok"
+                      ? "status-pill status-pill--ok"
+                      : h.outcome === "error"
+                        ? "status-pill status-pill--err"
+                        : "status-pill status-pill--warn"
+                  }
+                >
+                  {h.outcome}
+                </span>
+                {h.detail ? (
+                  <span className="config-panel__row-meta">{h.detail}</span>
+                ) : null}
+              </li>
+            ))}
+          </ol>
+        )}
+        {data.historyTotal > data.recentHistory.length + historyOffset ? (
+          <button
+            type="button"
+            className="issue-detail__save"
+            style={{ marginTop: "var(--spacing-2)" }}
+            onClick={() => setHistoryOffset((o) => o + 25)}
+          >
+            Load older
+          </button>
+        ) : null}
+        {historyOffset > 0 ? (
+          <button
+            type="button"
+            className="issue-detail__save"
+            style={{
+              marginTop: "var(--spacing-2)",
+              marginLeft: "var(--spacing-2)",
+            }}
+            onClick={() => setHistoryOffset(0)}
+          >
+            Reset
+          </button>
+        ) : null}
+      </div>
+      {data.graphState?.context ? (
+        <div className="issue-detail__section">
+          <div className="issue-detail__section-title">
+            Graph context{" "}
+            <button
+              type="button"
+              className="issue-detail__close"
+              onClick={() => setContextOpen((o) => !o)}
+              aria-label="Toggle context"
+            >
+              {contextOpen ? "hide" : "show"}
+            </button>
+          </div>
+          {contextOpen ? (
+            <pre className="issue-detail__pre">
+              {JSON.stringify(data.graphState.context, null, 2)}
+            </pre>
+          ) : null}
+        </div>
+      ) : null}
       <div className="issue-detail__section">
         <div className="issue-detail__section-title">Edit</div>
         <label className="issue-detail__field">

@@ -15,8 +15,15 @@
 import React, { useMemo, useState } from "react";
 import { Inbox, MessageSquare } from "lucide-react";
 import Link from "next/link";
-import { mutate as globalMutate } from "swr";
+import useSWR, { mutate as globalMutate } from "swr";
 import type { IssueWithGraphState } from "@/app/api/scion/state/route";
+import type { ScionThreadsResponse } from "@/app/api/scion/threads/route";
+
+const threadsFetcher = async (url: string): Promise<ScionThreadsResponse> => {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`Request failed: ${res.status}`);
+  return (await res.json()) as ScionThreadsResponse;
+};
 
 export interface IssueInboxProps {
   issues: IssueWithGraphState[];
@@ -125,8 +132,15 @@ export default function IssueInbox({ issues, onOpenDetail }: IssueInboxProps) {
   const [filter, setFilter] = useState<Filter>("all");
   const [sortKey, setSortKey] = useState<SortKey>("createdAt");
   const [search, setSearch] = useState<string>("");
+  const [threadFilter, setThreadFilter] = useState<string>("");
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [lastError, setLastError] = useState<string | null>(null);
+
+  const { data: threadsData } = useSWR<ScionThreadsResponse>(
+    "/api/scion/threads?limit=100",
+    threadsFetcher,
+    { revalidateOnFocus: false },
+  );
 
   const visible = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -138,11 +152,12 @@ export default function IssueInbox({ issues, onOpenDetail }: IssueInboxProps) {
           return false;
         }
       }
+      if (threadFilter && i.threadId !== threadFilter) return false;
       if (q && !i.instruction.toLowerCase().includes(q)) return false;
       return true;
     });
     return sortIssues(filtered, sortKey);
-  }, [issues, filter, sortKey, search]);
+  }, [issues, filter, sortKey, search, threadFilter]);
 
   async function handleAction(
     issue: IssueWithGraphState,
@@ -181,6 +196,21 @@ export default function IssueInbox({ issues, onOpenDetail }: IssueInboxProps) {
             </button>
           ))}
         </div>
+        <label className="issue-inbox__control-label">
+          Thread
+          <select
+            className="issue-inbox__control"
+            value={threadFilter}
+            onChange={(e) => setThreadFilter(e.target.value)}
+          >
+            <option value="">all threads</option>
+            {(threadsData?.rows ?? []).map((t) => (
+              <option key={t.id} value={t.id}>
+                {t.title}
+              </option>
+            ))}
+          </select>
+        </label>
         <label className="issue-inbox__control-label">
           Sort
           <select
