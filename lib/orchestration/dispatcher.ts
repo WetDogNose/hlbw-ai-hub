@@ -28,7 +28,7 @@ import { getDispatcher } from "./dispatchers";
 import { getRuntimeConfig } from "./runtime-config";
 
 export interface DispatcherState {
-  dispatcherMode: "docker" | "noop";
+  dispatcherMode: "docker" | "noop" | "cloud-run-job";
   dispatchPaused: boolean;
 }
 

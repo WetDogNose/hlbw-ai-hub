@@ -5,7 +5,7 @@
 // deployment environment can plug in its own launcher without touching the
 // orchestrator's claim-and-retry logic in `lib/orchestration/dispatcher.ts`.
 
-export type DispatcherMode = "docker" | "noop";
+export type DispatcherMode = "docker" | "noop" | "cloud-run-job";
 
 export interface WorkerLaunchRequest {
   taskId: string;

@@ -1,0 +1,43 @@
+# Dockerfile for the SCION swarm worker (Cloud Run Job image).
+#
+# This image is intentionally separate from the Next.js `Dockerfile`: the UI
+# image uses Next.js's standalone output to minimize size and drops the full
+# node_modules tree. Swarm workers invoke `scripts/swarm/agent-runner.ts`
+# via `npx tsx`, which needs tsx + the orchestration runtime deps present at
+# runtime. So we ship the normal Node install (including devDependencies for
+# tsx + typescript) plus the scripts + prisma client.
+#
+# Built + tagged by cloudbuild.yaml as `gcr.io/$PROJECT_ID/hlbw-swarm-worker`
+# and deployed to a single Cloud Run Job named `hlbw-swarm-worker` per
+# execution. The CloudRunJobDispatcher injects per-task env vars on `runJob`.
+
+FROM node:20-alpine
+
+# openssl is required at runtime by the Prisma engine.
+RUN apk add --no-cache openssl libc6-compat
+
+WORKDIR /app
+
+# Install all dependencies (including devDependencies — tsx + typescript live
+# there and agent-runner.ts is loaded via `npx tsx`).
+COPY package.json package-lock.json* ./
+RUN npm ci --legacy-peer-deps
+
+# Generate the Prisma Client. Schema first, then the rest of the source —
+# keeps the generate step cached across unrelated edits.
+COPY prisma ./prisma
+RUN npx prisma generate
+
+# Ship the scripts + lib trees the worker actually exercises. Keeping the
+# whole repo out of the image would speed builds but tsx resolves paths via
+# the repo's tsconfig alias (@/...), so lib + scripts both need to exist.
+COPY tsconfig.json ./tsconfig.json
+COPY scripts ./scripts
+COPY lib ./lib
+COPY app ./app
+
+ENV NODE_ENV=production
+# tsx will load the runner script at container start; Cloud Run Jobs passes
+# per-task env overrides (AGENT_ISSUE_ID, AGENT_INSTRUCTION, ...) that the
+# runner consumes.
+CMD ["npx", "tsx", "scripts/swarm/agent-runner.ts"]

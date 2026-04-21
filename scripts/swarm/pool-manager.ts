@@ -5,6 +5,10 @@ import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
 import prisma from "@/lib/prisma";
 import { resumeIssue } from "./resume-worker";
+import { resolveWorkerCount } from "@/lib/orchestration/pool-config";
+
+// Re-export for any CLI callers (`scripts/swarm/pool-manager.ts start N`).
+export { resolveWorkerCount };
 
 /**
  * V3 SWARM WARM POOL MANAGER
@@ -38,9 +42,12 @@ async function getMcpClient() {
   return client;
 }
 
-export async function initializePool(config: PoolConfig = { workerCount: 21 }) {
+export async function initializePool(
+  config: Partial<PoolConfig> = {},
+): Promise<void> {
+  const workerCount = await resolveWorkerCount(config.workerCount);
   console.log(
-    `[PoolManager] Booting warm pool with ${config.workerCount} generic straight-workers...`,
+    `[PoolManager] Booting warm pool with ${workerCount} generic straight-workers...`,
   );
   const client = await getMcpClient();
   const absoluteRoot = process.cwd(); // Mount entire root so workers can dynamically `cd` into worktrees
@@ -57,7 +64,7 @@ export async function initializePool(config: PoolConfig = { workerCount: 21 }) {
     ];
     const roleCounters: Record<string, number> = {};
 
-    for (let i = 1; i <= config.workerCount; i++) {
+    for (let i = 1; i <= workerCount; i++) {
       const role = roles[(i - 1) % roles.length];
       roleCounters[role] = (roleCounters[role] || 0) + 1;
       const subIndex = roleCounters[role];
@@ -143,8 +150,11 @@ export async function pickNextResumable(): Promise<string | null> {
 if (require.main === module) {
   const cmd = process.argv[2];
   if (cmd === "start") {
-    const count = parseInt(process.argv[3] || "21");
-    initializePool({ workerCount: count }).then(() =>
+    // CLI arg wins over runtime-config; omit to pick up the configured default.
+    const raw = process.argv[3];
+    const parsed =
+      raw !== undefined && raw !== "" ? Number.parseInt(raw, 10) : undefined;
+    initializePool({ workerCount: parsed }).then(() =>
       console.log("Pool initialized."),
     );
   } else if (cmd === "resume-next") {

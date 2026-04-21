@@ -5,6 +5,7 @@
 
 import { DockerDispatcher } from "./DockerDispatcher";
 import { NoopDispatcher } from "./NoopDispatcher";
+import { CloudRunJobDispatcher } from "./CloudRunJobDispatcher";
 import type { DispatcherMode, WorkerDispatcher } from "./types";
 
 export type { DispatcherMode, WorkerDispatcher } from "./types";
@@ -21,12 +22,16 @@ function buildDispatcher(mode: DispatcherMode): WorkerDispatcher {
       return new DockerDispatcher();
     case "noop":
       return new NoopDispatcher();
+    case "cloud-run-job":
+      return new CloudRunJobDispatcher();
   }
 }
 
 function resolveMode(): DispatcherMode {
   const raw = process.env.DISPATCHER_MODE?.trim().toLowerCase();
   if (raw === "noop") return "noop";
+  if (raw === "cloud-run-job" || raw === "cloud_run_job")
+    return "cloud-run-job";
   if (raw === "docker" || !raw) return "docker";
   // Unknown mode: log once and fall back to noop so the UI doesn't claim
   // Issues it can't execute.

@@ -1,15 +1,15 @@
-# 🤖 AGENT DIRECTIVE: ALL CLOUD RUN AND INFRASTRUCTURE DEPLOYMENTS MUST TARGET THE `asia-southeast1` REGION. 
+# 🤖 AGENT DIRECTIVE: ALL CLOUD RUN AND INFRASTRUCTURE DEPLOYMENTS MUST TARGET THE `asia-southeast1` REGION.
 # NEVER DEPLOY TO `us-central1` OR ANY OTHER REGION UNLESS STRICTLY INSTRUCTED BY THE USER.
 
 steps:
-  # Pull the previous image (if available) to speed up the build using Docker cache
+  # Pull the previous UI image (if available) to speed up the build using Docker cache
   - name: 'gcr.io/cloud-builders/docker'
     entrypoint: 'bash'
     args:
       - '-c'
       - 'docker pull gcr.io/$PROJECT_ID/hlbw-ai-hub:latest || exit 0'
 
-  # Build the container image
+  # Build the UI container image (Next.js standalone)
   - name: 'gcr.io/cloud-builders/docker'
     args: [
       'build',
@@ -20,13 +20,36 @@ steps:
       '.'
     ]
 
-  # Push the container image to Container Registry
   - name: 'gcr.io/cloud-builders/docker'
     args: ['push', 'gcr.io/$PROJECT_ID/hlbw-ai-hub:latest']
 
-  # Push the specific commit image as well
   - name: 'gcr.io/cloud-builders/docker'
     args: ['push', 'gcr.io/$PROJECT_ID/hlbw-ai-hub:$BUILD_ID']
+
+  # Pull the previous worker image to speed up the swarm-worker build
+  - name: 'gcr.io/cloud-builders/docker'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - 'docker pull gcr.io/$PROJECT_ID/hlbw-swarm-worker:latest || exit 0'
+
+  # Build the SCION swarm worker image (separate from UI — full node_modules +
+  # tsx + scripts; see Dockerfile.worker). Used by the Cloud Run Job below.
+  - name: 'gcr.io/cloud-builders/docker'
+    args: [
+      'build',
+      '-t', 'gcr.io/$PROJECT_ID/hlbw-swarm-worker:latest',
+      '-t', 'gcr.io/$PROJECT_ID/hlbw-swarm-worker:$BUILD_ID',
+      '-f', 'Dockerfile.worker',
+      '--cache-from', 'gcr.io/$PROJECT_ID/hlbw-swarm-worker:latest',
+      '.'
+    ]
+
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'gcr.io/$PROJECT_ID/hlbw-swarm-worker:latest']
+
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'gcr.io/$PROJECT_ID/hlbw-swarm-worker:$BUILD_ID']
 
   # Enforce DB security settings (SSL, Password Policy, Backups, Deletion Protection)
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
@@ -42,8 +65,58 @@ steps:
       - '--backup-start-time=03:00'
       - '--deletion-protection'
 
+  # Create or update the SCION swarm-worker Cloud Run Job. `jobs deploy` is
+  # the idempotent shape — creates on first run, updates the image+env on
+  # subsequent runs. The Job is one execution per claimed Issue; the
+  # CloudRunJobDispatcher injects per-task env on `runJob()`. Memory is
+  # conservative (1 GiB); bump if worker OOMs.
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: bash
+    args:
+      - '-c'
+      - |
+        gcloud run jobs describe hlbw-swarm-worker \
+          --region=asia-southeast1 >/dev/null 2>&1 \
+          && VERB=update \
+          || VERB=create
+        gcloud run jobs $VERB hlbw-swarm-worker \
+          --image=gcr.io/$PROJECT_ID/hlbw-swarm-worker:$BUILD_ID \
+          --region=asia-southeast1 \
+          --memory=1Gi \
+          --cpu=1 \
+          --max-retries=1 \
+          --task-timeout=30m \
+          --parallelism=1 \
+          --tasks=1 \
+          --add-cloudsql-instances=hlbw-ai-hub:asia-southeast1:hlbw-ai-hub-db-instance \
+          --set-env-vars=SWARM_RUNTIME=cloud-run-job,NODE_ENV=production \
+          --set-secrets=DATABASE_URL=database-url:latest,GEMINI_API_KEY=gemini-api-key:latest
 
-  # Deploy container image to Cloud Run
+  # Grant the Cloud Run UI service account permission to invoke the Cloud Run
+  # Job. Idempotent — safe to re-run.
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: bash
+    args:
+      - '-c'
+      - |
+        UI_SA=$(gcloud run services describe hlbw-ai-hub \
+          --region=asia-southeast1 \
+          --format='value(spec.template.spec.serviceAccountName)' 2>/dev/null)
+        # Cloud Run services default to PROJECT_NUMBER-compute@developer.gserviceaccount.com
+        if [ -z "$UI_SA" ]; then
+          PROJECT_NUMBER=$(gcloud projects describe $PROJECT_ID --format='value(projectNumber)')
+          UI_SA="$PROJECT_NUMBER-compute@developer.gserviceaccount.com"
+        fi
+        echo "Granting run.invoker on hlbw-swarm-worker to $UI_SA"
+        gcloud run jobs add-iam-policy-binding hlbw-swarm-worker \
+          --region=asia-southeast1 \
+          --member="serviceAccount:$UI_SA" \
+          --role=roles/run.invoker || true
+
+  # Deploy UI container image to Cloud Run. DISPATCHER_MODE defaults to
+  # `noop` — flip to `cloud-run-job` to activate the data plane we just
+  # provisioned. SWARM_WORKER_JOB_NAME / _REGION point the dispatcher at
+  # the Job we just created/updated.
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     entrypoint: gcloud
     args:
@@ -66,13 +139,15 @@ steps:
       - '--add-cloudsql-instances'
       - 'hlbw-ai-hub:asia-southeast1:hlbw-ai-hub-db-instance'
       - '--set-env-vars'
-      - 'NEXT_PUBLIC_APP_URL=https://hlbw-ai-hub.com,NEXTAUTH_URL=https://hlbw-ai-hub.com,GCS_BUCKET_NAME=hlbw-ai-hub-uploads,SMTP_HOST=smtp.gmail.com,SMTP_PORT=587,SMTP_SECURE=false,ADMIN_EMAIL=barneswo@gmail.com,NEXT_PUBLIC_ADSENSE_PUB_ID=ca-pub-1756839464398511,APP_VERSION=$SHORT_SHA,APPLE_CLIENT_ID=com.hlbw-ai-hub.si,APPLE_TEAM_ID=A76BV63763,APPLE_KEY_ID=AQ5WAKV29R,DISPATCHER_MODE=noop'
+      - 'NEXT_PUBLIC_APP_URL=https://hlbw-ai-hub.com,NEXTAUTH_URL=https://hlbw-ai-hub.com,GCS_BUCKET_NAME=hlbw-ai-hub-uploads,SMTP_HOST=smtp.gmail.com,SMTP_PORT=587,SMTP_SECURE=false,ADMIN_EMAIL=barneswo@gmail.com,NEXT_PUBLIC_ADSENSE_PUB_ID=ca-pub-1756839464398511,APP_VERSION=$SHORT_SHA,APPLE_CLIENT_ID=com.hlbw-ai-hub.si,APPLE_TEAM_ID=A76BV63763,APPLE_KEY_ID=AQ5WAKV29R,DISPATCHER_MODE=noop,SWARM_WORKER_JOB_NAME=hlbw-swarm-worker,SWARM_WORKER_JOB_REGION=asia-southeast1'
       - '--set-secrets'
       - 'DATABASE_URL=database-url:latest,NEXTAUTH_SECRET=nextauth-secret:latest,GEMINI_API_KEY=gemini-api-key:latest,SMTP_PASSWORD=smtp-password:latest,SMTP_USER=smtp-user:latest,GOOGLE_CLIENT_ID=google-oauth-client-id:latest,GOOGLE_CLIENT_SECRET=google-oauth-client-secret:latest,GITHUB_CLIENT_ID=github-oauth-client-id:latest,GITHUB_CLIENT_SECRET=github-oauth-client-secret:latest,AZURE_AD_CLIENT_ID=azure-ad-oauth-client-id:latest,AZURE_AD_CLIENT_SECRET=azure-ad-oauth-client-secret:latest,APPLE_PRIVATE_KEY=apple-private-key:latest'
 
 images:
   - 'gcr.io/$PROJECT_ID/hlbw-ai-hub:latest'
   - 'gcr.io/$PROJECT_ID/hlbw-ai-hub:$BUILD_ID'
+  - 'gcr.io/$PROJECT_ID/hlbw-swarm-worker:latest'
+  - 'gcr.io/$PROJECT_ID/hlbw-swarm-worker:$BUILD_ID'
 
 options:
   machineType: 'E2_HIGHCPU_8'

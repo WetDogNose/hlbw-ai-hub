@@ -38,6 +38,9 @@ import TemplateBrowser, {
   type TemplateBrowserTemplate,
 } from "./orchestration/TemplateBrowser";
 import AuditLogViewer from "./orchestration/AuditLogViewer";
+import RoutineBrowser from "./orchestration/RoutineBrowser";
+import WebhookBrowser from "./orchestration/WebhookBrowser";
+import TimelineWaterfall from "./orchestration/TimelineWaterfall";
 // AgentPersona surface.
 import PersonasBrowser from "./orchestration/PersonasBrowser";
 import type { ScionStateResponse } from "@/app/api/scion/state/route";
@@ -275,7 +278,10 @@ export default function ScionDashboard() {
             </label>
           </div>
           {selectedIssueId ? (
-            <WorkflowGraph issueId={selectedIssueId} />
+            <>
+              <WorkflowGraph issueId={selectedIssueId} />
+              <TimelineWaterfall issueId={selectedIssueId} />
+            </>
           ) : (
             <div className="workflow-graph">Select an issue to inspect.</div>
           )}
@@ -302,6 +308,8 @@ export default function ScionDashboard() {
           <RuntimeConfigPanel />
           <MCPToolBrowser />
           <AuditLogViewer />
+          <RoutineBrowser />
+          <WebhookBrowser />
           <div className="scion-tools-section">
             <h2 className="scion-tools-section__title">Tools</h2>
             <CodeIndexPanel />

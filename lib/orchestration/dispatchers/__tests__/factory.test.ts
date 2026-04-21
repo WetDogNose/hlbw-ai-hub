@@ -32,6 +32,16 @@ describe("getDispatcher (DISPATCHER_MODE)", () => {
     expect(getDispatcher().mode).toBe("noop");
   });
 
+  it('returns the cloud-run-job adapter when DISPATCHER_MODE="cloud-run-job"', () => {
+    process.env.DISPATCHER_MODE = "cloud-run-job";
+    expect(getDispatcher().mode).toBe("cloud-run-job");
+  });
+
+  it('accepts the underscore spelling "cloud_run_job" too', () => {
+    process.env.DISPATCHER_MODE = "cloud_run_job";
+    expect(getDispatcher().mode).toBe("cloud-run-job");
+  });
+
   it("falls back to noop on an unknown mode (fail-safe: refuses to claim work it can't execute)", () => {
     process.env.DISPATCHER_MODE = "kubernetes";
     expect(getDispatcher().mode).toBe("noop");

@@ -64,7 +64,7 @@ describe("GET /api/scion/runtime-config", () => {
     const body = (await res.json()) as {
       entries: Array<{ key: string; source: string }>;
     };
-    expect(body.entries).toHaveLength(5);
+    expect(body.entries).toHaveLength(8);
     expect(body.entries.every((e) => e.source === "default")).toBe(true);
   });
 });

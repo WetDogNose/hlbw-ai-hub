@@ -89,10 +89,13 @@ describe("runtime-config loader", () => {
     findUniqueMock.mockResolvedValue(null);
     const entries = await listRuntimeConfig();
     expect(entries.map((e) => e.key).sort()).toEqual([
+      "budget_daily_ceiling_tokens",
       "category_provider_overrides",
       "confidence_threshold",
       "cycle_cap",
+      "dispatch_paused",
       "exploration_budget",
+      "pool_warm_count",
       "watchdog_timeout_minutes",
     ]);
   });

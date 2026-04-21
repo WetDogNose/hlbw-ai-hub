@@ -29,7 +29,7 @@ import { getDispatcher } from "@/lib/orchestration/dispatchers";
 import { getRuntimeConfig } from "@/lib/orchestration/runtime-config";
 
 export interface EngineHealthResponse {
-  dispatcherMode: "docker" | "noop";
+  dispatcherMode: "docker" | "noop" | "cloud-run-job";
   status: "online" | "remote" | "degraded" | "paused";
   message: string;
   dispatchPaused: boolean;
@@ -61,30 +61,34 @@ export async function GET() {
     });
   }
 
-  // dispatcher.mode === "docker": probe the DB so the badge reflects the
-  // caller's actual ability to claim work, not just that the Next process
-  // is up. Cheap `SELECT 1` round-trip.
+  // Real dispatcher mode (docker or cloud-run-job). Probe the DB so the badge
+  // reflects the caller's actual ability to claim work, not just that the Next
+  // process is up. Cheap `SELECT 1` round-trip.
   try {
     await prisma.$queryRaw`SELECT 1`;
     if (dispatchPaused) {
       return NextResponse.json<EngineHealthResponse>({
-        dispatcherMode: "docker",
+        dispatcherMode: dispatcher.mode,
         status: "paused",
         message: "Dispatch paused by operator — no new Issues will be claimed.",
         dispatchPaused: true,
       });
     }
+    const readyMessage =
+      dispatcher.mode === "cloud-run-job"
+        ? "Cloud Run Job dispatcher ready."
+        : "Local Docker dispatcher ready.";
     return NextResponse.json<EngineHealthResponse>({
-      dispatcherMode: "docker",
+      dispatcherMode: dispatcher.mode,
       status: "online",
-      message: "Local Docker dispatcher ready.",
+      message: readyMessage,
       dispatchPaused: false,
     });
   } catch (err: unknown) {
     const detail = err instanceof Error ? err.message : String(err);
     return NextResponse.json<EngineHealthResponse>(
       {
-        dispatcherMode: "docker",
+        dispatcherMode: dispatcher.mode,
         status: "degraded",
         message: `Database unreachable: ${detail}`,
         dispatchPaused,
