@@ -3,33 +3,42 @@
 // Thin wrapper API for Next.js server-side handlers to drive the swarm
 // without importing the `scripts/swarm/*` runtime into the Next build.
 // `scripts/` is excluded from the root `tsconfig.json` (see scripts/tsconfig.json
-// split), so we keep the implementation self-contained here and invoke the
-// worker via a subprocess (`npx tsx scripts/swarm/docker-worker.ts ...`).
+// split).
 //
 // Exports:
 //   - `dispatchReadyIssues(limit)` — atomically claim up to `limit` pending
-//     Issues (one claim per tx, `SELECT ... FOR UPDATE SKIP LOCKED`) and spawn
-//     a detached docker-worker child process for each.
+//     Issues (one claim per tx, `SELECT ... FOR UPDATE SKIP LOCKED`) and hand
+//     each to the active `WorkerDispatcher` (see `./dispatchers/`).
 //   - `reclaimStaleWorkers()` — mark Issues back to `pending` when their
 //     `startedAt` predates the worker timeout (`SWARM_POLICY.workerTimeoutMinutes`).
+//   - `spawnWorkerSubprocess` — re-exported from `./dispatchers` so existing
+//     tests that mock this seam keep working.
 //
-// Types come from `@/scripts/swarm/types` via TS path alias; the alias is
-// resolved by Next.js and jest's moduleNameMapper.
+// Dispatcher selection is env-driven (`DISPATCHER_MODE=docker|noop`). In noop
+// mode `dispatchReadyIssues` short-circuits without claiming any Issues — the
+// data plane lives in a separate deployment (see docs/re-arch/).
 
-import { spawn } from "node:child_process";
-import path from "node:path";
 import prisma from "@/lib/prisma";
 import type { Issue } from "@prisma/client";
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import type { Task } from "@/scripts/swarm/types";
 import { TaskStatus } from "@/scripts/swarm/types";
 import { SWARM_POLICY } from "@/scripts/swarm/policy";
+import { getDispatcher } from "./dispatchers";
+
+export { spawnWorkerSubprocess } from "./dispatchers";
+export type {
+  DispatcherMode,
+  WorkerDispatcher,
+  WorkerLaunchRequest,
+  WorkerLaunchResult,
+} from "./dispatchers";
 
 export interface DispatchResult {
   taskId: string;
   /** Populated on successful spawn; null means spawn failed. */
   workerId: string | null;
-  status: "spawned" | "failed";
+  status: "spawned" | "failed" | "skipped";
   error?: string;
 }
 
@@ -78,50 +87,20 @@ async function claimOneReadyIssue(): Promise<Issue | null> {
 }
 
 /**
- * Hook for tests. Production path forks `npx tsx scripts/swarm/docker-worker.ts`
- * as a detached child. Tests replace this via `jest.mock` so no Docker is
- * required in the heartbeat route test or the dispatcher integration test.
- */
-export async function spawnWorkerSubprocess(
-  taskId: string,
-  instruction: string,
-  branchName: string,
-  agentCategory: string,
-): Promise<{ workerId: string }> {
-  const repoRoot = process.cwd();
-  const scriptPath = path.join(
-    repoRoot,
-    "scripts",
-    "swarm",
-    "docker-worker.ts",
-  );
-
-  const child = spawn(
-    "npx",
-    ["tsx", scriptPath, taskId, instruction, branchName, agentCategory],
-    {
-      cwd: repoRoot,
-      detached: true,
-      stdio: "ignore",
-      env: process.env,
-      shell: process.platform === "win32",
-    },
-  );
-  // Detach so the Next.js handler can return without holding the child.
-  child.unref();
-  const workerId = `worker-subprocess-${child.pid ?? "pending"}-${taskId}`;
-  return { workerId };
-}
-
-/**
  * Drain up to `limit` ready Issues. Each claim is its own transaction so
- * a slow spawn cannot block the next claim, and concurrent dispatchers
+ * a slow launch cannot block the next claim, and concurrent dispatchers
  * (host + Cloud Scheduler) never race for the same row.
+ *
+ * In `DISPATCHER_MODE=noop` the loop is a no-op — we refuse to claim Issues
+ * we can't actually execute.
  */
 export async function dispatchReadyIssues(
   limit: number = 5,
 ): Promise<DispatchResult[]> {
   if (!Number.isFinite(limit) || limit <= 0) return [];
+
+  const dispatcher = getDispatcher();
+  if (dispatcher.mode === "noop") return [];
 
   const results: DispatchResult[] = [];
 
@@ -141,12 +120,12 @@ export async function dispatchReadyIssues(
     const agentCategory = claimed.agentCategory ?? "default";
 
     try {
-      const { workerId } = await spawnWorkerSubprocess(
-        claimed.id,
-        claimed.instruction,
+      const { workerId } = await dispatcher.launch({
+        taskId: claimed.id,
+        instruction: claimed.instruction,
         branchName,
         agentCategory,
-      );
+      });
       results.push({ taskId: claimed.id, workerId, status: "spawned" });
     } catch (err: unknown) {
       const msg =
@@ -154,7 +133,7 @@ export async function dispatchReadyIssues(
           ? err.message
           : typeof err === "string"
             ? err
-            : "spawn failed";
+            : "launch failed";
       // Put the Issue back so a future heartbeat retries it.
       try {
         await prisma.issue.update({
@@ -162,7 +141,7 @@ export async function dispatchReadyIssues(
           data: { status: TaskStatus.Pending, startedAt: null },
         });
       } catch {
-        // Swallow — we still want to report the spawn failure.
+        // Swallow — we still want to report the launch failure.
       }
       results.push({
         taskId: claimed.id,

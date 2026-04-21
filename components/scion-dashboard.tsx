@@ -36,6 +36,7 @@ import TemplateBrowser, {
   type TemplateBrowserTemplate,
 } from "./orchestration/TemplateBrowser";
 import type { ScionStateResponse } from "@/app/api/scion/state/route";
+import type { EngineHealthResponse } from "@/app/api/scion/engine-health/route";
 
 const fetcher = async (url: string): Promise<ScionStateResponse> => {
   const res = await fetch(url);
@@ -45,7 +46,21 @@ const fetcher = async (url: string): Promise<ScionStateResponse> => {
   return res.json() as Promise<ScionStateResponse>;
 };
 
+const engineHealthFetcher = async (
+  url: string,
+): Promise<EngineHealthResponse> => {
+  const res = await fetch(url);
+  // 503 means "degraded" — we still want the payload to render the banner.
+  const body = (await res
+    .json()
+    .catch(() => null)) as EngineHealthResponse | null;
+  if (!body)
+    throw new Error(`engine-health returned no payload (${res.status})`);
+  return body;
+};
+
 export const SCION_STATE_KEY = "/api/scion/state";
+export const SCION_ENGINE_HEALTH_KEY = "/api/scion/engine-health";
 
 type TabKey = "operations" | "workflow" | "abilities" | "memory";
 
@@ -61,6 +76,11 @@ export default function ScionDashboard() {
     SCION_STATE_KEY,
     fetcher,
     { refreshInterval: 5000, revalidateOnFocus: false },
+  );
+  const { data: engineHealth } = useSWR<EngineHealthResponse>(
+    SCION_ENGINE_HEALTH_KEY,
+    engineHealthFetcher,
+    { refreshInterval: 15000, revalidateOnFocus: false },
   );
   const [tab, setTab] = useState<TabKey>("operations");
   const [selectedIssueId, setSelectedIssueId] = useState<string>("");
@@ -93,12 +113,22 @@ export default function ScionDashboard() {
     ),
   );
 
-  const engineOnline = !error;
-  const engineLabel = isLoading
-    ? "Engine Loading"
-    : engineOnline
-      ? "Engine Online"
-      : "Engine Offline";
+  // Engine status: prefer the /api/scion/engine-health signal (which knows
+  // whether this deployment even has a data plane). Fall back to the old
+  // state-error heuristic while that endpoint is loading.
+  const engineStatus: "online" | "remote" | "degraded" | "loading" =
+    engineHealth?.status ??
+    (isLoading ? "loading" : error ? "degraded" : "online");
+  const engineLabel =
+    engineStatus === "loading"
+      ? "Engine Loading"
+      : engineStatus === "online"
+        ? "Engine Online"
+        : engineStatus === "remote"
+          ? "Remote Dispatcher"
+          : "Engine Offline";
+  const engineOk = engineStatus === "online" || engineStatus === "remote";
+  const engineTitle = engineHealth?.message ?? undefined;
 
   return (
     <div className="scion-container">
@@ -120,12 +150,19 @@ export default function ScionDashboard() {
           </Link>
           <div
             className={
-              engineOnline
+              engineOk
                 ? "scion-status-pill scion-status-pill--ok"
                 : "scion-status-pill scion-status-pill--warn"
             }
+            title={engineTitle}
           >
             <Activity size={18} /> {engineLabel}
+            {engineHealth ? (
+              <span className="scion-status-pill__mode">
+                {" "}
+                · {engineHealth.dispatcherMode}
+              </span>
+            ) : null}
           </div>
           <div className="scion-status-pill scion-status-pill--warn">
             <ShieldAlert size={18} /> Strict Mode Disabled
