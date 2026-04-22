@@ -92,7 +92,7 @@ steps:
           --task-timeout=30m \
           --parallelism=1 \
           --tasks=1 \
-          --add-cloudsql-instances=hlbw-ai-hub:asia-southeast1:hlbw-ai-hub-db-instance \
+          --set-cloudsql-instances=hlbw-ai-hub:asia-southeast1:hlbw-ai-hub-db-instance \
           --set-env-vars=SWARM_RUNTIME=cloud-run-job,NODE_ENV=production \
           --set-secrets=DATABASE_URL=database-url:latest,GEMINI_API_KEY=gemini-api-key:latest
 
