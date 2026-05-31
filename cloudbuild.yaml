@@ -64,6 +64,9 @@ steps:
       - '--enable-password-policy'
       - '--backup-start-time=03:00'
       - '--deletion-protection'
+      # Cost: drop WAL-archive storage (PITR) and trim retained backups 7 -> 3.
+      - '--no-enable-point-in-time-recovery'
+      - '--retained-backups-count=3'
 
   # Create or update the SCION swarm-worker Cloud Run Job. Idempotent —
   # creates on first run, updates the image+env on subsequent runs. One
@@ -137,7 +140,7 @@ steps:
       - '--port'
       - '3000'
       - '--max-instances'
-      - '24'
+      - '4'
       - '--memory'
       - '1024Mi'
       - '--add-cloudsql-instances'
