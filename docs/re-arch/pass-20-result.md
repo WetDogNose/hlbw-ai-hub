@@ -158,6 +158,6 @@ gcloud builds submit --config cloudbuild.yaml --project hlbw-ai-hub --region asi
 - Container built and pushed to `gcr.io/hlbw-ai-hub/hlbw-ai-hub:latest` and `gcr.io/hlbw-ai-hub/hlbw-ai-hub:$BUILD_ID`.
 - Cloud SQL `hlbw-ai-hub-db-instance` patched per the existing `gcloud sql instances patch` step (SSL required, password policy, 03:00 backup, deletion protection).
 - Cloud Run service `hlbw-ai-hub` updated in `asia-southeast1` with the new image (`--max-instances 24`, `--memory 1024Mi`, `--port 3000`), Cloud SQL attached via `--add-cloudsql-instances`, env/secrets patched per the existing step.
-- Smoke test: `curl -X POST https://hlbw-ai-hub.com/api/orchestrator/heartbeat` should return counts of scanned routines + in-progress issues. If the Scheduler is not wired (Option B above) this stays dormant until invoked.
+- Smoke test: `curl -X POST https://hlbw.org/api/orchestrator/heartbeat` should return counts of scanned routines + in-progress issues. If the Scheduler is not wired (Option B above) this stays dormant until invoked.
 
 **The dispatcher will not auto-deploy. No `gcloud builds submit` / `docker push` / Cloud Build command has been executed in this pass.** The user runs the command above when ready.
