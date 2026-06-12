@@ -18,9 +18,6 @@ Maintain a global "memory graph" of all established rules, directives, and hints
 
 - **Toolchain Doctor / CI**: Runs periodically (or on push) to scan all `SKILL.md` and repository artifacts.
 - **Agent Memory Interceptor**:
-> [!IMPORTANT]
-> **[Agent Directive: Artifact Validation]**
-> Agents MUST ALWAYS consult the Directive Enforcer Sentry via A2A messaging to validate draft instruction changes BEFORE rewriting any `.md` tool rules or skill files or committing any `.md` artifact updates.
 
 ## Reference Architecture
 

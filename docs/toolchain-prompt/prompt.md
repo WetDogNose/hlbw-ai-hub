@@ -11,10 +11,6 @@ This document is a technical blueprint detailing the exact agent instructions, s
 
 > [!IMPORTANT]
 > **[Agent Directive: Core Behavior]**
-> Agents MUST NEVER attempt slow, sequential multi-file refactoring; they MUST ALWAYS dispatch parallel sub-agents using the Master Agent Coordinator workflow (`scripts/swarm`) when tackling wide changes.
-
-> [!IMPORTANT]
-> **[Agent Directive: Core Behavior]**
 > Agents MUST NOT write domain business logic (e.g., React components, Prisma schemas) to this repository; this repository MUST ONLY contain infrastructure, workflow orchestration, and MCP server management code.
 
 Make sure to implement and maintain all 6 pillars in this workspace.
@@ -49,9 +45,6 @@ To stop the AI from slowly grepping files or reading massive source codes sequen
 
 **1. Create the AI Skill (`.agents/skills/mcp-optimizations/SKILL.md`):**
 Write strict instructions for the AI Agent:
-> [!IMPORTANT]
-> **[Agent Directive: MCP Prioritization]**
-> Agents MUST ALWAYS prioritize specialized MCP tools over sequential filesystem tools (`grep_search`, `view_file`).
 
 > [!NOTE]
 > **[Agent Instruction: MCP Tool Usage]**
@@ -141,15 +134,3 @@ Standardize how pipelines and runner environments are built to prevent ad-hoc an
 > 1. If the user asks to create or deploy a CI/CD pipeline, look in `docs/templates/pipelines.md` for guidance.
 > 2. NEVER invent a GitHub Actions workflow from scratch; ALWAYS copy the base templates located inside `templates/pipelines/github-actions/`.
 > 3. If queried about GitHub Actions runners or self-hosted infrastructure, refer the user immediately to `docs/templates/pipelines/gha-runners.md` for explanations on standard vs. self-hosted runners.
-
-## Pillar 8. Agent Directive Enforcement (Sentry Validation)
-
-To eliminate "context rot" and perfectly align multi-agent workflows, all rules, hints, and instructions for other agents MUST be rigorously verified and converted to explicit Markdown Callouts.
-
-**1. Create the AI Skill (`.agents/skills/directive-enforcer-sentry/SKILL.md`):**
-Instruct the AI on the architectural validation loop:
-> [!NOTE]
-> **[Agent Instruction: Directive Validation]**
->
-> 1. When drafting new directives, instructions, or hints, agents MUST consult the Directive Enforcer Sentry.
-> 2. Follow the detailed Sentry consultation procedure outlined in `docs/features/directive-enforcer-sentry.md` to validate and apply the Sentry's strict Markdown rewrite.

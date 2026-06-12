@@ -26,12 +26,8 @@ graph TD
       D_1["<agent_directive.*?</agent_directive>"]
       D_2["[!IMPORTANT] **[Agent Directive: Security]** Agents MUST NEVER commit raw Stripe API keys to any branch."]
       D_3["[!IMPORTANT] **[Agent Directive: Core Behavior]** Agents MUST NEVER use slow CLI commands if an MCP server ('ast-analyzer', 'app-tester', 'gcp-logging') can fetch structured data instantly."]
-      D_4["[!IMPORTANT] **[Agent Directive: Core Behavior]** Agents MUST NEVER attempt slow, sequential multi-file refactoring; they MUST ALWAYS dispatch parallel sub-agents using the Master Agent Coordinator workflow ('scripts/swarm') when tackling wide changes."]
       D_5["[!IMPORTANT] **[Agent Directive: Core Behavior]** Agents MUST NOT write domain business logic (e.g., React components, Prisma schemas) to this repository; this repository MUST ONLY contain infrastructure, workflow orchestration, and MCP server management code."]
-      D_6["[!IMPORTANT] **[Agent Directive: MCP Prioritization]** Agents MUST ALWAYS prioritize specialized MCP tools over sequential filesystem tools ('grep_search', 'view_file')."]
-      D_7["[!IMPORTANT] **[Agent Directive: Artifact Validation]** Agents MUST ALWAYS consult the Directive Enforcer Sentry via A2A messaging to validate draft instruction changes BEFORE rewriting any '.md' tool rules or skill files or committing any '.md' artifact updates."]
       D_8["[!IMPORTANT] **[Agent Directive: Scanner Logic]** The scanner MUST identify files for tracking by detecting specific string triggers and MUST extract annotations using the exact provided regex patterns."]
-      D_9["[!IMPORTANT] **[Agent Directive: Context Extraction]** The parser MUST extract exactly the first 15 lines of every matched file to ensure LLM context."]
       D_10["[!IMPORTANT] **[Agent Directive: Query Policy]** Master IDE agents MUST query the Sentry's 'get_advice' action BEFORE writing any tool rules or directives."]
       D_11["[!IMPORTANT] **[Agent Directive: Memory Management]** The 'refresh_memory' action MUST be triggered asynchronously on IDE startup or via periodic CI/CD cron jobs to ensure the Memory Graph does not drift from the active filesystem state."]
       D_12["[!IMPORTANT] **[Agent Directive: Conflict Resolution]** If the LLM detects an unresolvable logical loop, the Sentry MUST revert the write and raise a fatal exception outlining the loop to the Master Agent."]
@@ -53,7 +49,6 @@ graph TD
       I_7["[!NOTE] **[Agent Instruction: Memory Analysis]** 1. When tests fail due to memory, scan the logs directory for the latest tracker logs. 2. Compare the 'Top Aggregated Applications' sections between snapshots. 3. If specific tools or databases continuously grow without releasing memory across multiple tests, identify the leak. 4. Apply common fixes, including ensuring database disconnects in test teardowns, checking MCP server LRU caches, or forcing manual garbage collection."]
       I_8["[!NOTE] **[Agent Instruction: Workflow File Creation]** 1. Include standard company boilerplates. 2. Include exact terminal commands to run. 3. Inject the string '// turbo-all' at the top of the file to authorize the AI to execute the bash commands automatically without waiting for user permission."]
       I_9["[!NOTE] **[Agent Instruction: CI/CD Pipeline Creation]** 1. If the user asks to create or deploy a CI/CD pipeline, look in 'docs/templates/pipelines.md' for guidance. 2. NEVER invent a GitHub Actions workflow from scratch; ALWAYS copy the base templates located inside 'templates/pipelines/github-actions/'. 3. If queried about GitHub Actions runners or self-hosted infrastructure, refer the user immediately to 'docs/templates/pipelines/gha-runners.md' for explanations on standard vs. self-hosted runners."]
-      I_10["[!NOTE] **[Agent Instruction: Directive Validation]** 1. When drafting new directives, instructions, or hints, agents MUST consult the Directive Enforcer Sentry."]
       I_11["[!NOTE] **[Agent Instruction: Capability Contract]** 1. Recursively scan the codebase, isolating files with annotation triggers, extracting the exact first 15 lines of context, and raw annotations via regex. 2. Offload or inline the JSON graph to an LLM capable of holding massive context windows to evaluate drafts against existing rules. 3. Pass a draft instruction to the LLM; the LLM MUST evaluate Global Conflicts, Logical Loops, and Contextual Alignment, returning a safely rewritten instruction. 4. Rewrite files safely in CI/CD without mutilating surrounding logic."]
       I_12["[!NOTE] **[Agent Instruction: System Prompt Injection]** 1. The primary System Instruction MUST be injected verbatim into the LLM Engine's System Prompt. 2. The Meta-Syntax Formatting Rules MUST be injected verbatim into the LLM Engine's System Prompt. 3. The File Validation Prompt MUST be injected verbatim into the LLM Engine's System Prompt for the 'validate_file' action."]
       I_13["[!NOTE] **[Agent Instruction: Implementation Sequence]** 1. Implement a standalone function to walk directories, ignore artifacts ('node_modules', 'dist'), read target files ('.ts', '.py', '.md'), apply string triggers, and run regex extraction logic. 2. Ensure the resulting JSON graph is written to disk (e.g., '.agents/swarm/directives_graph.json') to act as the primary Source of Truth. 3. Abstract your LLM API; implement logic to either inline the JSON graph into the prompt (for small codebases) or upload the JSON to an LLM Context Cache (for massive codebases). 4. Implement HTTP endpoints (e.g., 'POST /a2a/message') parsing the envelope to route to 'get_advice' or 'validate_file'. 5. Ensure the output stream from the LLM strips backtick fences (```) before writing directly to the disk, preventing file corruption."]
@@ -182,9 +177,7 @@ graph TD
   F_2 -- "contains" --> H_8
   F_4 -- "contains" --> I_3
   F_5 -- "contains" --> D_3
-  F_5 -- "contains" --> D_4
   F_5 -- "contains" --> D_5
-  F_5 -- "contains" --> D_6
   F_5 -- "contains" --> I_4
   F_5 -- "contains" --> I_5
   F_5 -- "contains" --> I_6
@@ -192,9 +185,7 @@ graph TD
   F_5 -- "contains" --> I_8
   F_5 -- "contains" --> I_9
   F_5 -- "contains" --> I_10
-  F_6 -- "contains" --> D_7
   F_6 -- "contains" --> D_8
-  F_6 -- "contains" --> D_9
   F_6 -- "contains" --> D_10
   F_6 -- "contains" --> D_11
   F_6 -- "contains" --> D_12
@@ -231,21 +222,8 @@ graph TD
   D_2 -- "enforces" --> C_4
   D_2 -- "enforces" --> C_5
   D_3 -- "enforces" --> C_6
-  D_3 -- "enforces" --> C_7
-  D_4 -- "enforces" --> C_8
-  D_4 -- "enforces" --> C_9
-  D_4 -- "enforces" --> C_6
-  D_5 -- "enforces" --> C_10
-  D_5 -- "enforces" --> C_11
-  D_6 -- "enforces" --> C_7
-  D_6 -- "enforces" --> C_12
-  D_7 -- "enforces" --> C_13
-  D_7 -- "enforces" --> C_14
-  D_7 -- "enforces" --> C_15
   D_8 -- "enforces" --> C_16
   D_8 -- "enforces" --> C_3
-  D_9 -- "enforces" --> C_17
-  D_9 -- "enforces" --> C_18
   D_10 -- "enforces" --> C_19
   D_10 -- "enforces" --> C_13
   D_11 -- "enforces" --> C_20

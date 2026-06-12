@@ -7,8 +7,6 @@ description: Core instructions directing the agent to prioritize high-speed MCP 
 
 This repository has been optimized with custom Model Context Protocol (MCP) servers and "turbo" workflows designed to massively increase your speed and parallelism.
 
-**CRITICAL RULE:** As an autonomous agent operating in this repository, you MUST prioritize using the following tools whenever applicable, rather than relying on standard recursive `grep_search`, `view_file`, or sequential sequential line-editing.
-
 ## 1. The AST Analyzer (TypeScript Navigation)
 
 When trying to understand how a component works, what props it takes, or what a file exports, do NOT use `view_file` to read the entire 500+ line file.
