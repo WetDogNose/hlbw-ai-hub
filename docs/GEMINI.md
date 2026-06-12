@@ -11,8 +11,11 @@
 **AGENT DEPLOYMENT & WRAPPERS:** When creating a new AI Agent or MCP Server, you MUST NOT write custom Dockerfiles or from-scratch entry points. You MUST use the standard wrappers in `wrappers/a2a/` or `wrappers/mcp/` as your entry points. For deployment, you MUST place these wrappers into either the `templates/docker/` or `templates/cloud-run/` environment templates. Review `.agents/workflows/scaffold-agent.md` and `.agents/workflows/scaffold-mcp.md` for instructions.
 **TEMPLATES & WRAPPERS MAINTENANCE:** If you are ever tasked with updating core agent libraries (like `@modelcontextprotocol/sdk`, `fastapi`, or `genkit`), or if you change deployment environment standards, you MUST proactively update the corresponding baselines in `templates/` and `wrappers/` to ensure parity across the hub ecosystem.
 
-**⚡ PERFORMANCE & COGNITIVE EFFICIENCY:**
-- **FLASH THINKING:** When using `sequential-thinking`, prioritize speed and decisiveness. Aim for **3 or fewer** thought steps before acting.
+**⚡ 2026 PERFORMANCE & ARCHITECTURE:**
+- **ROUTER PATTERN:** Route simple tasks to fast/flash tiers and complex tasks to frontier tiers. Do not default to flagship models for simple log parsing.
+- **PLAN AND EXECUTE:** For complex operations, generate a multi-step JSON plan before execution. 
+- **REFLECTION PATTERN:** High-stakes operations must be evaluated by a Critic agent before final delivery.
+- **NO META-COMMENTARY:** Do not explain tool selection processes, internal reasoning, or prioritize tool explanations. Execute tools silently and directly.
 - **PARALLEL DELEGATION:** Always use `delegate_batch_code_edit` if you have more than 2 files to modify.
 - **NATIVE TOOLS:** Prefer specialized MCP tools (AST analyzer, etc.) over manual file reads or bash searches to minimize token usage and latency.
 ---

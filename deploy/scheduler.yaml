@@ -8,7 +8,7 @@
 #     --schedule="*/2 * * * *" \
 #     --location=asia-southeast1 \
 #     --http-method=POST \
-#     --uri="https://hlbw-ai-hub.com/api/orchestrator/heartbeat" \
+#     --uri="https://hlbw.org/api/orchestrator/heartbeat" \
 #     --headers="Content-Type=application/json,x-orchestrator-secret=$(gcloud secrets versions access latest --secret=orchestrator-shared-secret)" \
 #     --message-body='{"limit":10}' \
 #     --description="Heartbeat-driven dispatch of pending Issues to swarm workers."
@@ -25,7 +25,7 @@
 schedule: "*/2 * * * *"
 time-zone: "Etc/UTC"
 http-method: POST
-uri: "https://hlbw-ai-hub.com/api/orchestrator/heartbeat"
+uri: "https://hlbw.org/api/orchestrator/heartbeat"
 headers:
   Content-Type: "application/json"
   # Populated at deploy time from the `orchestrator-shared-secret` Secret Manager
