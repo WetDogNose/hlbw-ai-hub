@@ -99,9 +99,7 @@
       "annotations": {
         "directives": [
           "> [!IMPORTANT]\n> **[Agent Directive: Core Behavior]**\n> Agents MUST NEVER use slow CLI commands if an MCP server (`ast-analyzer`, `app-tester`, `gcp-logging`) can fetch structured data instantly.\n",
-          "> [!IMPORTANT]\n> **[Agent Directive: Core Behavior]**\n> Agents MUST NEVER attempt slow, sequential multi-file refactoring; they MUST ALWAYS dispatch parallel sub-agents using the Master Agent Coordinator workflow (`scripts/swarm`) when tackling wide changes.\n",
           "> [!IMPORTANT]\n> **[Agent Directive: Core Behavior]**\n> Agents MUST NOT write domain business logic (e.g., React components, Prisma schemas) to this repository; this repository MUST ONLY contain infrastructure, workflow orchestration, and MCP server management code.\n",
-          "> [!IMPORTANT]\n> **[Agent Directive: MCP Prioritization]**\n> Agents MUST ALWAYS prioritize specialized MCP tools over sequential filesystem tools (`grep_search`, `view_file`).\n",
           "> [!IMPORTANT]\n> **[Agent Directive: Core Behavior]**\n> When constructing pipes or compound commands involving ONLY safe lookup utilities, you MUST set SafeToAutoRun: true.\n"
         ],
         "instructions": [
@@ -110,8 +108,7 @@
           "> [!NOTE]\n> **[Agent Instruction: Autonomous Testing Loop]**\n",
           "> [!NOTE]\n> **[Agent Instruction: Memory Analysis]**\n",
           "> [!NOTE]\n> **[Agent Instruction: Workflow File Creation]**\n",
-          "> [!NOTE]\n> **[Agent Instruction: CI/CD Pipeline Creation]**\n",
-          "> [!NOTE]\n> **[Agent Instruction: Directive Validation]**\n"
+          "> [!NOTE]\n> **[Agent Instruction: CI/CD Pipeline Creation]**\n"
         ],
         "hints": [],
         "has_unstructured_legacy": true
@@ -136,10 +133,6 @@
       "context_metadata": "# Directive Enforcer Sentry Replication Blueprint\n\n## Feature Intent\n\nThe Directive Enforcer is a Python-based A2A worker agent built into a global toolchain. Its primary role is to enforce unambiguous, strict, Markdown Callout structures (Meta-Syntax) on any agent instructions, hints, or directives embedded across workspace artifacts. The enforcer resolves ambiguity by rejecting loose natural language prompts (e.g., \"hello agent, don't forget to\"), preventing infinite LLM loops, and consolidating conflicting logic.\n\n## Purpose & Target Outcomes\n\nMaintain a global \"memory graph\" of all established rules, directives, and hints across a codebase to prevent context rot. Automatically rewrite loose, human-like agent instructions into a strict, machine-enforceable meta-syntax while globally resolving logic conflicts.\n\n## Originating Tech Stack & Context (Reference Only)\n\n- **Language/Compute**: Built initially as a Python script orchestrated as an A2A (Agent-to-Agent) worker within a Next.js/TypeScript monorepo. It relies on standard library Python data structures (`os.walk`, `re`).\n- **Data Persistence**: Originally cached the JSON memory graph to standard filesystem `.agents/swarm/directives_graph.json`. Designed to offload this exact structure to an LLM Context Caching layer (like Google Vertex AI Context Cache or OpenAI) for massive repositories.\n- **LLM Provider**: Originally built against Google Gemini 1.5 Pro (temperature 0) to exploit 2-million token windows for massive workspace context graphs.",
       "annotations": {
         "directives": [
-          "> [!IMPORTANT]\n> **[Agent Directive: Artifact Validation]**\n> Agents MUST ALWAYS consult the Directive Enforcer Sentry via A2A messaging to validate draft instruction changes BEFORE rewriting any `.md` tool rules or skill files or committing any `.md` artifact updates.\n",
-          "> [!IMPORTANT]\n> **[Agent Directive: Scanner Logic]**\n> The scanner MUST identify files for tracking by detecting specific string triggers and MUST extract annotations using the exact provided regex patterns.\n",
-          "> [!IMPORTANT]\n> **[Agent Directive: Context Extraction]**\n> The parser MUST extract exactly the first 15 lines of every matched file to ensure LLM context.\n",
-          "> [!IMPORTANT]\n> **[Agent Directive: Query Policy]**\n> Master IDE agents MUST query the Sentry's `get_advice` action BEFORE writing any tool rules or directives.\n> [!IMPORTANT]\n> **[Agent Directive: Memory Management]**\n> The `refresh_memory` action MUST be triggered asynchronously on IDE startup or via periodic CI/CD cron jobs to ensure the Memory Graph does not drift from the active filesystem state.\n> [!IMPORTANT]\n> **[Agent Directive: Conflict Resolution]**\n> If the LLM detects an unresolvable logical loop, the Sentry MUST revert the write and raise a fatal exception outlining the loop to the Master Agent.\n",
           "> [!IMPORTANT]\n> **[Agent Directive: LLM Configuration]**\n> The LLM Engine MUST be configured with a temperature of 0.0.\n",
           "> [!IMPORTANT]\n> **[Agent Directive: <Domain>]**\n> <A single, concise sentence using MUST, MUST NOT, ALWAYS, or NEVER. No exposition.>\n",
           "<agent_directive.*?</agent_directive>"
